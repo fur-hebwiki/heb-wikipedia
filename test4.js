@@ -54,7 +54,8 @@ function riwt_readmypage_return() {
 	for (var key in this.currentwork)
 		current.push(key);
 	current.sort();
-	riwt_save_topage(riwt_special_page(0), summary, 'text', '#[[' + current.join(']]\n#[[') + ']]');
+	riwt_save_topage(riwt_special_page(0), summary, 'text', '#[[' + current.join(']]\n#[[') + ']]', 
+		function(){alert('הסקריפט סיים לרוץ. ' + nomore.length + ' תבניות "בעבודה" הוסרו.')});
 }
  
 function riwt_embedded_return() {
@@ -64,7 +65,7 @@ function riwt_embedded_return() {
 	var responses = xml.getElementsByTagName('ei');
 	this.currentwork = {};
 	for (var i = 0; i < responses.length; i++)
-		this.currentwork[$('<div/>').text(responses[i].getAttribute('title'))] = 1;
+		this.currentwork[$('<div/>').text(responses[i].getAttribute('title')).html()] = 1;
 	this.onreadystatechange = riwt_readmypage_return;
 	this.open('GET', riwt_special_page(0, wgServer + '/w/index.php?title='));
 	this.send(null);
