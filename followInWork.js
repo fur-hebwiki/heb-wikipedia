@@ -1,8 +1,10 @@
-// follow the use of "in work" template. 
+// riwt: Removed In-Work Templates. log removals in page [[Special:MyPage/כבר לא בעבודה]]
 
 function riwt_short_date() {
 	var date = new Date();
-	return date.getDate() + '/' + date.getMonth() + '/' + date.getFullYear();
+	var min = '' + date.getMinutes();
+	if (min.length < 2) min = '0' + min;
+	return date.getDate() + '/' + date.getMonth() + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + min;
 }
 
 function riwt_save_topage(title, summary, type, text, next) {
@@ -34,7 +36,7 @@ function riwt_get_json(params, func) {
 	$.getJSON(wgScriptPath + '/api.php?', params, func);
 }
 
-function riwt_readmypage_return(data, currentwork) {
+function riwt_received_oldlist(data, currentwork) {
 	var nomore = [];
 	for (var i in data.parse.links) 
 		if (!currentwork[data.parse.links[i]['*']])
@@ -43,28 +45,31 @@ function riwt_readmypage_return(data, currentwork) {
 	var text;
 	if (nomore.length > 0) {
 		text = '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + nomore.join(']]\n*[[') + ']]\n';
-		riwt_save_topage(riwt_special_page(1), summary, 'prependtext', text);
+		riwt_save_topage(riwt_page_name(1), summary, 'prependtext', text);
 	}
 	current = [];
 	for (var key in currentwork)
 		current.push(key);
 	current.sort();
 	text = '#[[' + current.join(']]\n#[[') + ']]';
-	riwt_save_topage(riwt_special_page(0), summary, 'text', text, 
+	riwt_save_topage(riwt_page_name(0), summary, 'text', text, 
 		function(){alert('הסקריפט סיים לרוץ. ' + nomore.length + ' תבניות "בעבודה" הוסרו.')}
 	);
 }
  
-function riwt_embedded_return(data) {
+function riiwt_received_current_list(data, currentwork) {
 	var responses = data.query.embeddedin;
-	var currentwork = {};
 	for (var i in responses)
-		currentwork[$('<div/>').text(responses[i].title).html()] = 1;
-	var params = {action: 'parse', page: riwt_special_page(0), format: 'json'};
-	riwt_get_json(params, function(data) {riwt_readmypage_return(data, currentwork);});
+		currentwork[responses[i].title] = 1;
+	if (data['query-continue'])
+		riwt_get_current_list(currentwork, data['query-continue'].embeddedin.eicontinue);
+	else {
+		var params = {action: 'parse', page: riwt_page_name(0), format: 'json'};
+		riwt_get_json(params, function(data) {riwt_received_oldlist(data, currentwork);});
+	}
 }
 
-function riwt_obtain_list() {
+function riwt_get_current_list(currentwork, continuation) {
 	var params = {
 		action: 'query', 
 		list: 'embeddedin',
@@ -72,12 +77,11 @@ function riwt_obtain_list() {
 		eilimit: 500,
 		einamespace: 0,		
 		format: 'json'};
-	riwt_get_json(params, riwt_embedded_return);
+	if (continuation)
+		params.eicontinue = continuation;
+	riwt_get_json(params, function(data) {riiwt_received_current_list(data, currentwork);});
 } 
 
-function riwt_special_page(type) {
-	var titles = ['בעבודה', 'כבר לא בעבודה'];
-	return 'משתמש:' + wgUserName + '/' + titles[type];
-}
+function riwt_page_name(type) {return 'משתמש:' + wgUserName + '/' +  ['בעבודה', 'כבר לא בעבודה'][type];}
 
-addPortletLink('p-tb', 'javascript:riwt_obtain_list()', 'תבניות בעבודה שהוסרו');
+addPortletLink('p-tb', 'javascript:riwt_get_current_list({}, null)', 'תבניות בעבודה שהוסרו');
