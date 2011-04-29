@@ -2,9 +2,8 @@
 
 function riwt_short_date() {
 	var date = new Date();
-	var min = '' + date.getMinutes();
-	if (min.length < 2) min = '0' + min;
-	return date.getDate() + '/' + date.getMonth() + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + min;
+	var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
+	return date.getUTCDate() + '/' + date.getUTCMonth() + '/' + date.getUTCFullYear() + ' ' + date.getUTCHours() + ':' + min;
 }
 
 function riwt_save_topage(title, summary, type, text, next) {
@@ -36,17 +35,32 @@ function riwt_get_json(params, func) {
 	$.getJSON(wgScriptPath + '/api.php?', params, func);
 }
 
-function riwt_received_oldlist(data, currentwork) {
+function riwt_receive_removed_query(data, currentwork) {
 	var nomore = [];
-	for (var i in data.parse.links) 
-		if (!currentwork[data.parse.links[i]['*']])
-			nomore.push(data.parse.links[i]['*']);
-	var summary = 'עדכון '  + riwt_short_date();
-	var text;
-	if (nomore.length > 0) {
-		text = '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + nomore.join(']]\n*[[') + ']]\n';
+	if (data && data.query && data.query.pages)
+		for (var i in data.query.pages) {
+			var page = data.query.pages[i];
+			if (typeof page.missing != 'string' && !currentwork[page.title]) // this is possible in case of redirection
+				nomore.push(page.title);
+		}
+	if (nomore.length) {
+		var summary = 'עדכון '  + riwt_short_date();
+		var text = '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + nomore.join(']]\n*[[') + ']]\n';
 		riwt_save_topage(riwt_page_name(1), summary, 'prependtext', text);
 	}
+}
+
+function riwt_received_oldlist(data, currentwork) {
+	var nomore = [];
+	if (data && data.parse && data.parse.links)
+		for (var i in data.parse.links) 
+			if (!currentwork[data.parse.links[i]['*']])
+				nomore.push(data.parse.links[i]['*']);
+	if (nomore.length) 
+		riwt_get_json({action: 'query', format: 'json', prop: 'info', titles: nomore.join('|'), redirects: ''},
+					  function(data){riwt_receive_removed_query(data, currentwork);});
+	var summary = 'עדכון '  + riwt_short_date();
+	var text;
 	current = [];
 	for (var key in currentwork)
 		current.push(key);
@@ -75,7 +89,7 @@ function riwt_get_current_list(currentwork, continuation) {
 		list: 'embeddedin',
 		eititle: 'תבנית:בעבודה',
 		eilimit: 500,
-		einamespace: 0,		
+		einamespace: 0,
 		format: 'json'};
 	if (continuation)
 		params.eicontinue = continuation;
