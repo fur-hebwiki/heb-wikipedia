@@ -34,20 +34,26 @@ function riwt_get_json(params, func) {
 	$.getJSON(wgScriptPath + '/api.php?', params, func);
 }
 
-function riwt_receive_removed_query(data, currentwork) {
-	var nomore = [];
-	if (data && data.query && data.query.pages)
-		for (var i in data.query.pages) {
-			var page = data.query.pages[i], title = page.title;
-			if (typeof page.missing != 'string' && !currentwork[title]) // this is possible in case of redirection
-				nomore.push(title);
-		}
-	if (nomore.length)
-		riwt_save_topage(riwt_page_name(1), 'עדכון '  + riwt_short_date(),
-			{prependtext: '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + nomore.join(']]\n*[[') + ']]\n'});
+function riwt_receive_handle_nomore(nomore, currentwork, data) {
+	if (!nomore.length)
+		return;
+	if (data) {
+		var goodpages = [];
+		if (data && data.query && data.query.pages)
+			for (var i in data.query.pages) {
+				var page = data.query.pages[i], title = page.title;
+				if (typeof page.missing != 'string' && !currentwork[title]) // this is possible in case of redirection
+					goodpages.push(title);
+			}
+		if (goodpages.length)
+			riwt_save_topage(riwt_page_name(1), 'עדכון '  + riwt_short_date(),
+				{prependtext: '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + nomore.join(']]\n*[[') + ']]\n'});
+	}
+	riwt_get_json({action: 'query', prop: 'info', titles: nomore.splice(0,10).join('|'), redirects: ''},
+				  function(newdata){riwt_receive_removed_query(nomore, currentwork, newdata);});
 }
 
-function riwt_received_oldlist(data, currentwork) {
+function riwt_analyze_results(data, currentwork) {
 	var nomore = [];
 	if (data && data.parse && data.parse.links)
 		for (var i in data.parse.links) {
@@ -55,10 +61,7 @@ function riwt_received_oldlist(data, currentwork) {
 			if (title && !currentwork[title])
 				nomore.push(title);
 		}
-	var total = nomore.length; // just for the message.
-	while (nomore.length) //query is limited to 50 (for non-bots)
-		riwt_get_json({action: 'query', prop: 'info', titles: nomore.splice(0,50).join('|'), redirects: ''},
-					  function(data){riwt_receive_removed_query(data, currentwork);});
+	riwt_handle_nomore(nomore, currentwork, false);
 	current = [];
 	for (var key in currentwork)
 		current.push(key);
@@ -75,7 +78,7 @@ function riiwt_received_current_list(data, currentwork) {
 		riwt_get_current_list(currentwork, data['query-continue'].embeddedin.eicontinue);
 	else
 		riwt_get_json({action: 'parse', page: riwt_page_name(0)},
-			function(data){riwt_received_oldlist(data, currentwork);});
+			function(data){riwt_analyze_results(data, currentwork);});
 }
 
 function riwt_get_current_list(currentwork, continuation) {
