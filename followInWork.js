@@ -34,7 +34,7 @@ function riwt_get_json(params, func) {
 	$.getJSON(wgScriptPath + '/api.php?', params, func);
 }
 
-function riwt_receive_handle_nomore(nomore, currentwork, data) {
+function riwt_handle_nomore(nomore, currentwork, data) {
 	if (!nomore.length)
 		return;
 	if (data) {
@@ -50,7 +50,7 @@ function riwt_receive_handle_nomore(nomore, currentwork, data) {
 				{prependtext: '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + nomore.join(']]\n*[[') + ']]\n'});
 	}
 	riwt_get_json({action: 'query', prop: 'info', titles: nomore.splice(0,10).join('|'), redirects: ''},
-				  function(newdata){riwt_receive_removed_query(nomore, currentwork, newdata);});
+				  function(newdata){riwt_handle_nomore(nomore, currentwork, newdata);});
 }
 
 function riwt_analyze_results(data, currentwork) {
