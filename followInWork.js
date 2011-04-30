@@ -6,16 +6,16 @@ function riwt_short_date() {
 	return date.getUTCDate() + '/' + date.getUTCMonth() + '/' + date.getUTCFullYear() + ' ' + date.getUTCHours() + ':' + min;
 }
 
-function riwt_save_topage(title, summary, type, text, next) {
+function riwt_save_topage(title, summary, content, next) {
 
 	function doneSave(data) {
-		if (data && data.edit && data.edit.result == 'Success' && typeof next == 'function')
+		if (data && data.edit && data.edit['result'] == 'Success' && typeof next == 'function')
 			next();
 	}
 	
 	function tokenReceived(token) {
 		var param = {action: 'edit', title: title, summary: summary, token: token, format: 'json'};
-		param[type] = text;
+		$.extend(param, content);
 		$.post(wgScriptPath + '/api.php?', param, doneSave);
 	}
 	
@@ -27,11 +27,12 @@ function riwt_save_topage(title, summary, type, text, next) {
 		}
 	}
 	
-	var params = {action: 'query', prop: 'info', intoken: 'edit', titles: title, indexpageids: '', format: 'json'};
+	var params = {action: 'query', prop: 'info', intoken: 'edit', titles: title, indexpageids: ''};
 	riwt_get_json(params, doneGetToken);
 }
  
 function riwt_get_json(params, func) {
+	params.format = 'json';
 	$.getJSON(wgScriptPath + '/api.php?', params, func);
 }
 
@@ -46,7 +47,7 @@ function riwt_receive_removed_query(data, currentwork) {
 	if (nomore.length) {
 		var summary = 'עדכון '  + riwt_short_date();
 		var text = '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + nomore.join(']]\n*[[') + ']]\n';
-		riwt_save_topage(riwt_page_name(1), summary, 'prependtext', text);
+		riwt_save_topage(riwt_page_name(1), summary, {prependtext: text});
 	}
 }
 
@@ -56,8 +57,9 @@ function riwt_received_oldlist(data, currentwork) {
 		for (var i in data.parse.links) 
 			if (!currentwork[data.parse.links[i]['*']])
 				nomore.push(data.parse.links[i]['*']);
-	if (nomore.length) 
-		riwt_get_json({action: 'query', format: 'json', prop: 'info', titles: nomore.join('|'), redirects: ''},
+	var total = nomore.length;
+	while (nomore.length) //query is limited to 50 (for non-bots)
+		riwt_get_json({action: 'query', prop: 'info', titles: nomore.splice(0,50).join('|'), redirects: ''},
 					  function(data){riwt_receive_removed_query(data, currentwork);});
 	var summary = 'עדכון '  + riwt_short_date();
 	var text;
@@ -66,8 +68,8 @@ function riwt_received_oldlist(data, currentwork) {
 		current.push(key);
 	current.sort();
 	text = '#[[' + current.join(']]\n#[[') + ']]';
-	riwt_save_topage(riwt_page_name(0), summary, 'text', text, 
-		function(){alert('הסקריפט סיים לרוץ. ' + nomore.length + ' תבניות "בעבודה" הוסרו.')}
+	riwt_save_topage(riwt_page_name(0), summary, {text: text}, 
+		function(){alert('הסקריפט סיים לרוץ. ' + total + ' תבניות "בעבודה" הוסרו.')}
 	);
 }
  
@@ -78,7 +80,7 @@ function riiwt_received_current_list(data, currentwork) {
 	if (data['query-continue'])
 		riwt_get_current_list(currentwork, data['query-continue'].embeddedin.eicontinue);
 	else {
-		var params = {action: 'parse', page: riwt_page_name(0), format: 'json'};
+		var params = {action: 'parse', page: riwt_page_name(0)};
 		riwt_get_json(params, function(data) {riwt_received_oldlist(data, currentwork);});
 	}
 }
@@ -89,8 +91,7 @@ function riwt_get_current_list(currentwork, continuation) {
 		list: 'embeddedin',
 		eititle: 'תבנית:בעבודה',
 		eilimit: 500,
-		einamespace: 0,
-		format: 'json'};
+		einamespace: 0};
 	if (continuation)
 		params.eicontinue = continuation;
 	riwt_get_json(params, function(data) {riiwt_received_current_list(data, currentwork);});
@@ -98,4 +99,5 @@ function riwt_get_current_list(currentwork, continuation) {
 
 function riwt_page_name(type) {return 'משתמש:' + wgUserName + '/' +  ['בעבודה', 'כבר לא בעבודה'][type];}
 
-addPortletLink('p-tb', 'javascript:riwt_get_current_list({}, null)', 'תבניות בעבודה שהוסרו');
+addPortletLink('p-tb', 'javascript:riwt_get_current_list({}, null)', 'סקריפט "איבדו בעבודה"');
+addPortletLink('p-tb', 'javascript:window.location=riwt_page_name(1);', 'דפים שאיבדו "בעבודה"');
