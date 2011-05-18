@@ -1,52 +1,18 @@
 ﻿// Patrollers alarm clock
-function pac_sendNonPatrolledEditsQuery(patrols) {
-	var aj = sajax_init_object();
-	aj.patrols = patrols;
-	aj.onreadystatechange = pac_countNonPatrolledEdits;
-	aj.open('GET', 'http://he.wikipedia.org/w/api.php?action=query&list=recentchanges&format=xml&rcshow=!patrolled&rclimit=100');
-	aj.send(null);
+
+function pac_sendNonPatrolledEditsQuery() {
+	var params = {action: 'query', list: 'recentchanges', rcshow: '!patrolled', rclimit: 100, format: 'json'}
+	$.getJSON(wgScriptPath + '/api.php?', params, pac_countNonPatrolledEdits);
 }
 
-function pac_countNonPatrolledEdits() {
-	if (this.readyState != 4) // this is some ajax incantation - ony "4" is good.
-		return;
-	xml = this.responseXML;
-	var responses = xml.getElementsByTagName('rc');
-	var edits = [];
-	for (var i = 0; i < responses.length; i++) {
-		var response = responses[i];
-		edits.push({
-			ts:response.getAttribute('timestamp'), 
-			cur:response.getAttribute('revid')
-		});
+function pac_countNonPatrolledEdits(data) {
+	pac_setCookieVal('lastTestedPatrols', new Date().valueOf());
+	if (data && data.query && data.query.recentchanges) {
+		var interval = pac_tsToDate(ar[0]) - pac_tsToDate(ar[99]);
+		var limit = typeof wgPatrolDistressLimit == "undefined" ? 150 : wgPatrolDistressLimit;
+		if (interval < limit * 60 * 1000)
+			pac_setDistress(true);
 	}
-	pac_analyzeResults(this.patrols, edits);
-}
-
-function pac_countPatrolledEdits() {
-	if (this.readyState != 4) // this is some ajax incantation - ony "4" is good.
-		return;
-	xml = this.responseXML;
-	var responses = xml.getElementsByTagName('item');
-	var patrols = [];
-	for (var i = 0; i < responses.length; i++) {
-		var response = responses[i];
-		if (response.getAttribute('auto') != 0)
-			continue;
-		patrols.push({
-			ts:response.getAttribute('timestamp'), 
-			patroller:response.getAttribute('user'),
-			cur:response.getAttribute('cur')
-		});
-	}
-	pac_sendNonPatrolledEditsQuery(patrols);
-}
-
-function pac_sendPatrolledEditsQuery() {
-	var aj = sajax_init_object();
-	aj.onreadystatechange = pac_countPatrolledEdits;
-	aj.open('GET', 'http://he.wikipedia.org/w/api.php?action=query&format=xml&list=logevents&leaction=patrol/patrol&lelimit=200');
-	aj.send(null);
 }
 
 function pac_simpleSerialize(obj) {
@@ -101,15 +67,6 @@ function pac_distressMessage(distress) {
 	}
 }
 
-function pac_analyzeResults(patrols, edits) {
-	pac_setCookieVal('lastTestedPatrols', new Date().valueOf());
-	if (edits && edits.length > 1) {
-		var interval = pac_stringToDate(edits[0].ts) - pac_stringToDate(edits[edits.length - 1].ts);
-		var limit = typeof wgPatrolDistressLimit == "undefined" ? 150 : wgPatrolDistressLimit;
-		pac_setDistress(interval < limit * 60 * 1000);
-	}
-}
-
 function pac_setDistress(distress) {
 	pac_setCookieVal("inDistress", distress ? "1" : "0");
 	pac_distressMessage(distress);
@@ -119,9 +76,10 @@ function pac_getDistress() {
 	return pac_getCookieVal("inDistress") == "1";
 }
 
-function pac_stringToDate(dstr) {
-	dar = dstr.split(/[^\d]/)
-	return new Date(dar[0],dar[1],dar[2],dar[3],dar[4],dar[5]);
+function pac_tsToDate(rc) {
+	dar = rc.timestamp.split(/[^\d]/); // timestamp looks like so: "2011-05-05T18:56:27Z"
+	var month = parseInt(dar[1],10) - 1; // "Date" expexts months in the range of 0..11, timestamp is more conventional.
+	return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]);
 }
 
 function pac_patrollersWakeUpPeriodic() {
@@ -150,7 +108,7 @@ function pac_patrollersWakeUpPeriodic() {
 		pac_clearCookie();
 	}
 
-	pac_sendNonPatrolledEditsQuery([]);
+	pac_sendNonPatrolledEditsQuery();
 }
 
 function pac_patrollersWakeUp() {
@@ -166,5 +124,5 @@ hookEvent("load", pac_patrollersWakeUp);
 
 
 wgPatrolDistressRestSeconds = 10;
-wgPatrolDistressLimit = 2000;
+wgPatrolDistressLimit = 20;
 
