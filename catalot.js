@@ -116,7 +116,7 @@ var catALot = {
 		var data = {
 			action: 'query',
 			prop: 'categories',
-			limit: 50,
+			cllimit: 500,
 			titles: this.localCatName + ':' + this.currentCategory
 		};
 		this.doAPICall(data, function (result) {
