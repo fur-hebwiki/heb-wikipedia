@@ -7,7 +7,7 @@
 // RegExes by Ilmari Karonen
 // Completely rewritten by DieBuche
 //
-// Modified to work on regular pages instead of files + Hebrew translation: קיפודנחש
+// Modified to work on regular pages instead of files, + Hebrew translation: קיפודנחש
 //
 // READ THIS PAGE IF YOU WANT TO TRANSLATE OR USE THIS ON ANOTHER SITE: 
 // http://commons.wikimedia.org/wiki/MediaWiki_talk:Gadget-Cat-a-lot.js/translating
