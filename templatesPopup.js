@@ -109,6 +109,7 @@ function ltw_knownLinkTemplates() {
 		"NFC":[1,2,3,4],
 		"Onlife":[1,2,3,4],
 		"ynet":[1,2,3,4,0,5,25],
+		"Xnet":[1,2,3,4,0,5,25],
 		"וואלה!":[1,2,3,4,0,26],
 		"גלובס":[1,2,3,4],
 		"כלכליסט":[1,2,3,4,0,19],
@@ -200,6 +201,7 @@ function ltw_defaultParameters(templateName) { // if parameter has the default v
 		"PalPost": {7: "Ar"},
 		"עיתונות יהודית היסטורית 2": {9: "Ar"},		
 		"ynet": {6: 0, 7: 'articles'},
+		"Xnet": {6: 0, 7: 'articles'},
 		"פנאי פלוס": {6: 0, 7: 'articles'}
 	}
 	return defs[templateName] || {};
@@ -213,8 +215,8 @@ function ltw_templateRegex(templateName) {
 		"mynet": {regex: /articles\/(\d+),7340,L-(\d+),00\.html/i, params:[6,3]},
 		"Onlife": {regex: /onlife\.co\.il\/([^\/]+)\/(.*)/i, params:[1,3]},
 		"PalPost": {regex: /BaseHref=PLS\/(\d{4}\/\d{1,2}\/\d{1,2})&EntityId=Ar(\d+)/i, params:[3,4]},
-//		"TheMarker": {regex: /http:\/\/(?:www\.){0,1}themarker\.com\/tmc\/article\.jhtml\?ElementId=([^&\/\.]+)/i, params:[3]},
 		"ynet": {regex: /ynet\.co\.il\/([^\/]+)\/(\d+),7340,L-(\d+),00.html/i, params:[7,6,3]},
+		"Xnet": {regex: /([^\/]+)\/(\d+),\d+,L-(\d+),00.html/i, params:[7,6,3]},
 		"Mooma2": {regex: /\?ArtistId=(\d+)/i, params:[2]},
 		"HebrewBooksPage": {regex: /pdfpager\.aspx\?.*req=(\d+).*&pgnum=(\d+)/i, params:[3,5]},
 		"בחדרי חרדים" : { regex: /\/Article\.aspx\?id=(\d+)/i, params:[3]},
@@ -293,9 +295,14 @@ function ltw_addFiledToTable(doc, table, param) {
 	return field;
 }
 
+function ltw_hasBookMarklet(template) {
+	return $.inArray(template, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים']) + 1;
+}
+
 function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
+	var hasBookmarklet = ltw_hasBookMarklet(templateName);
 	var namedParamsList = ltw_namedParams(templateName);
-	var height = 160 + 20 * (paramList.length + namedParamsList.length) + (regexDict ? 60 : 0);
+	var height = 160 + 20 * (paramList.length + namedParamsList.length) + (regexDict ? 60 : 0) + (hasBookmarklet ? 60 : 0);
 	for (i in paramList)
 		height += 16 * Math.floor(paramList[i].length / 24);
 	var top = (screen.height - height) / 2, left = (screen.width - 550) / 2;
@@ -311,6 +318,12 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 		defParam: ltw_defaultParameters(templateName)
 	});
 	var body = doc.body;
+	if (hasBookmarklet) {
+		var p = doc.createElement("p");
+		p.style.color = 'red';
+		p.appendChild(doc.createTextNode('קיים בוקמרקלט שמייצר תבנית זו באופן אוטומטי. אנא שקלו להשתמש בו.'));
+		body.appendChild(p);
+	}
 	if (regexDict) {
 		body.appendChild(doc.createTextNode('הדביקו את הקישור כאן:'));
 		var b = doc.createElement("input");

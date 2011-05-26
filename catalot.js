@@ -12,9 +12,9 @@ var catALot = {
 	version: 2.05,
 
 	init: function () {
-		$("#column-one, #mw-panel").append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="הקלד קטגוריה ולחץ Enter"/>' + '</div><div id="cat_a_lot_category_list" style="text-wrap:none;"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">בחר <a  id="cat_a_lot_select_all">כולם</a> / ' + '<a  id="cat_a_lot_select_none">נקה</a>' + '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
+		$("#column-one, #mw-panel").append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="Enter category name"/>' + '</div><div id="cat_a_lot_category_list"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">Select <a  id="cat_a_lot_select_all">all</a> / ' + '<a  id="cat_a_lot_select_none">none</a>' + '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
 
-		if (!this.searchmode) $('#cat_a_lot_selections').append('<br><a id="cat_a_lot_remove"><b>הסר מקטגוריה זו</b></a>');
+		if (!this.searchmode) $('#cat_a_lot_selections').append('<br><a id="cat_a_lot_remove"><b>Remove from this category</b></a>');
 
 		$('#cat_a_lot_searchcatname').keypress(function (e) {
 			if (e.which == 13) catALot.updateCats($(this).val());
@@ -34,14 +34,10 @@ var catALot = {
 		});
 
 		importStylesheet('MediaWiki:Gadget-Cat-a-lot.css');
-		
 	},
 	findAllLabels: function () {
-		if (this.searchmode) this.labels = $('#mw-pages').find('li');
-		else this.labels = $('#mw-pages').find('li');
-		var links = $('#mw-pages').find('li>a');
-		for (var a in links)
-			links[a].href = null;
+		if (this.searchmode) this.labels = $('table.searchResultImage').find('tr>td:eq(1)');
+		else this.labels = $('div.gallerytext');
 	},
 
 	getMarkedLabels: function () {
@@ -56,7 +52,7 @@ var catALot = {
 
 	updateSelectionCounter: function () {
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
-		$('#cat_a_lot_mark_counter').show().html(this.selectedLabels.length + " ערכים מסומנים.");
+		$('#cat_a_lot_mark_counter').show().html(this.selectedLabels.length + " files selected.");
 	},
 
 	makeClickable: function () {
@@ -72,7 +68,7 @@ var catALot = {
 		this.updateSelectionCounter();
 	},
 
-		getSubCats: function (cmcontinue) {
+	getSubCats: function () {
 		var data = {
 			action: 'query',
 			list: 'categorymembers',
@@ -80,24 +76,17 @@ var catALot = {
 			cmlimit: 50,
 			cmtitle: 'Category:' + this.currentCategory
 		};
-		if (typeof cmcontinue == "string") // ie braindamage
-			data.cmcontinue = cmcontinue;
-		else
-			this.subCats = [];
-			
+
 		this.doAPICall(data, function (result) {
 
 			var cats = result.query.categorymembers;
 
+			catALot.subCats = new Array();
 			for (var i = 0; i < cats.length; i++) {
 				catALot.subCats.push(cats[i].title.replace(/^[^:]+:/, ""));
 			}
-			if (result['query-continue'])
-				catALot.getSubCats(result['query-continue'].categorymembers.cmcontinue);
-			else {
-				catALot.catCounter++;
-				if (catALot.catCounter == 2) catALot.showCategoryList();
-			}
+			catALot.catCounter++;
+			if (catALot.catCounter == 2) catALot.showCategoryList();
 		});
 	},
 
@@ -148,7 +137,7 @@ var catALot = {
 
 		// Compile it into a RegExp that matches MediaWiki category syntax (yeah, it looks ugly):
 		// XXX: the first capturing parens are assumed to match the sortkey, if present, including the | but excluding the ]]
-		return new RegExp('\\[\\[[\\s_]*קטגוריה[\\s_]*:[\\s_]*' + category + '[\\s_]*(\\|[^\\]]*(?:\\][^\\]]+)*)?\\]\\]', 'g');
+		return new RegExp('\\[\\[[\\s_]*[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy][\\s_]*:[\\s_]*' + category + '[\\s_]*(\\|[^\\]]*(?:\\][^\\]]+)*)?\\]\\]', 'g');
 	},
 
 	getContent: function (file, targetcat, mode) {
@@ -206,20 +195,20 @@ var catALot = {
 		// Fix text
 		switch (mode) {
 		case 'add':
-			text += "\n[[" + "קטגוריה:" + targetcat + "]]\n";
-			comment = "Cat-a-lot: הוספת [[" + "קטגוריה:" + targetcat + "]]";
+			text += "\n[[" + "Category:" + targetcat + "]]\n";
+			comment = "Cat-a-lot: Adding [[" + "Category:" + targetcat + "]]";
 			break;
 		case 'copy':
-			text = text.replace(this.regexBuilder(sourcecat), "[[קטגוריה:" + sourcecat + "$1]]\n[[קטגוריה:" + targetcat + "$1]]");
-			comment = "Cat-a-lot: העתקה מ [[" + "קטגוריה:" + sourcecat + "]] ל [[" + "קטגוריה:" + targetcat + "]]";
+			text = text.replace(this.regexBuilder(sourcecat), "[[Category:" + sourcecat + "$1]]\n[[Category:" + targetcat + "$1]]");
+			comment = "Cat-a-lot: Copying from [[" + "Category:" + sourcecat + "]] to [[" + "Category:" + targetcat + "]]";
 			break;
 		case 'move':
-			text = text.replace(this.regexBuilder(sourcecat), "[[קטגוריה:" + targetcat + "$1]]");
-			comment = "Cat-a-lot: העברה מ [[" + "קטגוריה:" + sourcecat + "]] ל [[" + "קטגוריה:" + targetcat + "]]";
+			text = text.replace(this.regexBuilder(sourcecat), "[[Category:" + targetcat + "$1]]");
+			comment = "Cat-a-lot: Moving from [[" + "Category:" + sourcecat + "]] to [[" + "Category:" + targetcat + "]]";
 			break;
 		case 'remove':
 			text = text.replace(this.regexBuilder(sourcecat), "");
-			comment = "Cat-a-lot: מחיקת [[" + "קטגוריה:" + sourcecat + "]]";
+			comment = "Cat-a-lot: Removing from [[" + "Category:" + sourcecat + "]]";
 			break;
 		}
 
@@ -317,7 +306,7 @@ var catALot = {
 	doSomething: function (targetcat, mode) {
 		var files = this.getMarkedLabels();
 		if (files.length == 0) {
-			alert("אין ערכים מסומנים.");
+			alert("No files selected.");
 			return;
 		}
 		this.notFound = [];
@@ -358,27 +347,27 @@ var catALot = {
 			});
 
 			if (this.searchmode) {
-				var add = $('<a class="cat_a_lot_action"><b>הוסף</b></a>');
+				var add = $('<a class="cat_a_lot_action"><b>Add</b></a>');
 				add.click(function () {
 					catALot.addHere($(this).parent().data('cat'));
 				});
 			} else {
-				var move = $('<a class="cat_a_lot_move"><b>החלף</b></a>');
+				var move = $('<a class="cat_a_lot_move"><b>Move</b></a>');
 				move.click(function () {
 					catALot.moveHere($(this).parent().data('cat'));
 				});
 
-				var copy = $('<a class="cat_a_lot_action"><b>הוסף</b></a>');
+				var copy = $('<a class="cat_a_lot_action"><b>Copy</b></a>');
 				copy.click(function () {
 					catALot.copyHere($(this).parent().data('cat'));
 				});
 			}
 
+			li.append(symbol).append(' ').append(link);
 
 			// Can't move to source category
 			if (list[i] != wgTitle && this.searchmode) li.append(' ').append(add);
 			else if (list[i] != wgTitle && !this.searchmode) li.append(' ').append(move).append(' ').append(copy);
-			li.append(symbol).append(' ').append(link);
 
 			domlist.append(li);
 		}
@@ -408,13 +397,13 @@ var catALot = {
 
 		this.currentCategory = newcat;
 		this.catlist = $('#cat_a_lot_category_list');
-		this.catlist.html('<div class="cat_a_lot_loading">טוען...</div>');
+		this.catlist.html('<div class="cat_a_lot_loading">Loading...</div>');
 		this.getCategoryList();
 	},
 	showProgress: function () {
 		document.body.style.cursor = 'wait';
 
-		this.progressDialog = $('<div></div>').html('עורך דף <span id="cat_a_lot_current">' + this.counterCurrent + '</span> of ' + this.counterNeeded).dialog({
+		this.progressDialog = $('<div></div>').html('Editing page <span id="cat_a_lot_current">' + this.counterCurrent + '</span> of ' + this.counterNeeded).dialog({
 			width: 450,
 			height: 90,
 			minHeight: 90,
