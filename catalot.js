@@ -1,11 +1,13 @@
 ﻿// <source lang="javascript">
 //
 // Cat-A-Lot
-// Changes category of multiple files
+// Changes category of multiple files (or pages)
 //
 // Originally by Magnus Manske
 // RegExes by Ilmari Karonen
 // Completely rewritten by DieBuche
+//
+// Modified to work on regular pages instead of files + Hebrew translation: קיפודנחש
 //
 // READ THIS PAGE IF YOU WANT TO TRANSLATE OR USE THIS ON ANOTHER SITE: 
 // http://commons.wikimedia.org/wiki/MediaWiki_talk:Gadget-Cat-a-lot.js/translating
@@ -18,7 +20,7 @@ var catALot = {
 	init: function () {
 		$("body")
 		.append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="' + this.i18n.enterName + '"/>' 
-		+ '</div><div id="cat_a_lot_category_list"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">' + this.i18n.select 
+		+ '</div><div id="cat_a_lot_category_list"style="white-space:nowrap;"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">' + this.i18n.select 
 		+ ' <a id="cat_a_lot_select_all">' + this.i18n.all + '</a> / ' + '<a id="cat_a_lot_select_none">' + this.i18n.none + '</a>' 
 		+ '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
 
@@ -45,8 +47,11 @@ var catALot = {
 		this.localCatName = mw.config.get('wgFormattedNamespaces')[14];
 	},
 	findAllLabels: function () {
-		if (this.searchmode) this.labels = $('table.searchResultImage').find('tr>td:eq(1)');
-		else this.labels = $('div.gallerytext');
+		if (this.searchmode) this.labels = $('#mw-pages').find('li');
+		else this.labels = $('#mw-pages').find('li');
+		var links = $('#mw-pages').find('li>a');
+		for (var a in links)
+			links[a].href = null;
 	},
 
 	getMarkedLabels: function () {
@@ -77,25 +82,32 @@ var catALot = {
 		this.updateSelectionCounter();
 	},
 
-	getSubCats: function () {
+	getSubCats: function (cmcontinue) {
 		var data = {
 			action: 'query',
 			list: 'categorymembers',
 			cmnamespace: 14,
 			cmlimit: 50,
-			cmtitle: 'Category:' + this.currentCategory
+			cmtitle: this.localCatName + ':' + this.currentCategory
 		};
-
+		if (cmcontinue) 
+			data.cmcontinue = cmcontinue;
+		else
+			this.subCats = [];
+			
 		this.doAPICall(data, function (result) {
 
 			var cats = result.query.categorymembers;
 
-			catALot.subCats = new Array();
 			for (var i = 0; i < cats.length; i++) {
 				catALot.subCats.push(cats[i].title.replace(/^[^:]+:/, ""));
 			}
-			catALot.catCounter++;
-			if (catALot.catCounter == 2) catALot.showCategoryList();
+			if (result['query-continue'])
+				catALot.getSubCats(result['query-continue'].categorymembers.cmcontinue);
+			else {
+				catALot.catCounter++;
+				if (catALot.catCounter == 2) catALot.showCategoryList();
+			}
 		});
 	},
 
@@ -104,7 +116,8 @@ var catALot = {
 		var data = {
 			action: 'query',
 			prop: 'categories',
-			titles: 'Category:' + this.currentCategory
+			limit: 50,
+			titles: this.localCatName + ':' + this.currentCategory
 		};
 		this.doAPICall(data, function (result) {
 			catALot.parentCats = new Array();
@@ -375,11 +388,10 @@ var catALot = {
 				});
 			}
 
-			li.append(symbol).append(' ').append(link);
-
 			// Can't move to source category
 			if (list[i] != wgTitle && this.searchmode) li.append(' ').append(add);
 			else if (list[i] != wgTitle && !this.searchmode) li.append(' ').append(move).append(' ').append(copy);
+			li.append(symbol).append(' ').append(link);
 
 			domlist.append(li);
 		}
@@ -452,7 +464,45 @@ var catALot = {
 			this.labels.unbind('click');
 		}
 	},
-	i18n: {
+	i18n: (wgUserLanguage == "he") ? {
+		loading        : 'טוען...',
+		editing        : 'עורך דף',
+		of             : 'מתוך ',
+		skippedAlready : '<h5>הדפים להלן לא שונו, משום שכבר הכילו את הקטגוריה:</h5>',
+		skippedNotFound: '<h5>הדפים להלן לא שונו, משום שהקטגוריה לא נמצאה:</h5>',
+		skippedServer  : '<h5>Tהדפים להלן לא שונו, בגלל בעית תקשורת/h5>',
+		allDone        : 'כל הדפים שונו.',
+		done           : 'בוצע!',
+		addedCat       : 'קטגוריה התווספה',
+		copiedCat      : 'קטגוריה התווספה',
+		movedCat       : 'הועברו לקטגוריה',
+		removedCat     : 'הוסרו מקטגוריה',
+		returnToPage   : 'חזור לדף',
+		catNotFound    : 'קטגוריה לא נמצאה.',
+
+
+		//as in 17 files selected
+		filesSelected   : ' דפים מסומנים.',
+		
+		//Actions
+		copy            : 'הוסף',
+		move            : 'העבר',
+		add             : 'הוסף', 
+		removeFromCat   : 'הסר מקטגוריה זו',
+		enterName       : 'הקישו שם קטגוריה',
+		select          : 'בחירה',
+		all             : 'כולם',
+		none            : 'נקה',
+		
+		noneSelected    : 'אין דפים מסומנים!',
+		
+		//Summaries:
+		summaryAdd      : 'Cat-a-lot: הוסיף ל[[קטגוריה:',
+		summaryCopy     : 'Cat-a-lot: העתיק מ[[קטגוריה:',
+		to              : 'ל[[קטגוריה:',
+		summaryMove     : 'Cat-a-lot: העביר מ[[קטגוריה:',
+		summaryRemove   : 'Cat-a-lot: הסיר מ[[קטגוריה:'
+	} :	{
 		//Progress
 		loading        : 'Loading...',
 		editing        : 'Editing page',

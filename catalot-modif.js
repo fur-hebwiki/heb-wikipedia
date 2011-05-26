@@ -12,7 +12,7 @@ var catALot = {
 	version: 2.05,
 
 	init: function () {
-		$("#column-one, #mw-panel").append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="הקלד קטגוריה ולחץ Enter"/>' + '</div><div id="cat_a_lot_category_list" style="text-wrap:none;"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">בחר <a  id="cat_a_lot_select_all">כולם</a> / ' + '<a  id="cat_a_lot_select_none">נקה</a>' + '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
+		$("#column-one, #mw-panel").append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="הקלד קטגוריה ולחץ Enter"/>' + '</div><div id="cat_a_lot_category_list" style="text-wrap:none;white-space:nowrap;"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">בחר <a  id="cat_a_lot_select_all">כולם</a> / ' + '<a  id="cat_a_lot_select_none">נקה</a>' + '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
 
 		if (!this.searchmode) $('#cat_a_lot_selections').append('<br><a id="cat_a_lot_remove"><b>הסר מקטגוריה זו</b></a>');
 
