@@ -6,15 +6,23 @@
 // Originally by Magnus Manske
 // RegExes by Ilmari Karonen
 // Completely rewritten by DieBuche
+//
+// READ THIS PAGE IF YOU WANT TO TRANSLATE OR USE THIS ON ANOTHER SITE: 
+// http://commons.wikimedia.org/wiki/MediaWiki_talk:Gadget-Cat-a-lot.js/translating
+//
 var catALot = {
-	apiUrl: wgScriptPath + "/api.php",
-	searchmode: false,
-	version: 2.05,
+    apiUrl: wgScriptPath + "/api.php",
+    searchmode: false,
+	version: 2.15,
 
 	init: function () {
-		$("#column-one, #mw-panel").append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="Enter category name"/>' + '</div><div id="cat_a_lot_category_list"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">Select <a  id="cat_a_lot_select_all">all</a> / ' + '<a  id="cat_a_lot_select_none">none</a>' + '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
+		$("body")
+		.append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="' + this.i18n.enterName + '"/>' 
+		+ '</div><div id="cat_a_lot_category_list"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">' + this.i18n.select 
+		+ ' <a id="cat_a_lot_select_all">' + this.i18n.all + '</a> / ' + '<a id="cat_a_lot_select_none">' + this.i18n.none + '</a>' 
+		+ '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
 
-		if (!this.searchmode) $('#cat_a_lot_selections').append('<br><a id="cat_a_lot_remove"><b>Remove from this category</b></a>');
+		if (!this.searchmode) $('#cat_a_lot_selections').append('<br><a id="cat_a_lot_remove"><b>' + this.i18n.removeFromCat + '</b></a>');
 
 		$('#cat_a_lot_searchcatname').keypress(function (e) {
 			if (e.which == 13) catALot.updateCats($(this).val());
@@ -34,6 +42,7 @@ var catALot = {
 		});
 
 		importStylesheet('MediaWiki:Gadget-Cat-a-lot.css');
+		this.localCatName = mw.config.get('wgFormattedNamespaces')[14];
 	},
 	findAllLabels: function () {
 		if (this.searchmode) this.labels = $('table.searchResultImage').find('tr>td:eq(1)');
@@ -52,7 +61,7 @@ var catALot = {
 
 	updateSelectionCounter: function () {
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
-		$('#cat_a_lot_mark_counter').show().html(this.selectedLabels.length + " files selected.");
+		$('#cat_a_lot_mark_counter').show().html(this.selectedLabels.length + this.i18n.filesSelected );
 	},
 
 	makeClickable: function () {
@@ -101,7 +110,7 @@ var catALot = {
 			catALot.parentCats = new Array();
 			var pages = result.query.pages;
 			if (pages[-1] && pages[-1].missing == '') {
-				catALot.catlist.html('<span id="cat_a_lot_no_found">Category not found.</span>');
+				catALot.catlist.html('<span id="cat_a_lot_no_found">' + catALot.i18n.catNotFound + '</span>');
 				document.body.style.cursor = 'auto';
 				
 				catALot.catlist.append('<ul></ul>');
@@ -121,6 +130,9 @@ var catALot = {
 		});
 	},
 	regexBuilder: function (category) {
+		var catname = ( this.localCatName == 'Category' ) ? this.localCatName : this.localCatName + '|Category';
+		catname = '(' + catname + ')';
+		
 		// Build a regexp string for matching the given category:
 		// trim leading/trailing whitespace and underscores
 		category = category.replace(/^[\s_]+/, "").replace(/[\s_]+$/, "");
@@ -137,7 +149,7 @@ var catALot = {
 
 		// Compile it into a RegExp that matches MediaWiki category syntax (yeah, it looks ugly):
 		// XXX: the first capturing parens are assumed to match the sortkey, if present, including the | but excluding the ]]
-		return new RegExp('\\[\\[[\\s_]*[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy][\\s_]*:[\\s_]*' + category + '[\\s_]*(\\|[^\\]]*(?:\\][^\\]]+)*)?\\]\\]', 'g');
+		return new RegExp('\\[\\[[\\s_]*' + catname + '[\\s_]*:[\\s_]*' + category + '[\\s_]*(\\|[^\\]]*(?:\\][^\\]]+)*)?\\]\\]', 'ig');
 	},
 
 	getContent: function (file, targetcat, mode) {
@@ -195,20 +207,20 @@ var catALot = {
 		// Fix text
 		switch (mode) {
 		case 'add':
-			text += "\n[[" + "Category:" + targetcat + "]]\n";
-			comment = "Cat-a-lot: Adding [[" + "Category:" + targetcat + "]]";
+			text += "\n[[" + this.localCatName + ":" + targetcat + "]]\n";
+			comment = this.i18n.summaryAdd + targetcat + "]]";
 			break;
 		case 'copy':
-			text = text.replace(this.regexBuilder(sourcecat), "[[Category:" + sourcecat + "$1]]\n[[Category:" + targetcat + "$1]]");
-			comment = "Cat-a-lot: Copying from [[" + "Category:" + sourcecat + "]] to [[" + "Category:" + targetcat + "]]";
+			text = text.replace(this.regexBuilder(sourcecat), "[[" + this.localCatName + ":" + sourcecat + "$2]]\n[[" + this.localCatName + ":" + targetcat + "$2]]");
+			comment = this.i18n.summaryCopy + sourcecat + "]] " + this.i18n.to + targetcat + "]]";
 			break;
 		case 'move':
-			text = text.replace(this.regexBuilder(sourcecat), "[[Category:" + targetcat + "$1]]");
-			comment = "Cat-a-lot: Moving from [[" + "Category:" + sourcecat + "]] to [[" + "Category:" + targetcat + "]]";
+			text = text.replace(this.regexBuilder(sourcecat), "[[" + this.localCatName + ":" + targetcat + "$2]]");
+			comment = this.i18n.summaryMove + sourcecat + "]] " + this.i18n.to + targetcat + "]]";
 			break;
 		case 'remove':
 			text = text.replace(this.regexBuilder(sourcecat), "");
-			comment = "Cat-a-lot: Removing from [[" + "Category:" + sourcecat + "]]";
+			comment = this.i18n.summaryRemove + sourcecat + "]]";
 			break;
 		}
 
@@ -237,16 +249,16 @@ var catALot = {
 		label.addClass('cat_a_lot_markAsDone');
 		switch (mode) {
 		case 'add':
-			label.append('<br>Added category ' + targetcat);
+			label.append('<br>' + this.i18n.addedCat + ' ' + targetcat);
 			break;
 		case 'copy':
-			label.append('<br>Copied to category ' + targetcat);
+			label.append('<br>' + this.i18n.copiedCat + ' ' + targetcat);
 			break;
 		case 'move':
-			label.append('<br>Moved to category ' + targetcat);
+			label.append('<br>' + this.i18n.movedCat + ' ' + targetcat);
 			break;
 		case 'remove':
-			label.append('<br>Removed from category');
+			label.append('<br>' + this.i18n.movedCat );
 			break;
 		}
 	},
@@ -263,25 +275,25 @@ var catALot = {
 		$('.cat_a_lot_feedback').addClass('cat_a_lot_done');
 		$('.ui-dialog-content').height('auto');
 		var rep = this.domCounter.parent();
-		rep.html('<h3>Done!</h3>');
-		rep.append('All pages are processed.<br />');
+		rep.html('<h3>' + this.i18n.done + '</h3>');
+		rep.append( this.i18n.allDone + '<br />');
 
-		var close = $('<a>Return to page</a>')
+		var close = $('<a>').append( this.i18n.returnToPage );
 		close.click(function () {
 			catALot.progressDialog.remove();
 			catALot.toggleAll(false);
 		});
 		rep.append(close);
 		if (this.alreadyThere.length) {
-			rep.append('<h5>The following pages were skipped, because the page was already in the category:</h5>');
+			rep.append( this.i18n.skippedAlready );
 			rep.append(this.alreadyThere.join('<br>'));
 		}
 		if (this.notFound.length) {
-			rep.append('<h5>The following pages were skipped, because the old category could not be found:</h5>');
+			rep.append( this.i18n.skippedNotFound );
 			rep.append(this.notFound.join('<br>'));
 		}
 		if (this.connectionError.length) {
-			rep.append('<h5>The following pages couldn\'t be changed, since there were problems connecting to the server:</h5>');
+			rep.append( this.i18n.skippedServer );
 			rep.append(this.connectionError.join('<br>'));
 		}
 
@@ -306,7 +318,7 @@ var catALot = {
 	doSomething: function (targetcat, mode) {
 		var files = this.getMarkedLabels();
 		if (files.length == 0) {
-			alert("No files selected.");
+			alert( this.i18n.noneSelected );
 			return;
 		}
 		this.notFound = [];
@@ -347,17 +359,17 @@ var catALot = {
 			});
 
 			if (this.searchmode) {
-				var add = $('<a class="cat_a_lot_action"><b>Add</b></a>');
+				var add = $('<a class="cat_a_lot_action"><b>' + this.i18n.add + '</b></a>');
 				add.click(function () {
 					catALot.addHere($(this).parent().data('cat'));
 				});
 			} else {
-				var move = $('<a class="cat_a_lot_move"><b>Move</b></a>');
+				var move = $('<a class="cat_a_lot_move"><b>' + this.i18n.move + '</b></a>');
 				move.click(function () {
 					catALot.moveHere($(this).parent().data('cat'));
 				});
 
-				var copy = $('<a class="cat_a_lot_action"><b>Copy</b></a>');
+				var copy = $('<a class="cat_a_lot_action"><b>' + this.i18n.copy + '</b></a>');
 				copy.click(function () {
 					catALot.copyHere($(this).parent().data('cat'));
 				});
@@ -390,6 +402,9 @@ var catALot = {
 		this.createCatLinks("↓", this.subCats);
 
 		document.body.style.cursor = 'auto';
+        //Reset width
+		$('#cat_a_lot').width('');
+		$('#cat_a_lot').width( $('#cat_a_lot').width() * 1.05 );
 	},
 
 	updateCats: function (newcat) {
@@ -397,13 +412,15 @@ var catALot = {
 
 		this.currentCategory = newcat;
 		this.catlist = $('#cat_a_lot_category_list');
-		this.catlist.html('<div class="cat_a_lot_loading">Loading...</div>');
+		this.catlist.html('<div class="cat_a_lot_loading">' + this.i18n.loading + '</div>');
 		this.getCategoryList();
 	},
 	showProgress: function () {
 		document.body.style.cursor = 'wait';
 
-		this.progressDialog = $('<div></div>').html('Editing page <span id="cat_a_lot_current">' + this.counterCurrent + '</span> of ' + this.counterNeeded).dialog({
+		this.progressDialog = $('<div></div>')
+		.html( this.i18n.editing + ' <span id="cat_a_lot_current">' + this.counterCurrent + '</span> ' + this.i18n.of + this.counterNeeded)
+		.dialog({
 			width: 450,
 			height: 90,
 			minHeight: 90,
@@ -422,7 +439,8 @@ var catALot = {
 		if ($('.cat_a_lot_enabled').length) {
 			this.makeClickable();
 			$("#cat_a_lot_data").show();
-			$('#cat_a_lot').resizable({ handles: 'n', resize: function(event, ui) {$(this).css({left:"", top:""});} });
+			$('#cat_a_lot')
+			   	.resizable({ handles: 'n', resize: function(event, ui) {$(this).css({left:"", top:""});} });
 
 			if (this.searchmode) this.updateCats("Pictures and images");
 			else this.updateCats(wgTitle);
@@ -433,24 +451,64 @@ var catALot = {
 			//Unbind click handlers
 			this.labels.unbind('click');
 		}
+	},
+	i18n: {
+		//Progress
+		loading        : 'Loading...',
+		editing        : 'Editing page',
+		of             : 'of ',
+		skippedAlready : '<h5>The following pages were skipped, because the page was already in the category:</h5>',
+		skippedNotFound: '<h5>The following pages were skipped, because the old category could not be found:</h5>',
+		skippedServer  : '<h5>The following pages couldn\'t be changed, since there were problems connecting to the server:</h5>',
+		allDone        : 'All pages are processed.',
+		done           : 'Done!',
+		addedCat       : 'Added category',
+		copiedCat      : 'Copied to category',
+		movedCat       : 'Moved to category',
+		removedCat     : 'Removed from category',
+		returnToPage   : 'Return to page',
+		catNotFound    : 'Category not found.',
+
+
+		//as in 17 files selected
+		filesSelected   : ' files selected.',
+		
+		//Actions
+		copy            : 'Copy',
+		move            : 'Move',
+		add             : 'Add', 
+		removeFromCat   : 'Remove from this category',
+		enterName       : 'Enter category name',
+		select          : 'Select',
+		all             : 'all',
+		none            : 'none',
+		
+		noneSelected    : 'No files selected!',
+		
+		//Summaries:
+		summaryAdd      : 'Cat-a-lot: Adding [[Category:',
+		summaryCopy     : 'Cat-a-lot: Copying from [[Category:',
+		to              : 'to [[Category:',
+		summaryMove     : 'Cat-a-lot: Moving from [[Category:',
+		summaryRemove   : 'Cat-a-lot: Removing from [[Category:'
 	}
 };
 
-if (wgNamespaceNumber == 14) {
-    mediaWiki.loader.using('jquery.ui.dialog', function () {
-        $(document).ready(function () {
-            catALot.init();
-        });
-    });
-}
 
-if (wgNamespaceNumber == -1 && wgCanonicalSpecialPageName == "Search") {
-	catALot.searchmode = true;
+if ((wgNamespaceNumber == -1 && wgCanonicalSpecialPageName == "Search") || wgNamespaceNumber == 14) {
+	if ( wgNamespaceNumber == -1 ) catALot.searchmode = true;
+	//This is not optimal, since we can't be sure that we have the strings before the DOM is built
+	if ( mw.config.get('wgUserLanguage') != 'en' ) {
+		importScript('MediaWiki:Gadget-Cat-a-lot.js/' + mw.config.get('wgUserLanguage') );
+	}
+	if ( mw.config.get('wgContentLanguage') != 'en' ) {
+		importScript('MediaWiki:Gadget-Cat-a-lot.js/' + mw.config.get('wgContentLanguage') );
+	}
 	mediaWiki.loader.using('jquery.ui.dialog', function () {
-        $(document).ready(function () {
-            catALot.init();
-        });
-    });
+		$(document).ready(function () {
+			catALot.init();
+		});
+	});
 }
 
 // </source>
