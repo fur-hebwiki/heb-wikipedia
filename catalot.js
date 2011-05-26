@@ -13,10 +13,10 @@
 // http://commons.wikimedia.org/wiki/MediaWiki_talk:Gadget-Cat-a-lot.js/translating
 //
 var catALot = {
-    apiUrl: wgScriptPath + "/api.php",
-    searchmode: false,
-	version: 2.15,
-
+	apiUrl: wgScriptPath + "/api.php",
+	searchmode: false,
+	version: 2.18,
+	setHeight: 450,
 	init: function () {
 		$("body")
 		.append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="' + this.i18n.enterName + '"/>' 
@@ -415,8 +415,12 @@ var catALot = {
 
 		document.body.style.cursor = 'auto';
         //Reset width
-		$('#cat_a_lot').width('');
-		$('#cat_a_lot').width( $('#cat_a_lot').width() * 1.05 );
+		var cat = $('#cat_a_lot');
+		cat.width('');
+		cat.height('');
+		cat.width( cat.width() * 1.05 );
+		var list = $('#cat_a_lot_category_list');
+		list.css({maxHeight: this.setHeight+'px', height: ''});
 	},
 
 	updateCats: function (newcat) {
@@ -451,9 +455,13 @@ var catALot = {
 		if ($('.cat_a_lot_enabled').length) {
 			this.makeClickable();
 			$("#cat_a_lot_data").show();
-			$('#cat_a_lot')
-			   	.resizable({ handles: 'n', resize: function(event, ui) {$(this).css({left:"", top:""});} });
-
+			$('#cat_a_lot').resizable({ handles: 'n', alsoResize: '#cat_a_lot_category_list',
+						resize: function(event, ui) {
+						$(this).css({left:"", top:""});
+						catALot.setHeight = $(this).height();
+						$('#cat_a_lot_category_list').css({maxHeight: '', width: ''});
+				} });
+			$('#cat_a_lot_category_list').css({maxHeight: '450px'});
 			if (this.searchmode) this.updateCats("Pictures and images");
 			else this.updateCats(wgTitle);
 
@@ -465,6 +473,7 @@ var catALot = {
 		}
 	},
 	i18n: (wgUserLanguage == "he") ? {
+		//Progress
 		loading        : 'טוען...',
 		editing        : 'עורך דף',
 		of             : 'מתוך ',
