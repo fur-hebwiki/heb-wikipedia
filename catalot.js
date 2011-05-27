@@ -47,9 +47,13 @@ var catALot = {
 		this.localCatName = mw.config.get('wgFormattedNamespaces')[14];
 	},
 	findAllLabels: function () {
-		if (this.searchmode) this.labels = $('#mw-pages').find('li');
-		else this.labels = $('#mw-pages').find('li');
-		var links = $('#mw-pages').find('li>a');
+		this.labels = $('#mw-pages').find('li');
+		var subCats =  $('#mw-subcategories').find('.CategoryTreeItem');
+		for (var sub = 0; sub < subCats.length; sub++)
+			subCats[sub]['subcat'] = 1;
+		$.extend(this.labels, subCats);
+		var links = $('#bodyContent').find('li>a');
+		$.extend(links, $('#bodyContent').find('.CategoryTreeLabel'));
 		for (var a in links)
 			links[a].href = null;
 	},
@@ -58,8 +62,10 @@ var catALot = {
 		var marked = [];
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
 		this.selectedLabels.each(function () {
-			var file = $(this).find('a[title]');
-			marked.push([file.attr('title'), $(this)]);
+			var file = $(this).find('a[title]') && $(this).find('a[title]').attr('title');
+			file = file || $(this).find('a')[0].innerHTML;
+			var extra = this['subcat'] ? catALot.localCatName + ':' : '';
+			marked.push([extra + file, $(this)]);
 		});
 		return marked;
 	},
