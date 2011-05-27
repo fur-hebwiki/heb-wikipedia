@@ -60,6 +60,36 @@ function riwt_handle_removed(removed, pagesWithTemplate, data, sanitizedRemoved)
 	}
 }
 
+function riwt_store_current(current) {
+	var stale = {}, work = current.slice(), threshold = new Date() - 1000 * 60 * 60 * 24 * 21; //three weeks
+	
+	function isold(ts) {
+		dar = ts.split(/[^\d]/); // timestamp looks like so: "2011-05-05T18:56:27Z"
+		var month = parseInt(dar[1],10) - 1; // "Date" expexts months in the range of 0..11, timestamp is more conventional.
+		return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]) < threshold;
+	}
+	
+	nextSlice(work.splice(0, 50));
+	function nextSlice(slice) {
+		riwt_get_json({action: 'query', prop: 'revisions', rvprop: 'timestamp', titles: slice.join('|').replace(/&/g, '%26')}, function(data) {
+			if (data.query && data.query.pages)
+				for (var pageid in data.query.pages) {
+					var page = data.query.pages[pageid];
+					stale[page.title] = isold(page.revisions[0].timestamp);
+				}
+			if (work.length)
+				nextSlice(work.splice(0, 50));
+			else {
+				for (var i in current) {
+					var bold = stale[current[i]] ? "'''" : "";
+					current[i] = bold + '[[' + current[i] + ']]' + bold;
+				}
+				riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: '#' + current.join('\n#')});
+			}
+		})
+	}
+}
+
 function riwt_analyze_results(data, pagesWithTemplate) {
 	var removed = [];
 	if (data && data.parse && data.parse.links)
@@ -73,7 +103,7 @@ function riwt_analyze_results(data, pagesWithTemplate) {
 	for (var key in pagesWithTemplate)
 		current.push(key);
 	current.sort();
-	riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: '#[[' + current.join(']]\n#[[') + ']]'});
+	riwt_store_current(current);
 }
 
 function riwt_get_current_list(data, pagesWithTemplate) {
