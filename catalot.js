@@ -63,7 +63,8 @@ var catALot = {
 		var marked = [];
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
 		this.selectedLabels.each(function () {
-			marked.push([$(this).find('a[title]'), $(this)]);
+			var file = $(this).find('a[title]');
+			marked.push([file.attr('title'), $(this)]);
 		});
 		return marked;
 	},

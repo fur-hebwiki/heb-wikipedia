@@ -1,17 +1,24 @@
 // riwt: Identify Removal of [[תבנית:בעבודה]] and log pages that lost it on [[Special:MyPage/כבר לא בעבודה]]
 
 function riwt_short_date() {
-	var date = new Date();
+    var date = new Date();
 	var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
-	return date.getUTCDate() + '/' + date.getUTCMonth() + '/' + date.getUTCFullYear() + ' ' + date.getUTCHours() + ':' + min;
+	return date.getUTCDate() + '/' + (1+date.getUTCMonth()) + '/' + date.getUTCFullYear() + ' ' + date.getUTCHours() + ':' + min;
 }
 
-function riwt_save_topage(title, summary, content) {
+function riwt_save_topage(title, summary, content, section, next) {
 
+	function doneSave(data) {
+		if (data && data.error) 
+			alert('error saving: ' + data.error['info']);
+		else if (data && data.edit && data.edit.result == 'Success' && typeof next == 'function')
+			next();
+	}
+	
 	function tokenReceived(token) {
-		var param = {action: 'edit', title: title, summary: summary, token: token, format: 'json'};
+		var param = {action: 'edit', title: title, summary: summary, token: token, section: section || '0', format: 'json'};
 		$.extend(param, content);
-		$.post(wgScriptPath + '/api.php?', param);
+		$.post(wgScriptPath + '/api.php?', param, doneSave);
 	}
 
 	function doneGetToken(data) {
@@ -43,8 +50,43 @@ function riwt_handle_removed(removed, pagesWithTemplate, data, sanitizedRemoved)
 		sanitizedRemoved.sort();
 		if (sanitizedRemoved.length)
 			riwt_save_topage(riwt_page_name(1), 'עדכון '  + riwt_short_date(),
-				{prependtext: '\n<!-- הרצה בתאריך ' + riwt_short_date() + '-->\n*[[' + sanitizedRemoved.join(']]\n*[[') + ']]\n'});
-		alert('הסקריפט סיים לרוץ. ' + sanitizedRemoved.length + ' תבניות "בעבודה" הוסרו.');
+				{prependtext: '\n====הרצה בתאריך ' + riwt_short_date() + '====\n*[[' + sanitizedRemoved.join(']]\n*[[') + ']]\n'}, 
+				1,
+				function() {
+					alert('הסקריפט סיים לרוץ. ' + sanitizedRemoved.length + ' תבניות "בעבודה" הוסרו.');
+				});
+		else
+			alert('לא נמצאו דפים חדשים מהם הוסרה תבנית "בעבודה"');
+	}
+}
+
+function riwt_store_current(current) {
+	var stale = {}, work = current.slice(), threshold = new Date() - 1000 * 60 * 60 * 24 * 21; //three weeks
+	
+	function isold(ts) {
+		dar = ts.split(/[^\d]/); // timestamp looks like so: "2011-05-05T18:56:27Z"
+		var month = parseInt(dar[1],10) - 1; // "Date" expexts months in the range of 0..11, timestamp is more conventional.
+		return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]) < threshold;
+	}
+	
+	nextSlice(work.splice(0, 50));
+	function nextSlice(slice) {
+		riwt_get_json({action: 'query', prop: 'revisions', rvprop: 'timestamp', titles: slice.join('|').replace(/&/g, '%26')}, function(data) {
+			if (data.query && data.query.pages)
+				for (var pageid in data.query.pages) {
+					var page = data.query.pages[pageid];
+					stale[page.title] = isold(page.revisions[0].timestamp);
+				}
+			if (work.length)
+				nextSlice(work.splice(0, 50));
+			else {
+				for (var i in current) {
+					var bold = stale[current[i]] ? "'''" : "";
+					current[i] = bold + '[[' + current[i] + ']]' + bold;
+				}
+				riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: '#' + current.join('\n#')});
+			}
+		})
 	}
 }
 
@@ -61,7 +103,7 @@ function riwt_analyze_results(data, pagesWithTemplate) {
 	for (var key in pagesWithTemplate)
 		current.push(key);
 	current.sort();
-	riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: '#[[' + current.join(']]\n#[[') + ']]'});
+	riwt_store_current(current);
 }
 
 function riwt_get_current_list(data, pagesWithTemplate) {
@@ -77,8 +119,13 @@ function riwt_get_current_list(data, pagesWithTemplate) {
 		riwt_get_json({action: 'parse', page: riwt_page_name(0)}, function(data){riwt_analyze_results(data, pagesWithTemplate);});
 }
 
-function riwt_page_name(type, full) {
-	return (full ? wgServer + '/w/index.php?title=' : '') + 'משתמש:' + wgUserName + '/' +  ['בעבודה', 'כבר לא בעבודה'][type];
+
+function riwt_page_name(type, full) {	
+	return (full ? wgServer + '/w/index.php?title=' : '') + 
+		'ויקיפדיה:ערכים מהם הוסרה תבנית בעבודה' + 
+	(type == 0 ?
+	'/דפים עם התבנית' 
+	: '');
 }
 
 addPortletLink('p-tb', 'javascript:riwt_get_current_list(false, {})', 'סקריפט "איבדו בעבודה"');

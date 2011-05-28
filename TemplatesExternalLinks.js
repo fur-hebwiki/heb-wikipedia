@@ -4,7 +4,13 @@
 function ltw_createTemplate() {
 	var par = ["{{" + this.templateName];
 	for (var i in this.orderedFields)
-		par.push((this.problematic? (parseInt(i)+1) + "=":"") + this.orderedFields[i].value);
+		par.push((this.problematic? (parseInt(i)+1) + "=":"") + $.trim(this.orderedFields[i].value));
+	if (this.defParam)
+		for (var parnum in this.defParam)
+			if (par[parnum] == this.defParam[parnum])
+				par[parnum] = '';
+	while (par.length && !par[par.length - 1].lenght) // remove tailing empty ordered params.
+		par.pop();
 	var code = par.join("|");
 	if (this.namedFields) {
 		var pairs = ['']; // so we'll get the firs bar
@@ -97,7 +103,6 @@ function ltw_knownLinkTemplates() {
 		"mynet":[1,2,3,4,0,5],
 		"NFC":[1,2,3,4],
 		"Onlife":[1,2,3,4],
-		"TheMarker":[1,2,3,4],
 		"ynet":[1,2,3,4,0,5,25],
 		"וואלה!":[1,2,3,4,0,26],
 		"גלובס":[1,2,3,4],
@@ -152,7 +157,8 @@ function ltw_knownLinkTemplates() {
 		"imdb title": [],
 		"imdb name": [],
 		"imdb company": [],
-		"Google book": []
+		"Google book": [],
+		"TheMarker1": [1,2,3,4]
 	};
 	for (var key in templatesDic)
 		for (var i in templatesDic[key])
@@ -170,9 +176,26 @@ function ltw_namedParams(templateName) {
 		"imdb title": [['id', 'המספר שמופיע בקישור'], ['title', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך']],
 		"imdb name": [['id', 'המספר שמופיע בקישור'], ['name', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך']],
 		"imdb company": [['id', 'המספר שמופיע בקישור'], ['company', 'הכותרת שתופיע בקישור']],
-		"Google book": [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)'],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך']]
+		"Google book": [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)'],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך']],
+		"TheMarker1": [['5','קידומת הקישור, אם שונה מ-www']]
 	};
 	return allNamedParam[templateName] || [];
+}
+
+function ltw_defaultParameters(templateName) { // if parameter has the default value, we omit it
+	var defs = {
+		"דבר": {7: "Ar"}, 
+		"מעריב": {7: "Ar"},
+		"הצבי": {7: "Ar"},
+		"הצפירה": {7: "Ar"},
+		"המגיד": {7: "Ar"},
+		"המליץ": {7: "Ar"},
+		"חבצלת": {7: "Ar"},
+		"PalPost": {7: "Ar"},
+		"ynet": {7: 'articles'}
+		"פנאי פלוס": {7: 'articles'}
+	}
+	return defs[templateName] || {};
 }
 
 function ltw_templateRegex(templateName) {
@@ -183,7 +206,7 @@ function ltw_templateRegex(templateName) {
 		"mynet": {regex: /articles\/(\d+),7340,L-(\d+),00\.html/i, params:[6,3]},
 		"Onlife": {regex: /onlife\.co\.il\/([^\/]+)\/(.*)/i, params:[1,3]},
 		"PalPost": {regex: /BaseHref=PLS\/(\d{4}\/\d{1,2}\/\d{1,2})&EntityId=Ar(\d+)/i, params:[3,4]},
-		"TheMarker": {regex: /http:\/\/(?:www\.){0,1}themarker\.com\/tmc\/article\.jhtml\?ElementId=([^&\/\.]+)/i, params:[3]},
+//		"TheMarker": {regex: /http:\/\/(?:www\.){0,1}themarker\.com\/tmc\/article\.jhtml\?ElementId=([^&\/\.]+)/i, params:[3]},
 		"ynet": {regex: /ynet\.co\.il\/([^\/]+)\/(\d+),7340,L-(\d+),00.html/i, params:[7,6,3]},
 		"Mooma2": {regex: /\?ArtistId=(\d+)/i, params:[2]},
 		"HebrewBooksPage": {regex: /pdfpager\.aspx\?.*req=(\d+).*&pgnum=(\d+)/i, params:[3,5]},
@@ -232,7 +255,8 @@ function ltw_templateRegex(templateName) {
 		"imdb title": {regex: /title\/tt(\d+)/i, params: [1]},
 		"imdb name": {regex: /name\/nm(\d+)/i, params: [1]},
 		"imdb company": {regex: /company\/co(\d+)/i, params: [1]},
-		"Google book" : {regex: /id=([^&]*)/, params: [1]}
+		"Google book" : {regex: /id=([^&]*)/, params: [1]},
+		"TheMarker1": {regex: /http:\/\/(?:www)?(.*)\.themarker\.com\/([^\?]+)/i, params: [5,3]}
 	}
 
 	// these guys are all the same - it's best to handle them as such.
@@ -268,9 +292,16 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 		height += 16 * Math.floor(paramList[i].length / 24);
 	var top = (screen.height - height) / 2, left = (screen.width - 550) / 2;
 	var popup = window.open("", "", "resizable=1,height="+height+",width=550,left="+left+",top="+top);
-	var doc = popup.document;
-	doc.problematic = regexDict && regexDict.problematic;
-	ltw_copyAttributes(doc, {title: " הוספת תבנית: " + templateName, dir: "rtl", templateName: templateName, orderedFields:[], getTemplate:ltw_createTemplate, updatePreview:function(){this.previewNode.data = this.getTemplate();}});
+	var doc = ltw_copyAttributes(popup.document, {
+		title: " הוספת תבנית: " + templateName, 
+		dir: "rtl", 
+		templateName: templateName, 
+		orderedFields: [], 
+		getTemplate: ltw_createTemplate, 
+		updatePreview: function(){this.previewNode.data = this.getTemplate();},
+		problematic: regexDict && regexDict.problematic,
+		defParam: ltw_defaultParameters(templateName)
+	});
 	var body = doc.body;
 	if (regexDict) {
 		body.appendChild(doc.createTextNode('הדביקו את הקישור כאן:'));
@@ -292,9 +323,9 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 				for (var i = 1; i < matches.length; i++) {
 					var fieldIndex = this.regexDict.params[i-1] - 1; //parameters are counted from one, we count from 0.
 					if (fieldIndex < numOrdered)
-						orderedFields[fieldIndex].value = matches[i];
+						orderedFields[fieldIndex].value = matches[i] || '';
 					else if (fieldIndex < numOrdered + numNamed)
-						namedFields[fieldIndex-numOrdered][1].value = matches[i];
+						namedFields[fieldIndex-numOrdered][1].value = matches[i] || '';
 				}
 			this.update();
 		}
