@@ -1,61 +1,23 @@
-﻿/*Author:[[user:שמוליק]]*/
+﻿/*Author:[[user:שמוליק]] with a lot of help from [[user:קיפודנחש]] */ 
 function wikiit() {
-
-	function dateFormat(dateArr)
-	{
-		var m = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
-		if (dateArr instanceof Array)
-		{
-			dateArr[1] = m[Number(dateArr[1])-1];
-			if (Number(dateArr[2])<=50) dateArr[2]=20+dateArr[2];
-			else if (Number(dateArr[2])>=50&&Number(dateArr[2])<100) dateArr[2]=19+dateArr[2];
-			dateArr =dateArr[0]+" ב"+dateArr[1]+" "+dateArr[2];
-		}
-		return jQuery.trim(dateArr);
-	}
-
-	var ATags = [/<a .*?>/gi, /<\/a>/gi];
-
-	function match(str, expr) {str = str.match(expr); return str?str[1]:''}
-	
-	function extractParam(rule) {
-	{
-		var result = rule.str; //may be null.
-		if (rule.elem)
-		{
-			if (!(rule.elem instanceof Array))
-				rule.elem = [rule.elem];
-			result = $(rule.elem[0]);
-			for(var elemIdx = 1; elemIdx < rule.elem.length; elemIdx++)
-			{
-				var func = rule.elem[elemIdx].split(',');
-				result = result[func[0]](func.length>0?func[1]:null);
-			}
-			result = result.html();
-		} 
-		else if (rule.elements)
-			result = $(rule.elements[0]).map(function(el){return $(this).html();}).toArray().join(rule.elements[1]);
-
-		if (rule.match)
-			result = match(result, rule.match);
-
-		if (rule.remove)
-			for (var removeIdx = 0; removeIdx < rule.remove.length; removeIdx++)
-				result =  result.replace(rule.remove[removeIdx],"");
-
-		if (rule.split)
-			result =  result.split(rule.split);
-
-		if (rule.func)
-		{
-			if (!(rule.func instanceof Array))
-				rule.func = [rule.func];
-			for (var funcIdx = 0; funcIdx < rule.func.length; funcIdx++)
-				result = rule.func[funcIdx](result);
-		}
-		return jQuery.trim(result);
-	}
-	
+ 
+  function dateFormat(dateArr)
+  {
+    var m = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+    if (dateArr instanceof Array)
+    {
+      dateArr[1] = m[Number(dateArr[1])-1];
+      if (Number(dateArr[2])<=50) dateArr[2]=20+dateArr[2];
+      else if (Number(dateArr[2])>=50&&Number(dateArr[2])<100) dateArr[2]=19+dateArr[2];
+      dateArr =dateArr[0]+" ב"+dateArr[1]+" "+dateArr[2];
+    }
+    return jQuery.trim(dateArr);
+  }
+ 
+  var ATags = [/<a .*?>/gi, /<\/a>/gi];
+ 
+  function match (str, expr){str = str.match(expr); return str?str[1]:''}
+ 
   var data = 
   [
     {
@@ -63,9 +25,12 @@ function wikiit() {
      params:[
       {str : 'ynet'},
       {elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
-      {elem : 'h1:first'},
+      {elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/},
       {str : location.href, match: /L-(.*?),/},
-      {elem : 'td:has(h1:first) .text12g:last', match: /^(.*?),/, split:'.', func:dateFormat }
+      {elem : 'td:has(h1:first) .text12g:last', match: /^(.*?),/, split:'.', func:dateFormat},
+	  {str: '', nopurge:1},
+	  {str:  location.href, match: /ynet.co.il\/[^[\/]*\/(\d+)/, defvalue: '0'},
+	  {str : location.href, match: /ynet.co.il\/([^[\/]*)/, defvalue: 'articles'}
      ]
     },
     {
@@ -85,20 +50,20 @@ function wikiit() {
      params:[
       {str : 'נענע10'},
       {elem: '.Author:first', remove:ATags},
-      {elem: 'ArtTitle'},
+      {elem: '#ArtTitle'},
       {str : location.href, match:/ArticleID=(\d+)/i},
-      {elem: '.ArticleDate:first', match:/^[^]* (.*)$/, split:'/', func:dateFormat},
+      {elem: '.ArticleDate:first', match:/ (.*)$/, split:'/', func:dateFormat},
       {str :''},
-      {str : location.href, match:/(\w+)\.nana/i},
+      {str : location.href, match:/(\w+)\.nana/i}
      ]
     },
     {
     hostname: "www.haaretz.co.il",
      params:[
       {str : 'הארץ'},
-      {elem:'.t12:eq(4) .tUbl2'},
+      {elem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}},
       {elem:'.t18B:first', func:function(str){return str.replace('|',' - ')}},
-      {str : location.href, match:/^.*\/(\d+)/},
+      {str : location.href, match:[/^.*\/(\d+)/, /No=(\d+)/]},
       {elem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
      ]
     },
@@ -136,7 +101,7 @@ function wikiit() {
     hostname: "www.the7eye.org.il",
      params:[
       {str : 'העין השביעית'},
-      {elem: '#ctl00_PlaceHolderMain_ArticleAuthor_m_EditModePanel_Disp span', remove:["מאת:"].concat(ATags) ,},
+      {elem: '#ctl00_PlaceHolderMain_ArticleAuthor_m_EditModePanel_Disp span', remove:["מאת:"].concat(ATags)},
       {elem: "a[name='1']"},
       {str : location.href, match: /^.*\/(.*)\./},
       {elem: "#ctl00_PlaceHolderMain_PublishDate_m_EditModePanel_Disp span", remove:["תאריך פרסום: "], func:dateFormat, split:'/'},
@@ -182,7 +147,7 @@ function wikiit() {
       {elem: "p.katava-info:first", match: /מאת: (.*)$/},
       {elem: "h1:not(:empty):[class!=ttl-gallery]:first"},
       {str : location.href, match: /item,(.*?),\.aspx$/},
-      {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/},
+      {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/}
      ]
     },
     {
@@ -211,33 +176,120 @@ function wikiit() {
       {str : location.href, match: /ART(\d+)/}
      ]
     },
+    {
+    hostname: "www.one.co.il",
+     params:[
+      {str : 'one'},
+      {elem: ".f11.rtl.right", remove:["מאת מערכת ONE","מאת "]},
+      {elem: "#_ctl0_Main_ucFullArticle_lblCaption"},
+      {str: location.href, match:[/Article\/(\d+)/,/id=(\d+)/]},
+      {elem: ".f10.left" ,match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
+     ]
+    },
+    {
+    hostname: "www.israelhayom.co.il",
+     params:[
+      {str : 'ישראל היום'},
+      {elem: ".normal14 .normal"},
+      {elem: ".h2"},
+      {str: location.href, match:/\?id=(\d+)/},
+      {elem: ".newsletter_title_date" , split:'.',  func:dateFormat}
+     ]
+    }
   ];
+ 
+  for (var i in data)
+  {
+    if (location.hostname.match(data[i].hostname)
+    && (!data[i].hrefmatch || location.href.match(data[i].hrefmatch))
+    && (!data[i].condition || data[i].condition())
+    )
+    {
+      var params = [];
+      for (var j = 0; j < data[i].params.length; j++)
+		try {
+			var curParam = data[i].params[j];
+			var lastPurge = 0; // only reason is the idiotic default '*' before the link in some templates.
+			params[j] = '';
+			if (typeof curParam.str != "undefined")
+			  params[j] = curParam.str;
+			else if (typeof curParam.elem != "undefined")
+			{
+			  if (curParam.elem instanceof Array)
+			  {
+				params[j] = $(curParam.elem[0]);
+				for(var elemIdx = 1; elemIdx < curParam.elem.length; elemIdx++)
+				{
+				  var func = curParam.elem[elemIdx].split(',');
+				  params[j] = params[j][func[0]](func.length>0?func[1]:null);
+				}
+				params[j] = params[j].html();
+			  }    
+			  else
+				params[j] = $(curParam.elem).html();
+			}
+			else if (typeof curParam.elements != "undefined")
+			{
+			  params[j] = $(curParam.elements[0]).map(function(el){return $(this).html();}).toArray().join(curParam.elements[1]);
+			}
+	 
+			if (typeof curParam.match != "undefined")
+			{
+			  if (!(curParam.match instanceof Array))
+				params[j] = match(params[j], curParam.match);
+			  else for (patIdx = 0; patIdx < curParam.match.length; patIdx++)
+			  {
+				temp = match(params[j], curParam.match[patIdx]);
+				if (temp != '')
+				{
+				  params[j] = temp;
+				  break;
+				}
+			  }
+			}
+	 
+	 
+			if (typeof curParam.remove != "undefined")
+			  for (var removeIdx = 0; removeIdx < curParam.remove.length; removeIdx++)
+				params[j] =  params[j].replace(curParam.remove[removeIdx],"");
+	 
+			if (typeof curParam.split != "undefined")
+			  params[j] =  params[j].split(curParam.split);
+	 
+	 
+			if (typeof curParam.func != "undefined")
+			{
+			  if (!(curParam.func instanceof Array))
+				curParam.func = [curParam.func];
+			  for (var funcIdx = 0; funcIdx < curParam.func.length; funcIdx++)
+			  {
+				params[j] = curParam.func[funcIdx](params[j]);
+			  }
+			}
 
-	for (var i in data)
-	{
-		if (location.hostname.match(data[i].hostname)
-		&& (!data[i].hrefmatch || location.href.match(data[i].hrefmatch))
-		&& (!data[i].condition || data[i].condition())
-		)
-		{
-			var params = [];
-			for (var j in data[i].params)
-				params[j] = extractParma(data[i].params[j]);
-			prompt("Your template:", '{{' + params.join('|') + '}}');
-			break;
+			params[j] = jQuery.trim(params[j]);
+			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
+				params[j] = '';
+				
+			if (typeof currParam.nopurge)
+				lastPurge = j + 1;
+			
+		} catch(e) {
 		}
-	}
+			
+		while (! params[params.length-1].length && params.length > lastPurge) //remove all last empty params
+			params.pop();
+        prompt("Your template:", '{{' + params.join('|') + '}}');
+        break;
+    }
+  }
 }
-
 (function ()
 {
-	if (typeof(jQuery) != "undefined") {
-		window.$ = jQuery; 
-		wikiit();
-		return;
-	}
-	var s = document.createElement('script');
-	s.setAttribute('src',"http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js");
-	s.onload = wikiit;
-	document.getElementsByTagName('body')[0].appendChild(s);
+  if (typeof(jQuery)!="undefined")
+  {window.$ = jQuery;wikiit();return;}
+  var s=document.createElement('script');
+  s.setAttribute('src',"http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js");
+  s.onload=wikiit;
+  document.getElementsByTagName('body')[0].appendChild(s);
 })();
