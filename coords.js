@@ -1,6 +1,6 @@
 ﻿function coords() {
 	function p(x,y) {
-		var ar = ['coords', y, x, 'display=title', 'type:landmark'];
+		var ar = ['coord', y, x, 'display=title', 'type:landmark'];
 		prompt('העתק את תוכן השורה והדבק בדף', '{{' + ar.join('|') + '}}');
 	}
 	if (/maps\.google/i.test(location.href)) 
