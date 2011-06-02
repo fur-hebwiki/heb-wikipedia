@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // <source lang="javascript">
+=======
+﻿// <source lang="javascript">
+>>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
 //
 // Cat-A-Lot
 // Changes category of multiple files (or pages)
@@ -49,6 +53,7 @@ var catALot = {
 	findAllLabels: function () {
 		this.labels = $('#mw-pages').find('li');
 		var subCats =  $('#mw-subcategories').find('.CategoryTreeItem');
+<<<<<<< HEAD
 		for (var sub = 0; sub < subCats.length; sub++) {
 			var a = $(subCats[sub]).find('a');
 			if (a.length) {
@@ -57,14 +62,30 @@ var catALot = {
 			}
 		}
 		$('#bodyContent').find('li>a, .CategoryTreeLabel').each(function(){this.href = null;});
+=======
+		for (var sub = 0; sub < subCats.length; sub++)
+			subCats[sub]['subcat'] = 1;
+		$.extend(this.labels, subCats);
+		var links = $('#bodyContent').find('li>a');
+		$.extend(links, $('#bodyContent').find('.CategoryTreeLabel'));
+		for (var a in links)
+			links[a].href = null;
+>>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
 	},
 
 	getMarkedLabels: function () {
 		var marked = [];
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
 		this.selectedLabels.each(function () {
+<<<<<<< HEAD
 			var file = $(this).find('a[title]');
 			marked.push([file.attr('title'), $(this)]);
+=======
+			var file = $(this).find('a[title]') && $(this).find('a[title]').attr('title');
+			file = file || $(this).find('a')[0].innerHTML;
+			var extra = this['subcat'] ? catALot.localCatName + ':' : '';
+			marked.push([extra + file, $(this)]);
+>>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
 		});
 		return marked;
 	},
@@ -575,4 +596,8 @@ if ((wgNamespaceNumber == -1 && wgCanonicalSpecialPageName == "Search") || wgNam
 	});
 }
 
+<<<<<<< HEAD
 // </source>
+=======
+// </source>
+>>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
