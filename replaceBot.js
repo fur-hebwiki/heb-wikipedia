@@ -45,6 +45,7 @@ jsb_main = {
 			if (!this.skip_regexes[i+1])
 				t = t.replace(this.regexes[i][0], this.regexes[i][1]);
 		this.textbox.value = t;
+		alert('סקריפט בוט החלפות סיים לרוץ. אנא בצעו "הצגת שינויים" לפני שמירה, כדי לוודא שהסקריפט לא גרם נזק');
 	},
 	
 	init: function() {
