@@ -197,6 +197,18 @@ function wikiit() {
       {str: location.href, match:/\?id=(\d+)/},
       {elem: ".newsletter_title_date" , split:'.',  func:dateFormat}
      ]
+    },
+   {
+    hostname: "www.mako.co.il", minimum:0,
+     params:[
+      {str : 'mako'},
+      {elem: ".writerData span:first"},
+      {elem: "h1"},
+      {str: location.href, match:/Article-(.*?).htm/},
+      {str: location.href, match:/www\.mako\.co\.il\/(.*?)\//},
+      {str: location.href, match:/www\.mako\.co\.il\/.*?\/(.*?)\//},
+      {elem:".writerData span:last", match:/(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
+     ]
     }
   ];
  
@@ -277,7 +289,7 @@ function wikiit() {
 		}
 		
 		if (typeof data[i].minimum != "undefined")
-			while (params[params.length-1].length=="" && params.length > data[i].minimum) //remove all last empty params
+			while (params[params.length-1]=="" && params.length > data[i].minimum) //remove all last empty params
 				params.pop();
 		
         prompt("Your template:", '{{' + params.join('|') + '}}');
