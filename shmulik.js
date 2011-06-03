@@ -205,8 +205,7 @@ function wikiit() {
       {elem: ".writerData span:first"},
       {elem: "h1"},
       {str: location.href, match:/Article-(.*?).htm/},
-      {str: location.href, match:/www\.mako\.co\.il\/(.*?)\//},
-      {str: location.href, match:/www\.mako\.co\.il\/.*?\/(.*?)\//},
+      {str: location.href, match:/www\.mako\.co\.il\/(.*?\.*?)//},
       {elem:".writerData span:last", match:/(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
      ]
     }
