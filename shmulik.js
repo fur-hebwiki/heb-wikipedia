@@ -23,14 +23,14 @@ function wikiit() {
   var data = 
   [
     {
-     hostname: 'www.ynet.co.il',
+     hostname: 'www.ynet.co.il', minimum:6,
      params:[
 		{str : 'ynet'},
 		{elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
 		{elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/},
 		{str : location.href, match: /L-(.*?),/},
 		{elem : 'td:has(h1:first) .text12g:last', match: /^(.*?),/, split:'.', func:dateFormat},
-		{str: '', nopurge:"test"},
+		{str: ''},
 		{str:  location.href, match: /ynet.co.il\/[^[\/]*\/(\d+)/, defvalue: '0'},
 		{str : location.href, match: /ynet.co.il\/([^[\/]*)/, defvalue: 'articles'}
      ]
@@ -111,7 +111,7 @@ function wikiit() {
      ]
     },
     {
-    hostname: "www.xnet.co.il",
+    hostname: "www.xnet.co.il", minimum:6,
      params:[
       {str : 'xnet'},
       {elem: '.author_name_link:visible'},
@@ -119,7 +119,7 @@ function wikiit() {
       {str : location.href, match: /L-(.*?),/},
       {elem: ".author.clearFix cite", match: /(\d+\.\d+\.\d+)/ ,func:dateFormat, split:'.'},
       {str :''},
-      {str : location.href, match: /articles\/(\d+),/}
+      {str : location.href, match: /articles\/(\d+),/, defvalue: '0'}
      ]
     }, 
     {
@@ -208,7 +208,6 @@ function wikiit() {
     )
     {
       var params = [];
-      var lastPurge = 0; // only reason is the idiotic default '*' before the link in some templates.
       for (var j = 0; j < data[i].params.length; j++)
 		try {
 			var curParam = data[i].params[j];
@@ -273,15 +272,14 @@ function wikiit() {
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 				
-			if (typeof curParam.nopurge != "undefined")
-				lastPurge = j + 1;
 			
 		} catch(e) {
 		}
-			
-		while (! params[params.length-1].length && params.length > lastPurge) //remove all last empty params
-			params.pop();
-			
+		
+		if (typeof data[i].minimum != "undefined")
+			while (params[params.length-1].length=="" && params.length > data[i].minimum) //remove all last empty params
+				params.pop();
+		
         prompt("Your template:", '{{' + params.join('|') + '}}');
         break;
     }
