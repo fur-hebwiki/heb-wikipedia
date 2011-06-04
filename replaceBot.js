@@ -47,10 +47,12 @@ jsb_main = {
 	
 	process_page: function() {
 		var t = this.textbox.value;
-		var skipmatch = t.match(/{{ללא_בוט\|(\d+)}}/g);
-		if (skipmatch)
-			for (var i = 1; i < skipmatch.length; i++)
-				this.skip_regexes[parseInt(skipmatch[i], 10)] = true;
+		var skipmatch = t.match(/{{ללא[_ ]בוט\|\s*(\d+)\s*}}/g);
+		if (skipmatch) 
+			for (var i in skipmatch) {
+				var matches = skipmatch[i].match(/{{ללא[_ ]בוט\|\s*(\d+)\s*}}/);
+				this.skip_regexes[parseInt(matches[1], 10)] = true;
+			}
 		for (var i in this.regexes) 
 			if (!this.skip_regexes[i])
 				t = t.replace(this.regexes[i][0], this.regexes[i][1]);
