@@ -4,6 +4,7 @@ jsb_main = {
 	badlines: [],
 	textbox: null,
 	build_regexes: function(event, data) {
+		this.start = new Date();
 		var t = $('#wpTextbox1');
 		this.textbox = t.length ? t[0] : null;
 		if (!this.textbox || this.textbox.value.length == 0 || /{{ללא_בוט}}/.test(this.textbox.value))
@@ -21,7 +22,7 @@ jsb_main = {
 						continue;
 					line = line.substring(1).replace(/<\/?nowiki>/g, '');
 					try {
-						var regex = new RegExp(line);
+						var regex = new RegExp(line, 'g');
 					} catch(e) {
 						this.badlines.push([num, line]);
 						continue;
@@ -57,7 +58,7 @@ jsb_main = {
 			if (!this.skip_regexes[i])
 				t = t.replace(this.regexes[i][0], this.regexes[i][1]);
 		this.textbox.value = t;
-		alert('סקריפט בוט החלפות סיים לרוץ. אנא בצעו "הצגת שינויים" לפני שמירה, כדי לוודא שהסקריפט לא גרם נזק');
+		alert('סקריפט בוט החלפות סיים לרוץ. אנא בצעו "הצגת שינויים" לפני שמירה, כדי לוודא שהסקריפט לא גרם נזק.' + '\n' + 'ההרצה לקחה ' + (new Date() - this.start) + ' מילישניות.');
 	},
 	
 	init: function() {
