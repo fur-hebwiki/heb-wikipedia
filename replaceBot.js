@@ -11,28 +11,23 @@ jsb_main = {
 			return;
 		if (data) {
 			var lines = data.split(/\n/);
+			var clear_nowiki = /\|<nowiki>(.*)<\/nowiki>/;
+			var matches;
 			while (lines.length) {
-				var line = lines.shift();
-				var matches = line.match(/^\|(\d+)/);
-				if (matches) {
-					var num = parseInt(matches[1], 10);
-					line = lines.shift();
-					line = line.replace(/<\/?nowiki>/g, '');
-					if (! line || ! line.length || line.substring(0,1) != '|')
-						continue;
-					line = line.substring(1).replace(/<\/?nowiki>/g, '');
-					try {
-						var regex = new RegExp(line, 'g');
-					} catch(e) {
-						this.badlines.push([num, line]);
-						continue;
-					}
-					line = lines.shift();
-					if (! line || ! line.length || line.substring(0,1) != '|')
-						continue;
-					line = line.substring(1).replace(/<\/?nowiki>/g, '');
-					this.regexes[num] = [regex, line];
+				if (! (matches = lines.shift().match(/^\|(\d+)/)))
+					continue;
+				var num = parseInt(matches[1], 10);
+				if (! (matches = lines.shift().match(clear_nowiki)))
+					continue;
+				try {
+					var regex = new RegExp(matches[1], 'g');
+				} catch(e) {
+					this.badlines.push(num);
+					continue;
 				}
+				if (! (matches = lines.shift().match(clear_nowiki)))
+					continue;
+				this.regexes[num] = [regex, matches[1]];
 			}
 			this.process_page();
 		}
