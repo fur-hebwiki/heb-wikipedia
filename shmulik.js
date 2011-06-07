@@ -11,7 +11,7 @@ function wikiit() {
 				dateArr[2]=20+dateArr[2];
 			else if (Number(dateArr[2])>=50&&Number(dateArr[2])<100)
 				dateArr[2]=19+dateArr[2];
-			dateArr =dateArr[0]+" ב"+dateArr[1]+" "+dateArr[2];
+			dateArr = parseInt(dateArr[0])+" ב"+dateArr[1]+" "+dateArr[2];
 		}
 		return jQuery.trim(dateArr);
 	}
