@@ -6,7 +6,7 @@ jsb_main = {
 		this.start = new Date();
 		var t = $('#wpTextbox1');
 		this.textbox = t.length ? t[0] : null;
-		if (!this.textbox || this.textbox.value.length == 0 || /{{\s*ללא_בוט\s*}}/.test(this.textbox.value)) {
+		if (!this.textbox || this.textbox.value.length == 0 || /\{\{\s*ללא_בוט\s*\}\}/.test(this.textbox.value)) {
 			alert('הדף מכיל תבנית "ללא בוט" ולכן לא יבוצעו החלפות');
 			return;
 		}
