@@ -1,38 +1,34 @@
 jsb_main = {
 	regexes: [],
-	skip_regexes: {},
 	badlines: [],
 	textbox: null,
 	build_regexes: function(event, data) {
 		this.start = new Date();
 		var t = $('#wpTextbox1');
 		this.textbox = t.length ? t[0] : null;
-		if (!this.textbox || this.textbox.value.length == 0 || /{{ללא_בוט}}/.test(this.textbox.value))
+		if (!this.textbox || this.textbox.value.length == 0 || /\{\{\s*ללא_בוט\s*\}\}/.test(this.textbox.value)) {
+			alert('הדף מכיל תבנית "ללא בוט" ולכן לא יבוצעו החלפות');
 			return;
+		}
 		if (data) {
 			var lines = data.split(/\n/);
+			var clear_nowiki = /\|<nowiki>(.*)<\/nowiki>/;
+			var matches;
 			while (lines.length) {
-				var line = lines.shift();
-				var matches = line.match(/^\|(\d+)/);
-				if (matches) {
-					var num = parseInt(matches[1], 10);
-					line = lines.shift();
-					line = line.replace(/<\/?nowiki>/g, '');
-					if (! line || ! line.length || line.substring(0,1) != '|')
-						continue;
-					line = line.substring(1).replace(/<\/?nowiki>/g, '');
-					try {
-						var regex = new RegExp(line, 'g');
-					} catch(e) {
-						this.badlines.push([num, line]);
-						continue;
-					}
-					line = lines.shift();
-					if (! line || ! line.length || line.substring(0,1) != '|')
-						continue;
-					line = line.substring(1).replace(/<\/?nowiki>/g, '');
-					this.regexes[num] = [regex, line];
+				if (! (matches = lines.shift().match(/^\|(\d+)/)))
+					continue;
+				var num = parseInt(matches[1], 10);
+				if (! (matches = lines.shift().match(clear_nowiki)))
+					continue;
+				try {
+					var regex = new RegExp(matches[1], 'g');
+				} catch(e) {
+					this.badlines.push(num);
+					continue;
 				}
+				if (! (matches = lines.shift().match(clear_nowiki)))
+					continue;
+				this.regexes[num] = [regex, matches[1]];
 			}
 			this.process_page();
 		}
@@ -47,18 +43,35 @@ jsb_main = {
 	},
 	
 	process_page: function() {
-		var t = this.textbox.value;
-		var skipmatch = t.match(/{{ללא[_ ]בוט\|\s*(\d+)\s*}}/g);
+		var t = this.textbox.value,
+			skip_dict = {},
+			skip_ar = [],
+			actual_replaced = [],
+			skipmatch = t.match(/{{ללא[_ ]בוט\|\s*(\d+)\s*}}/g);
 		if (skipmatch) 
 			for (var i in skipmatch) {
 				var matches = skipmatch[i].match(/{{ללא[_ ]בוט\|\s*(\d+)\s*}}/);
-				this.skip_regexes[parseInt(matches[1], 10)] = true;
+				skip_dict[parseInt(matches[1], 10)] = true;
+				skip_ar.push(matches[1]);
 			}
 		for (var i in this.regexes) 
-			if (!this.skip_regexes[i])
-				t = t.replace(this.regexes[i][0], this.regexes[i][1]);
+			if (! skip_dict[i])
+				if (this.regexes[i][0].test(t)) {
+					actual_replaced.push(i);
+					t = t.replace(this.regexes[i][0], this.regexes[i][1]);
+				}
 		this.textbox.value = t;
-		alert('סקריפט בוט החלפות סיים לרוץ. אנא בצעו "הצגת שינויים" לפני שמירה, כדי לוודא שהסקריפט לא גרם נזק.' + '\n' + 'ההרצה לקחה ' + (new Date() - this.start) + ' מילישניות.');
+		var msg = ['‏ריצת הסקריפט הסתיימה. אנא בצעו "הצגת שינויים" לפני שמירה, כדי לוודא שהסקריפט לא גרם נזק.‏'];
+		if (skip_ar.length)
+			msg.push('‏החלפות שלא התבצעו בגלל תבנית "ללא בוט": ‏' + skip_ar.join(', '));
+		if (this.badlines.length)
+			msg.push('‏החלפות שלא התבצעו בגלל בעיה בקוד:‏ ' + this.badlines.join(', ‏'));
+		msg.push('');
+		msg.push(actual_replaced.length 
+			? '‏התבצעו ההחלפות הבאות: ‏' + actual_replaced.join('‏ ,‏')
+			: '‏לא התבצעו החלפות - הדף "נקי".‏');
+		msg.push('‏הריצה ארכה ' + (new Date() - this.start) + ' מילישניות.‏');
+		alert(msg.join('\n'));
 	},
 	
 	init: function() {
