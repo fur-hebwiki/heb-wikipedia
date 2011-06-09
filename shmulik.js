@@ -279,7 +279,7 @@ function wikiit() {
 			  }
 			}
 
-			params[j] = jQuery.trim(params[j]);
+			params[j] = jQuery.trim(params[j]).replace(/\s+/g, ' ');
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 				
