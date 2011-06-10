@@ -317,7 +317,9 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 		problematic: regexDict && regexDict.problematic,
 		defParam: ltw_defaultParameters(templateName)
 	});
+	doc.write("Fix for FF4");
 	var body = doc.body;
+	body.innerHTML = "";
 	if (hasBookmarklet) {
 		var p = doc.createElement("p");
 		p.style.color = 'red';
