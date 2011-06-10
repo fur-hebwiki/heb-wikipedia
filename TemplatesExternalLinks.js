@@ -1,7 +1,7 @@
 //Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
  
-function ltw_createTemplate() {
+function ltw2_createTemplate() {
 	var par = ["{{" + this.templateName];
 	for (var i in this.orderedFields)
 		par.push((this.problematic? (parseInt(i)+1) + "=":"") + $.trim(this.orderedFields[i].value));
@@ -30,13 +30,13 @@ function ltw_createTemplate() {
 	return code;
 }
  
-function ltw_copyAttributes(target, source) {for (key in source)target[key] = source[key];return target;}
+function ltw2_copyAttributes(target, source) {for (key in source)target[key] = source[key];return target;}
  
  
  
  
  
-function ltw_knownLinkTemplates() {
+function ltw2_knownLinkTemplates() {
 	var constants = ["",
 		"שם המחבר",
 		"כותרת  המאמר",
@@ -90,6 +90,7 @@ function ltw_knownLinkTemplates() {
 	];
  
 	var templatesDic = {
+		'קישור כללי': [],
 		"הארץ": [1, 2, 3, 4],
 		"דבר": [1,2,22,3,7,0,23],
 		"מעריב": [1,2,22,3,7,0,23],
@@ -172,11 +173,11 @@ function ltw_knownLinkTemplates() {
 			if (typeof(templatesDic[key][i]) == "number")
 				templatesDic[key][i] = constants[templatesDic[key][i]];
 	if (typeof privateTemplates === "object")
-		ltw_copyAttributes(templatesDic, privateTemplates);
+		ltw2_copyAttributes(templatesDic, privateTemplates);
 	return templatesDic;
 }
  
-function ltw_namedParams(templateName) {
+function ltw2_namedParams(templateName) {
 	var allNamedParam = {
 		'קול הלשון - שיעור': [['וידאו', '"וידאו": רשמו "כן" אם זה שיעור לצפייה'], ['תואר', 'תואר - אם תואר המרצה שונה מ"הרב"']],
 		"ספר פרויקט גוטנברג": [["כותב", "שם כותב הספר (אופציונלי)"], ['שם הספר', 'שם הספר (ברירת מחדל: שם הערך)'], ['מספר', 'מספר הספר בפרויקט']],
@@ -185,11 +186,21 @@ function ltw_namedParams(templateName) {
 		"imdb company": [['id', 'המספר שמופיע בקישור'], ['company', 'הכותרת שתופיע בקישור']],
 		"Google book": [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)'],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך']],
 		"TheMarker1": [['5','קידומת הקישור, אם שונה מ-www']],
+		'קישור כללי': [
+			['כתובת', 'הקישור (כלומר ה-URL) עצמו'],
+			['כותרת', 'שם המאמר המקושר'],
+			['הכותב', 'שמות כותבי המאמר'],
+			['תאריך', 'תאריך המאמר'],
+			['עמודים', 'מספר העמודים'],
+			['שפה', 'שפה (אם המאמר לא בעברית)'],
+			['פורמט', 'פורמט המאמר, אם אינו HTML (למשל PDF, DOC, וכן הלאה'],
+			['ציטוט', 'ציטוט משפט מהדף המקושר (יכול לעזור במציאת הדף בעתיד, אם הקישור ישתנה)']
+		]
 	};
 	return allNamedParam[templateName] || [];
 }
  
-function ltw_defaultParameters(templateName) { // if parameter has the default value, we omit it
+function ltw2_defaultParameters(templateName) { // if parameter has the default value, we omit it
 	var defs = {
 		"דבר": {7: "Ar"}, 
 		"מעריב": {7: "Ar"},
@@ -206,7 +217,7 @@ function ltw_defaultParameters(templateName) { // if parameter has the default v
 	return defs[templateName] || {};
 }
  
-function ltw_templateRegex(templateName) {
+function ltw2_templateRegex(templateName) {
 	var regexes = {
 		"nrg": {regex: /\/online\/([^\/]+)\/ART([^\/]*)\/([^\.]+).html/i, params:[6,7,3]},
 		"NFC": {regex: /Archive\/([^\.]+)\.html/i, params:[3]},
@@ -272,52 +283,55 @@ function ltw_templateRegex(templateName) {
 	var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS"};
 	var histregex = {regex: /=HISTNAME\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[3,7,4], replace: [[/%2F/gi, '/']]};
 	for (var template in historic) {
-		var lr = ltw_copyAttributes({}, histregex);
+		var lr = ltw2_copyAttributes({}, histregex);
 		lr.regex =  new RegExp(lr.regex.source.replace("HISTNAME", historic[template]));
 		regexes[template] = lr;
 	}
 	if (typeof privateRegexes === "object")
-		ltw_copyAttributes(regexes, privateRegexes);
+		ltw2_copyAttributes(regexes, privateRegexes);
 	return regexes[templateName];
 }
  
-function ltw_addFiledToTable(doc, table, param) {
+function ltw2_addFiledToTable(doc, table, param) {
 	var row = table.insertRow(-1) || table[rows[table.rows.length-1]];
 	var cell = row.insertCell(-1) || row.cells[0];
 	cell.innerHTML = param;
 	cell.style.maxWidth = "16em";
-	var field = ltw_copyAttributes(doc.createElement("input"), {type: "text", maxLength: 120, doc: doc});
-	field.onkeyup = field.onmouseup = field.onfocus = field.onblur = ltw_updatePreview;
+	var field = ltw2_copyAttributes(doc.createElement("input"), {type: "text", maxLength: 120, doc: doc});
+	field.onkeyup = field.onmouseup = field.onfocus = field.onblur = ltw2_updatePreview;
 	field.style.width = "20em";
 	cell = row.insertCell(-1) || row.cells[1];
 	cell.appendChild(field);
 	return field;
 }
  
-function ltw_hasBookMarklet(template) {
+function ltw2_hasBookMarklet(template) {
 	return $.inArray(template, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים','ישראל היום','mako']) + 1;
 }
  
-function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
-	var hasBookmarklet = ltw_hasBookMarklet(templateName);
-	var namedParamsList = ltw_namedParams(templateName);
-	var height = 160 + 20 * (paramList.length + namedParamsList.length) + (regexDict ? 60 : 0) + (hasBookmarklet ? 60 : 0);
-	for (i in paramList)
-		height += 16 * Math.floor(paramList[i].length / 24);
+function ltw2_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
+	var hasBookmarklet = ltw2_hasBookMarklet(templateName);
+	var namedParamsList = ltw2_namedParams(templateName);
+	var height = 160 + 26 * (paramList.length + namedParamsList.length) + (regexDict ? 60 : 0) + (hasBookmarklet ? 60 : 0);
+	for (var i in paramList)
+		height += 18 * Math.floor(paramList[i].length / 33);
+	for (var i in namedParamsList)
+		height += 18 * Math.floor(namedParamsList[i][1].length / 33);
 	var top = (screen.height - height) / 2, left = (screen.width - 550) / 2;
 	var popup = window.open("", "", "resizable=1,height="+height+",width=550,left="+left+",top="+top);
-	var doc = ltw_copyAttributes(popup.document, {
+	var doc = popup.document;
+	doc.write("Fix for FF4");
+	var body = doc.body;
+	ltw2_copyAttributes(doc, {
 		title: " הוספת תבנית: " + templateName, 
 		dir: "rtl", 
 		templateName: templateName, 
 		orderedFields: [], 
-		getTemplate: ltw_createTemplate, 
+		getTemplate: ltw2_createTemplate, 
 		updatePreview: function(){this.previewNode.data = this.getTemplate();},
 		problematic: regexDict && regexDict.problematic,
-		defParam: ltw_defaultParameters(templateName)
+		defParam: ltw2_defaultParameters(templateName)
 	});
-	doc.write("Fix for FF4");
-	var body = doc.body;
 	body.innerHTML = "";
 	if (hasBookmarklet) {
 		var p = doc.createElement("p");
@@ -329,10 +343,10 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 		body.appendChild(doc.createTextNode('הדביקו את הקישור כאן:'));
 		var b = doc.createElement("input");
 		b.urlInput = doc.createElement("input");
-		ltw_copyAttributes(b.urlInput, { type: "text", maxLength: 600 } );
+		ltw2_copyAttributes(b.urlInput, { type: "text", maxLength: 600 } );
 		b.urlInput.style.width = "12em";
 		body.appendChild(b.urlInput);
-		ltw_copyAttributes(b, {type: "button", value: "חילוץ פרמטרים מהקישור", regexDict: regexDict, doc: doc, update: ltw_updatePreview });
+		ltw2_copyAttributes(b, {type: "button", value: "חילוץ פרמטרים מהקישור", regexDict: regexDict, doc: doc, update: ltw2_updatePreview });
 		b.onclick = function() {
 			var str = this.urlInput.value;
 			if (this.regexDict.replace)
@@ -361,12 +375,12 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 			doc.orderedFields.push({value:""});
 			continue;
 		}
-		doc.orderedFields.push(ltw_addFiledToTable(doc, table, param));
+		doc.orderedFields.push(ltw2_addFiledToTable(doc, table, param));
 	}
 	doc.namedFields = [];
 	for (var i in namedParamsList) {
 		var np = namedParamsList[i];
-		doc.namedFields.push([np[0], ltw_addFiledToTable(doc, table, np[1])]);
+		doc.namedFields.push([np[0], ltw2_addFiledToTable(doc, table, np[1])]);
 	}
 	body.appendChild(table);
 	body.appendChild(doc.createElement("p"));
@@ -374,54 +388,56 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 	var checkboxes = {refCheckBox: " הערת שוליים:", listCheckBox: " פריט ברשימה:"}
 	for (var box in checkboxes) {
 		p.appendChild(doc.createTextNode(checkboxes[box]));
-		doc[box] = ltw_copyAttributes(doc.createElement('input'), {type: "checkbox", doc: doc, onchange: ltw_updatePreview});
+		doc[box] = ltw2_copyAttributes(doc.createElement('input'), {type: "checkbox", doc: doc, onchange: ltw2_updatePreview});
 		p.appendChild(doc[box]);
 	}
 	body.appendChild(p);
 	body.appendChild(p = doc.createElement("p"));
-	ltw_copyAttributes(p.style, {background: "blue", color: "white", fontSize: "0.85em"} );
+	ltw2_copyAttributes(p.style, {background: "blue", color: "white", fontSize: "0.85em"} );
 	p.appendChild(doc.previewNode = doc.createTextNode(' '));
 	body.appendChild(doc.createElement("p"));
-	b = ltw_copyAttributes(doc.createElement("input"), {type:"button", value:"אישור", doc: doc, popup: popup});
+	b = ltw2_copyAttributes(doc.createElement("input"), {type:"button", value:"אישור", doc: doc, popup: popup});
 	doc.problematic = regexDict && regexDict.problematic && true;
 	b.onclick = function() {
 		insertTags("", this.doc.getTemplate(), "");
 		this.popup.close();
 	}
 	body.appendChild(b);
-	b = ltw_copyAttributes(doc.createElement("input"), {type: "button", value: "ביטול", popup: popup, onclick: function(){this.popup.close();}});
+	b = ltw2_copyAttributes(doc.createElement("input"), {type: "button", value: "ביטול", popup: popup, onclick: function(){this.popup.close();}});
 	body.appendChild(b);
 	doc.refCheckBox.onchange();
 }
  
-function ltw_fireLinkTemplatePopup(templateName) {
-	var linkTemplates = ltw_knownLinkTemplates();
+function ltw2_fireLinkTemplatePopup(templateName) {
+	var linkTemplates = ltw2_knownLinkTemplates();
 	var templateParams = linkTemplates[templateName];
-	ltw_popupPredefinedLinkTemplate(templateName, templateParams, ltw_templateRegex(templateName));
+	ltw2_popupPredefinedLinkTemplate(templateName, templateParams, ltw2_templateRegex(templateName));
 }
  
-function ltw_createSortedTemplatesList() {
-	var fullList = ltw_knownLinkTemplates();
+function ltw2_createSortedTemplatesList() {
+	var fullList = ltw2_knownLinkTemplates();
 	var names = [], hnames = [];
+	var first = 'קישור כללי';
 	for (var x in fullList)
 		if (x.match(/^[a-zA-Z]/))
 			names.push(x);
 		else
-			hnames.push(x);
+			if (x != first)
+				hnames.push(x);
 	hnames.sort();
 	names.sort(function(a,b){var la=a.toLowerCase(),lb=b.toLowerCase();return la>lb?1:la<lb?-1:0;});
-	return hnames.concat(names);
+	return [first].concat(hnames).concat(names);
 }
  
-function ltw_createLinkTemplatesSelections() {
+function ltw2_createLinkTemplatesSelections() {
 	var select = document.createElement("select");
 	select.onchange = function() {
-		ltw_fireLinkTemplatePopup(this.value);
+		ltw2_fireLinkTemplatePopup(this.value);
 		this.selectedIndex = 0;
 		return false;
 	}
 	select.options.add(new Option("אשף תבניות קישורים", ""));
-	var allnames = ltw_createSortedTemplatesList();
+	var allnames = ltw2_createSortedTemplatesList();
 	for (var i in allnames)
 		select.options.add(new Option(allnames[i], allnames[i]));
 	var toolbar = document.getElementById("toolbar");
@@ -429,17 +445,17 @@ function ltw_createLinkTemplatesSelections() {
 		toolbar.appendChild(select);
 }
  
-function ltw_updatePreview() { this.doc.updatePreview(); }
+function ltw2_updatePreview() { this.doc.updatePreview(); }
  
-function ltw_advancedFire(context) {
-	ltw_fireLinkTemplatePopup(this.template);
+function ltw2_advancedFire(context) {
+	ltw2_fireLinkTemplatePopup(this.template);
 }
  
-function ltw_createAdvanceToolKit() {
+function ltw2_createAdvanceToolKit() {
     var gadget = {label: 'אשף תבניות קישורים', type: 'select', list: []};
-	var templatesList = ltw_createSortedTemplatesList();
+	var templatesList = ltw2_createSortedTemplatesList();
 	for (var i in templatesList)
-        gadget.list.push({label: templatesList[i], action: {type: 'callback', execute: ltw_advancedFire, template: templatesList[i]}});
+        gadget.list.push({label: templatesList[i], action: {type: 'callback', execute: ltw2_advancedFire, template: templatesList[i]}});
 	$j('#wpTextbox1').wikiEditor('addToToolbar', {
 		'section': 'advanced',
 		'group': 'heading',
@@ -448,6 +464,6 @@ function ltw_createAdvanceToolKit() {
 }
  
 if (typeof $j != 'undefined' && typeof $j.fn.wikiEditor != 'undefined')
-	$j(document).ready(ltw_createAdvanceToolKit);
+	$j(document).ready(ltw2_createAdvanceToolKit);
 if (wgAction == 'edit')
-	hookEvent("load", ltw_createLinkTemplatesSelections);
+	hookEvent("load", ltw2_createLinkTemplatesSelections);
