@@ -34,9 +34,10 @@ jsb_main = {
 		}
 		else 
 			$.ajax({
-				url: wgServer + wgScriptPath + '/index.php?title=ויקיפדיה:בוט/בוט החלפות/רשימת החלפות נוכחית&action=raw&ctype=text/x-wiki',
-				context: document.body,
-				success: function(data, status, jqhxr){
+				url: wgServer + wgScriptPath + '/index.php?title=%D7%95%D7%99%D7%A7%D7%99%D7%A4%D7%93%D7%99%D7%94:%D7%91%D7%95%D7%98/%D7%91%D7%95%D7%98_%D7%94%D7%97%D7%9C%D7%A4%D7%95%D7%AA/%D7%A8%D7%A9%D7%99%D7%9E%D7%AA_%D7%94%D7%97%D7%9C%D7%A4%D7%95%D7%AA_%D7%A0%D7%95%D7%9B%D7%97%D7%99%D7%AA&action=raw&ctype=text/x-wiki',
+						// above is: "ויקיפדיה:בוט/בוט_החלפות/רשימת_החלפות_נוכחית"
+						// which all browsers except IE can work with.
+				success: function(data, status){
 					jsb_main.build_regexes(null, data);
 				}
 			});
@@ -49,13 +50,13 @@ jsb_main = {
 			actual_replaced = [],
 			skipmatch = t.match(/{{ללא[_ ]בוט\|\s*(\d+)\s*}}/g);
 		if (skipmatch) 
-			for (var i in skipmatch) {
+			for (var i = 0; i < skipmatch.length; i++) {
 				var matches = skipmatch[i].match(/{{ללא[_ ]בוט\|\s*(\d+)\s*}}/);
 				skip_dict[parseInt(matches[1], 10)] = true;
 				skip_ar.push(matches[1]);
 			}
 		for (var i in this.regexes) 
-			if (! skip_dict[i])
+			if (! skip_dict[i] && ! isNaN(i))
 				if (this.regexes[i][0].test(t)) {
 					actual_replaced.push(i);
 					t = t.replace(this.regexes[i][0], this.regexes[i][1]);
@@ -72,6 +73,8 @@ jsb_main = {
 			: '‏לא התבצעו החלפות - הדף "נקי".‏');
 		msg.push('‏הריצה ארכה ' + (new Date() - this.start) + ' מילישניות.‏');
 		alert(msg.join('\n'));
+		if (actual_replaced.length && $('#wpSummary').val() == '')
+			$('#wpSummary').val('סקריפט החלפות - (' + actual_replaced.join('‏ ,‏') + ') ');
 	},
 	
 	init: function() {
