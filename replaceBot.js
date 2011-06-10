@@ -58,7 +58,8 @@ jsb_main = {
 		for (var i in this.regexes) 
 			if (! skip_dict[i] && ! isNaN(i))
 				if (this.regexes[i][0].test(t)) {
-					actual_replaced.push(i);
+					
+					actual_replaced.push(t.match(this.regexes[i][0]) +" -> "+ t.match(this.regexes[i][1]));
 					t = t.replace(this.regexes[i][0], this.regexes[i][1]);
 				}
 		this.textbox.value = t;
