@@ -165,7 +165,8 @@ function ltw_knownLinkTemplates() {
 		"imdb company": [],
 		"Google book": [],
 		"TheMarker1": [1,2,3,4],
-		"מערכות": [1,2,3,49]
+		"מערכות": [1,2,3,49],
+		"mako": [1,2,3,6,4]
 	};
 	for (var key in templatesDic)
 		for (var i in templatesDic[key])
@@ -184,7 +185,7 @@ function ltw_namedParams(templateName) {
 		"imdb name": [['id', 'המספר שמופיע בקישור'], ['name', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך']],
 		"imdb company": [['id', 'המספר שמופיע בקישור'], ['company', 'הכותרת שתופיע בקישור']],
 		"Google book": [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)'],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך']],
-		"TheMarker1": [['5','קידומת הקישור, אם שונה מ-www']]
+		"TheMarker1": [['5','קידומת הקישור, אם שונה מ-www']],
 	};
 	return allNamedParam[templateName] || [];
 }
@@ -266,7 +267,8 @@ function ltw_templateRegex(templateName) {
 		"imdb company": {regex: /company\/co(\d+)/i, params: [1]},
 		"Google book" : {regex: /id=([^&]*)/, params: [1]},
 		"TheMarker1": {regex: /http:\/\/(?:www)?(.*)\.themarker\.com\/([^\?]+)/i, params: [5,3]},
-		"מערכות": {regex: /FILES\/(.*)\.pdf/i, params: [3]}
+		"מערכות": {regex: /FILES\/(.*)\.pdf/i, params: [3]},
+		"mako": {regex: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, params: [4,3]}
 	}
  
 	// these guys are all the same - it's best to handle them as such.
@@ -296,7 +298,7 @@ function ltw_addFiledToTable(doc, table, param) {
 }
  
 function ltw_hasBookMarklet(template) {
-	return $.inArray(template, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים','ישראל היום']) + 1;
+	return $.inArray(template, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים','ישראל היום','mako']) + 1;
 }
  
 function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
