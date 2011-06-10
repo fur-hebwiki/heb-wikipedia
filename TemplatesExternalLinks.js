@@ -153,7 +153,6 @@ function ltw_knownLinkTemplates() {
 		"ויקישיבה":["שם הערך בויקישיבה"],
 		"HebrewBooksPage": [1,8,3,4,40],
 		"גדולי ישראל": [29,40,41,13],
-		"פנאי פלוס": [1,2,3,4,0,5,25],
 		"עיתונות יהודית היסטורית 2": [43,44,1,2,22,3,7,0,23],
 		"Iucnredlist": [45,3],
 		"העין השביעית": [1,34,6,4,25],
@@ -202,8 +201,7 @@ function ltw_defaultParameters(templateName) { // if parameter has the default v
 		"PalPost": {7: "Ar"},
 		"עיתונות יהודית היסטורית 2": {9: "Ar"},		
 		"ynet": {6: 0, 7: 'articles'},
-		"Xnet": {6: 0, 7: 'articles'},
-		"פנאי פלוס": {6: 0, 7: 'articles'}
+		"Xnet": {6: 0, 7: 'articles'}
 	}
 	return defs[templateName] || {};
 }
@@ -255,7 +253,6 @@ function ltw_templateRegex(templateName) {
 		"תכלת": {regex: /article\.php\?id=(\d+)/i, params:[3]},
 		":אנצ דעת": {regex: /value\.asp\?id1=(\d+)/i, params:[1]},
 		"דעת": {regex: /(?:www\.)?daat\.ac\.il\/(.*)/i, params:[2], problematic:1},
-		"פנאי פלוס": {regex: /ynet\.co\.il\/([^\/]+)\/(\d+),7340,L-(\d+),00\.html/i, params:[7,6,3]},
 		"עיתונות יהודית היסטורית 2": {regex: /(?:Key|BaseHref)=([A-Z]{3})\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[2,5,9,6], replace: [[/%2F/gi, '/']]},
 		"Iucnredlist": {regex: /details(?:\.php)?\/(\d+)/, params: [2]},
 		"העין השביעית": {regex: /the7eye\.org\.il\/([^\/]+)\/Pages\/(.*)\.aspx/, params: [5,3]},
