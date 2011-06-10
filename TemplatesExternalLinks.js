@@ -403,7 +403,7 @@ function ltw_fireLinkTemplatePopup(templateName) {
 function ltw_createSortedTemplatesList() {
 	var fullList = ltw_knownLinkTemplates();
 	var names = [], hnames = [];
-	for (x in fullList)
+	for (var x in fullList)
 		if (x.match(/^[a-zA-Z]/))
 			names.push(x);
 		else
