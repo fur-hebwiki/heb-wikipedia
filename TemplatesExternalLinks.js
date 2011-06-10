@@ -1,4 +1,4 @@
-//Adds wizard for using templates for external links
+﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
  
 function ltw_createTemplate() {
