@@ -36,19 +36,19 @@ function wikiit() {
      ]
 	},
 	{
-	hostname: 'news.walla.co.il',
+	hostname: 'news.walla.co.il', minimum:6,
 	params:[
 		{str : 'וואלה!'},
 		{elem : 'div.wp-0-b:first span:first', match: /מאת:(.*),/, remove:ATags},
 		{elem : 'h1'},
 		{str : location.href, match:/w=\/\d*\/(\d+)/},
 		{elem:["h1","parent","children","eq,2"], match:/,(.*),/},
-		{str:''},
+		{str : ''},
 		{str : location.href, match:/w=\/(\d*)\/\d+/}
      ]
     },
     {
-    hostname: /^\w+\.nana10\.co\.il$/i,
+    hostname: /^\w+\.nana10\.co\.il$/i, minimum:6,
      params:[
       {str : 'נענע10'},
       {elem: '.Author:first', remove:ATags},
@@ -60,7 +60,7 @@ function wikiit() {
      ]
     },
     {
-    hostname: "www.haaretz.co.il",
+    hostname: "www.haaretz.co.il", 
      params:[
       {str : 'הארץ'},
       {elem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}},
@@ -153,7 +153,7 @@ function wikiit() {
      ]
     },
     {
-    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length > 0)},
+    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length > 0)},  minimum:6,
      params:[
       {str : 'nrg'},
       {elem: "#articleCBar span:first", match: /<!-- ARTICLE_WRITER_START --> (.*?)<!-- ARTICLE_WRITER_END -->/ , remove:ATags},
@@ -166,7 +166,7 @@ function wikiit() {
      ]
     },
     {
-    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},
+    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},  minimum:6,
      params:[
       {str : 'nrg'},
       {elem: ".newsVitzCredit", match: /^(.*?)<br>/ , remove:["NRG מעריב"]},
@@ -199,7 +199,7 @@ function wikiit() {
      ]
     },
    {
-    hostname: "www.mako.co.il", minimum:0,
+    hostname: "www.mako.co.il",
      params:[
       {str : 'mako'},
       {elem: ".writerData span:first"},
@@ -207,6 +207,17 @@ function wikiit() {
       {str: location.href, match:/Article-(.*?).htm/},
       {str: location.href, match:/www\.mako\.co\.il\/(.*?)\/Article/},
       {elem:".writerData span:last", match:/(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
+     ]
+    },
+   {
+    hostname: /^\w+\.themarker\.com$/i,
+     params:[
+      {str : 'TheMarker1'},
+      {elem: ".author-bar li:eq(2) strong, .h3_author",  remove:["מאת:"].concat(ATags)},
+      {elem: "h1.mainTitle, h2"},
+      {str: location.href, match:/com\/(.*?)$/},
+      {elem:".author-bar li:eq(1) .h3_date", match:/(\d+\.\d+\.\d+)/, split:'.',  func:dateFormat},
+      {str: location.href, match:/\/(.*?).themarker/i, defvalue:"wwww"}
      ]
     }
   ];
@@ -287,9 +298,10 @@ function wikiit() {
 		} catch(e) {
 		}
 		
-		if (typeof data[i].minimum != "undefined")
-			while (params[params.length-1]=="" && params.length > data[i].minimum) //remove all last empty params
-				params.pop();
+		var minimum = (typeof data[i].minimum != "undefined") ? (data[i].minimum) : (0);
+			
+		while (params[params.length-1]=="" && params.length > minimum) //remove all last empty params
+			params.pop();
 		
         prompt("Your template:", '{{' + params.join('|') + '}}');
         break;
