@@ -1,4 +1,4 @@
-//Adds wizard for using templates for external links
+﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
  
 function ltw_createTemplate() {
@@ -90,6 +90,7 @@ function ltw_knownLinkTemplates() {
 	];
  
 	var templatesDic = {
+		'קישור כללי': [],
 		"הארץ": [1, 2, 3, 4],
 		"דבר": [1,2,22,3,7,0,23],
 		"מעריב": [1,2,22,3,7,0,23],
@@ -153,7 +154,6 @@ function ltw_knownLinkTemplates() {
 		"ויקישיבה":["שם הערך בויקישיבה"],
 		"HebrewBooksPage": [1,8,3,4,40],
 		"גדולי ישראל": [29,40,41,13],
-		"פנאי פלוס": [1,2,3,4,0,5,25],
 		"עיתונות יהודית היסטורית 2": [43,44,1,2,22,3,7,0,23],
 		"Iucnredlist": [45,3],
 		"העין השביעית": [1,34,6,4,25],
@@ -186,6 +186,16 @@ function ltw_namedParams(templateName) {
 		"imdb company": [['id', 'המספר שמופיע בקישור'], ['company', 'הכותרת שתופיע בקישור']],
 		"Google book": [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)'],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך']],
 		"TheMarker1": [['5','קידומת הקישור, אם שונה מ-www']],
+		'קישור כללי': [
+			['כתובת', 'הקישור (כלומר ה-URL) עצמו'],
+			['כותרת', 'שם המאמר המקושר'],
+			['הכותב', 'שמות כותבי המאמר'],
+			['תאריך', 'תאריך המאמר'],
+			['עמודים', 'מספר העמודים'],
+			['שפה', 'שפה (אם המאמר לא בעברית)'],
+			['פורמט', 'פורמט המאמר, אם אינו HTML (למשל PDF, DOC, וכן הלאה'],
+			['ציטוט', 'ציטוט משפט מהדף המקושר (יכול לעזור במציאת הדף בעתיד, אם הקישור ישתנה)']
+		]
 	};
 	return allNamedParam[templateName] || [];
 }
@@ -202,8 +212,7 @@ function ltw_defaultParameters(templateName) { // if parameter has the default v
 		"PalPost": {7: "Ar"},
 		"עיתונות יהודית היסטורית 2": {9: "Ar"},		
 		"ynet": {6: 0, 7: 'articles'},
-		"Xnet": {6: 0, 7: 'articles'},
-		"פנאי פלוס": {6: 0, 7: 'articles'}
+		"Xnet": {6: 0, 7: 'articles'}
 	}
 	return defs[templateName] || {};
 }
@@ -255,7 +264,6 @@ function ltw_templateRegex(templateName) {
 		"תכלת": {regex: /article\.php\?id=(\d+)/i, params:[3]},
 		":אנצ דעת": {regex: /value\.asp\?id1=(\d+)/i, params:[1]},
 		"דעת": {regex: /(?:www\.)?daat\.ac\.il\/(.*)/i, params:[2], problematic:1},
-		"פנאי פלוס": {regex: /ynet\.co\.il\/([^\/]+)\/(\d+),7340,L-(\d+),00\.html/i, params:[7,6,3]},
 		"עיתונות יהודית היסטורית 2": {regex: /(?:Key|BaseHref)=([A-Z]{3})\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[2,5,9,6], replace: [[/%2F/gi, '/']]},
 		"Iucnredlist": {regex: /details(?:\.php)?\/(\d+)/, params: [2]},
 		"העין השביעית": {regex: /the7eye\.org\.il\/([^\/]+)\/Pages\/(.*)\.aspx/, params: [5,3]},
@@ -304,12 +312,17 @@ function ltw_hasBookMarklet(template) {
 function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 	var hasBookmarklet = ltw_hasBookMarklet(templateName);
 	var namedParamsList = ltw_namedParams(templateName);
-	var height = 160 + 20 * (paramList.length + namedParamsList.length) + (regexDict ? 60 : 0) + (hasBookmarklet ? 60 : 0);
-	for (i in paramList)
-		height += 16 * Math.floor(paramList[i].length / 24);
+	var height = 160 + 26 * (paramList.length + namedParamsList.length) + (regexDict ? 60 : 0) + (hasBookmarklet ? 60 : 0);
+	for (var i in paramList)
+		height += 18 * Math.floor(paramList[i].length / 33);
+	for (var i in namedParamsList)
+		height += 18 * Math.floor(namedParamsList[i][1].length / 33);
 	var top = (screen.height - height) / 2, left = (screen.width - 550) / 2;
 	var popup = window.open("", "", "resizable=1,height="+height+",width=550,left="+left+",top="+top);
-	var doc = ltw_copyAttributes(popup.document, {
+	var doc = popup.document;
+	doc.write("Fix for FF4");
+	var body = doc.body;
+	ltw_copyAttributes(doc, {
 		title: " הוספת תבנית: " + templateName, 
 		dir: "rtl", 
 		templateName: templateName, 
@@ -319,8 +332,6 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 		problematic: regexDict && regexDict.problematic,
 		defParam: ltw_defaultParameters(templateName)
 	});
-	doc.write("Fix for FF4");
-	var body = doc.body;
 	body.innerHTML = "";
 	if (hasBookmarklet) {
 		var p = doc.createElement("p");
@@ -406,14 +417,16 @@ function ltw_fireLinkTemplatePopup(templateName) {
 function ltw_createSortedTemplatesList() {
 	var fullList = ltw_knownLinkTemplates();
 	var names = [], hnames = [];
-	for (x in fullList)
+	var first = 'קישור כללי';
+	for (var x in fullList)
 		if (x.match(/^[a-zA-Z]/))
 			names.push(x);
 		else
-			hnames.push(x);
+			if (x != first)
+				hnames.push(x);
 	hnames.sort();
 	names.sort(function(a,b){var la=a.toLowerCase(),lb=b.toLowerCase();return la>lb?1:la<lb?-1:0;});
-	return hnames.concat(names);
+	return [first].concat(hnames).concat(names);
 }
  
 function ltw_createLinkTemplatesSelections() {
