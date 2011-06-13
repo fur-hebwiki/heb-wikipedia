@@ -26,8 +26,14 @@ function wikiit() {
      hostname: 'www.ynet.co.il', minimum:6,
      params:[
 		{str : 'ynet'},
-		{elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
-		{elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/},
+		[
+			{elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
+			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/}
+		],
+		[
+			{elem : 'h1'},
+			{elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/}
+		],
 		{str : location.href, match: /L-(.*?),/},
 		{elem : 'td:has(h1:first) .text12g:last', match: /^(.*?),/, split:'.', func:dateFormat},
 		{str: ''},
@@ -156,10 +162,10 @@ function wikiit() {
     hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length > 0)},  minimum:6,
      params:[
       {str : 'nrg'},
-      {elem: "#articleCBar span:first", match: /<!-- ARTICLE_WRITER_START --> (.*?)<!-- ARTICLE_WRITER_END -->/ , remove:ATags},
-      {elem: "h1:first"},
+      {elem: "#articleCBar span:first, .cdat.small.bold", match: [/<!-- ARTICLE_WRITER_START --> (.*?)<!-- ARTICLE_WRITER_END -->/ , / (.*?) \|/] , remove:ATags},
+      {telem: "h1:first"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
-      {elem: "#articleCBar span:first", match: /<!-- ARTICLE_DATE_START -->(.*?) .*<!-- ARTICLE_DATE_END -->/, split:'/',  func:dateFormat},
+      {elem: "#articleCBar span:first", match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat},
       {str : ''},
       {str : location.href, match: /online\/(.*?)\/ART/},
       {str : location.href, match: /ART(\d+)/}
@@ -170,7 +176,7 @@ function wikiit() {
      params:[
       {str : 'nrg'},
       {elem: ".newsVitzCredit", match: /^(.*?)<br>/ , remove:["NRG מעריב"]},
-      {elem: "#titleS1"},
+      {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
       {elem: ".newsVitzCredit", match: /<br>(.*?) /, split:'/',  func:dateFormat},
       {str : ''},
@@ -217,7 +223,19 @@ function wikiit() {
       {elem: "h1.mainTitle, h2"},
       {str: location.href, match:/com\/(.*?)$/},
       {elem:".author-bar li:eq(1) .h3_date", match:/(\d+\.\d+\.\d+)/, split:'.',  func:dateFormat},
-      {str: location.href, match:/\/(.*?).themarker/i, defvalue:"wwww"}
+      {str: location.href, match:/\/(.*?).themarker/i, defvalue:"www"}
+     ]
+    },
+	{
+    hostname: "www.calcalist.co.il", minimum:6,
+     params:[
+      {str : 'כלכליסט'},
+      {telem: "h3:first"},
+      {elem: "h1"},
+      {str: location.href, match:/L\-(\d+)/},
+      {elem:"table[style^=w] span:first", match:/(\d+\.\d+\.\d+)/m, split:'.',  func:dateFormat},
+      {str:''},
+      {str: location.href, match:/les\/\d+\,/i, defvalue:"0"}
      ]
     }
   ];
@@ -229,10 +247,13 @@ function wikiit() {
     && (!data[i].condition || data[i].condition())
     )
     {
+
       var params = [];
+      var k = 0;
       for (var j = 0; j < data[i].params.length; j++)
 		try {
-			var curParam = data[i].params[j];
+			var curParam = (data[i].params[j] instanceof Array)?(data[i].params[j][k]):(data[i].params[j]);
+			
 			params[j] = '';
 			if (typeof curParam.str != "undefined")
 			  params[j] = curParam.str;
@@ -254,6 +275,10 @@ function wikiit() {
 			else if (typeof curParam.elements != "undefined")
 			{
 			  params[j] = $(curParam.elements[0]).map(function(el){return $(this).html();}).toArray().join(curParam.elements[1]);
+			}
+			else if (typeof curParam.telem != "undefined")
+			{
+				params[j] = $(curParam.telem).text();
 			}
 	 
 			if (typeof curParam.match != "undefined")
@@ -293,19 +318,32 @@ function wikiit() {
 			params[j] = jQuery.trim(params[j]).replace(/\s+/g, ' ');
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
+			
+			
+			
+			if ((params[j] == '') && (data[i].params[j] instanceof Array) && (k < data[i].params[j].length - 1))
+			{
+				alert(j);
+				k++;
+				j--;
+				continue;
+			}
 				
 			
-		} catch(e) {
 		}
+			catch(e) {}
+				
+		k = 0;
 		
 		var minimum = (typeof data[i].minimum != "undefined") ? (data[i].minimum) : (0);
 			
 		while (params[params.length-1]=="" && params.length > minimum) //remove all last empty params
 			params.pop();
 		
-        prompt("Your template:", '{{' + params.join('|') + '}}');
-        break;
-    }
+		prompt("Your template:", '{{' + params.join('|') + '}}');
+		break;
+	}
+	
   }
 }
 (function ()
