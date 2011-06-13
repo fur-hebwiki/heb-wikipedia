@@ -11,7 +11,11 @@ function wikiit() {
 				dateArr[2]=20+dateArr[2];
 			else if (Number(dateArr[2])>=50&&Number(dateArr[2])<100)
 				dateArr[2]=19+dateArr[2];
-			dateArr = parseInt(dateArr[0])+" ב"+dateArr[1]+" "+dateArr[2];
+				
+			if (dateArr[0].charAt(0) == '0')
+				dateArr[0] = dateArr[0].substring(1, dateArr[0].length);
+			
+			dateArr = dateArr[0]+" ב"+dateArr[1]+" "+dateArr[2];
 		}
 		return jQuery.trim(dateArr);
 	}
@@ -35,7 +39,7 @@ function wikiit() {
 			{elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/}
 		],
 		{str : location.href, match: /L-(.*?),/},
-		{elem : 'td:has(h1:first) .text12g:last', match: /^(.*?),/, split:'.', func:dateFormat},
+		{elem : 'td:has(h1:first) .text12g:last', match: /(\d+\.\d+\.\d+)/, split:'.', func:dateFormat},
 		{str: ''},
 		{str:  location.href, match: /ynet.co.il\/[^[\/]*\/(\d+)/, defvalue: '0'},
 		{str : location.href, match: /ynet.co.il\/([^[\/]*)/, defvalue: 'articles'}
@@ -69,10 +73,10 @@ function wikiit() {
     hostname: "www.haaretz.co.il", 
      params:[
       {str : 'הארץ'},
-      {elem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}},
-      {elem:'.t18B:first', func:function(str){return str.replace('|',' - ')}},
+      {telem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}, remove:"מאת " },
+      {telem:'.t18B:first', func:function(str){return str.replace('|',' - ')}},
       {str : location.href, match:[/^.*\/(\d+)/, /No=(\d+)/]},
-      {elem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
+      {telem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
      ]
     },
     {
@@ -159,7 +163,7 @@ function wikiit() {
      ]
     },
     {
-    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length > 0)},  minimum:6,
+    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length > 0)},  minimum:8,
      params:[
       {str : 'nrg'},
       {elem: "#articleCBar span:first, .cdat.small.bold", match: [/<!-- ARTICLE_WRITER_START --> (.*?)<!-- ARTICLE_WRITER_END -->/ , / (.*?) \|/] , remove:ATags},
@@ -172,10 +176,10 @@ function wikiit() {
      ]
     },
     {
-    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},  minimum:6,
+    hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},  minimum:8,
      params:[
       {str : 'nrg'},
-      {elem: ".newsVitzCredit", match: /^(.*?)<br>/ , remove:["NRG מעריב"]},
+      {elem: "font.newsVitzCredit", remove:["NRG מעריב"]},
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
       {elem: ".newsVitzCredit", match: /<br>(.*?) /, split:'/',  func:dateFormat},
@@ -278,7 +282,7 @@ function wikiit() {
 			}
 			else if (typeof curParam.telem != "undefined")
 			{
-				params[j] = $(curParam.telem).text();
+				params[j] = $(curParam.telem).first().text();
 			}
 	 
 			if (typeof curParam.match != "undefined")
