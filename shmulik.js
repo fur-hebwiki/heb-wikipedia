@@ -74,7 +74,7 @@ function wikiit() {
      params:[
       {str : 'הארץ'},
       {telem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}, remove:"מאת " },
-      {telem:'.t18B:first', func:function(str){return str.replace('|',' - ')}},
+      {telem:'.t18B:first', func:function(str){return str.replace('|',' - ').replace(/<br.*?>/gmi,' ')}},
       {str : location.href, match:[/^.*\/(\d+)/, /No=(\d+)/]},
       {telem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
      ]
