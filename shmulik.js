@@ -323,7 +323,6 @@ function wikiit() {
 			
 			if ((params[j] == '') && (data[i].params[j] instanceof Array) && (k < data[i].params[j].length - 1))
 			{
-				alert(j);
 				k++;
 				j--;
 				continue;
