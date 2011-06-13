@@ -179,10 +179,10 @@ function wikiit() {
     hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},  minimum:8,
      params:[
       {str : 'nrg'},
-      {elem: "font.newsVitzCredit", remove:["NRG מעריב"]},
+      {telem: "font.newsVitzCredit", remove:["NRG מעריב"]},
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
-      {elem: ".newsVitzCredit", match: /<br>(.*?) /, split:'/',  func:dateFormat},
+      {telem: "font.newsVitzCredit:last", split:'/',  func:dateFormat},
       {str : ''},
       {str : location.href, match: /online\/(.*?)\/ART/},
       {str : location.href, match: /ART(\d+)/}
