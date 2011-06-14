@@ -241,6 +241,16 @@ function wikiit() {
       {str:''},
       {str: location.href, match:/les\/\d+\,/i, defvalue:"0"}
      ]
+    },
+	{
+    hostname: "www.news1.co.il",
+     params:[
+      {str : 'NFC'},
+      {telem: "#ctl00_ContentMain_UcArticle1_lnkWriterName, #ctl00_ContentMain_UcArticle1_lblTopWriterName"},
+      {telem: "#ctl00_ContentMain_UcArticle1_lblHead1"},
+      {str: location.href, match:/ve\/(.*?)\.html/},
+      {telem:"#ctl00_ContentMain_UcArticle1_lblCreateDate", match:/(\d+\/\d+\/\d+)/m, split:'/',  func:dateFormat},
+     ]
     }
   ];
  
