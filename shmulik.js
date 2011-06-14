@@ -74,7 +74,7 @@ function wikiit() {
      params:[
       {str : 'הארץ'},
       {telem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}, remove:"מאת " },
-      {telem:'.t18B:first', func:function(str){return str.replace('|',' - ').replace(/<br.*?>/gmi,' ')}},
+      {elem:'.t18B:first', func:function(str){return $("<span>" + str.replace('|',' - ').replace(/<br.*?>/gmi,' ') + "</span>").text();}},
       {str : location.href, match:[/^.*\/(\d+)/, /No=(\d+)/]},
       {telem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
      ]
@@ -166,7 +166,7 @@ function wikiit() {
     hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length > 0)},  minimum:8,
      params:[
       {str : 'nrg'},
-      {elem: "#articleCBar span:first, .cdat.small.bold", match: [/<!-- ARTICLE_WRITER_START --> (.*?)<!-- ARTICLE_WRITER_END -->/ , / (.*?) \|/] , remove:ATags},
+      {elem: "#articleCBar span:first, .cdat.small.bold", match: [/<!-- ARTICLE_WRITER_START --> (.*?)<!-- ARTICLE_WRITER_END -->/ , /(.*?)&nbsp;\|/] , remove:ATags.concat(["<span>"])},
       {telem: "h1:first"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
       {elem: "#articleCBar span:first", match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat},
@@ -179,7 +179,7 @@ function wikiit() {
     hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},  minimum:8,
      params:[
       {str : 'nrg'},
-      {telem: "font.newsVitzCredit", remove:["NRG מעריב"]},
+      {telem: "font.newsVitzCredit", remove:["NRG מעריב"],},
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
       {telem: "font.newsVitzCredit:last", split:'/',  func:dateFormat},
