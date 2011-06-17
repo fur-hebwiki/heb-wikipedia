@@ -212,11 +212,11 @@ function wikiit() {
     hostname: "www.mako.co.il",
      params:[
       {str : 'mako'},
-      {elem: ".writerData span:first"},
+      {elem: ".writerData *:visible:first"},
       {elem: "h1"},
       {str: location.href, match:/Article-(.*?).htm/},
       {str: location.href, match:/www\.mako\.co\.il\/(.*?)\/Article/},
-      {elem:".writerData span:last", match:/(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
+      {elem:".writerData *:last", match:/(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
      ]
     },
    {
