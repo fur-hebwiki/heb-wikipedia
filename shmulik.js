@@ -227,7 +227,7 @@ function wikiit() {
       {elem: "h1.mainTitle, h2"},
       {str: location.href, match:/com\/(.*?)$/},
       {elem:".author-bar li:eq(1) .h3_date", match:/(\d+\.\d+\.\d+)/, split:'.',  func:dateFormat},
-      {str: location.href, match:/\/(.*?).themarker/i, defvalue:"www"}
+      {str: location.href, match:/\/\/(.*?).themarker/i , defvalue:"www"}
      ]
     },
 	{
