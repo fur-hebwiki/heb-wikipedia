@@ -103,7 +103,7 @@ function wikiit() {
     hostname: "www.globes.co.il",
      params:[
       {str : 'גלובס'},
-      {elem:'#coteret_Writer, .g_Article_Author, #F_Author' , remove:[/<.*?>/gmi , /&nbsp;/gmi] },
+      {elem:'#coteret_Writer, .g_Article_Author, #F_Author' , remove:[/<.*?>/gmi , /&nbsp;/gmi,'מאת '] },
       {elem:'#F_Title, .mainArticletitle' },
       {str : location.href, match: /=(.*?)$/},
       {elem:'#coteret_Modified, #F_Modified_on, .g_Article_DateTime', match:/^(.*),/, split:'/', func:dateFormat}
