@@ -157,7 +157,7 @@ function wikiit() {
      params:[
       {str : 'עכבר העיר'},
       {elem: "p.katava-info:first", match: /מאת: (.*)$/},
-      {elem: "h1:not(:empty):[class!=ttl-gallery]:first"},
+      {telem: ".katava-box.box h1"},
       {str : location.href, match: /item,(.*?),\.aspx$/},
       {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/}
      ]
