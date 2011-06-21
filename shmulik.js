@@ -156,7 +156,7 @@ function wikiit() {
     hostname: "www.mouse.co.il", //only "CM.articles" have a template!
      params:[
       {str : 'עכבר העיר'},
-      {elem: "p.katava-info:first", match: /מאת: (.*)$/},
+      {elem: "p.katava-info:first", match: /מאת: (.*)$/ remove:", עכבר העיר אונליין"},
       {telem: ".katava-box.box h1"},
       {str : location.href, match: /item,(.*?),\.aspx$/},
       {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/}
