@@ -156,7 +156,7 @@ function wikiit() {
     hostname: "www.mouse.co.il", //only "CM.articles" have a template!
      params:[
       {str : 'עכבר העיר'},
-      {elem: "p.katava-info:first", match: /מאת: (.*)$/ remove:", עכבר העיר אונליין"},
+      {elem: "p.katava-info:first", match: /מאת: (.*)$/, remove:", עכבר העיר אונליין"},
       {telem: ".katava-box.box h1"},
       {str : location.href, match: /item,(.*?),\.aspx$/},
       {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/}
@@ -223,10 +223,10 @@ function wikiit() {
     hostname: /^\w+\.themarker\.com$/i,
      params:[
       {str : 'TheMarker1'},
-      {elem: ".author-bar li:eq(2) strong, .h3_author",  remove:["מאת:"].concat(ATags)},
+      {telem: ".author-bar li:eq(2), .h3_author",  remove:["מאת:"]},
       {elem: "h1.mainTitle, h2"},
       {str: location.href, match:/com\/(.*?)$/},
-      {elem:".author-bar li:eq(1) .h3_date", match:/(\d+\.\d+\.\d+)/, split:'.',  func:dateFormat},
+      {telem:".author-bar li:eq(1), .h3_date", match:/(\d+\.\d+\.\d+)/, split:'.',  func:dateFormat},
       {str: location.href, match:/\/\/(.*?).themarker/i , defvalue:"www"}
      ]
     },
