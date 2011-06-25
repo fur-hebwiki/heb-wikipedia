@@ -212,8 +212,8 @@ function wikiit() {
     hostname: "www.mako.co.il",
      params:[
       {str : 'mako'},
-      {elem: ".writerData *:visible:first"},
-      {elem: "h1"},
+      {telem: ".writerData *:visible:first"},
+      {telem: "h1"},
       {str: location.href, match:/Article-(.*?).htm/},
       {str: location.href, match:/www\.mako\.co\.il\/(.*?)\/Article/},
       {elem:".writerData *:last", match:/(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
@@ -223,7 +223,7 @@ function wikiit() {
     hostname: /^\w+\.themarker\.com$/i,
      params:[
       {str : 'TheMarker1'},
-      {telem: ".author-bar li:eq(2), .h3_author",  remove:["מאת:"]},
+      {telem: ".author-bar li:eq(2), .h3_author",  remove:["מאת: "]},
       {elem: "h1.mainTitle, h2"},
       {str: location.href, match:/com\/(.*?)$/},
       {telem:".author-bar li:eq(1), .h3_date", match:/(\d+\.\d+\.\d+)/, split:'.',  func:dateFormat},
@@ -329,7 +329,7 @@ function wikiit() {
 			  }
 			}
 
-			params[j] = jQuery.trim(params[j]).replace(/[\s+|]/g, ' ');
+			params[j] = jQuery.trim(params[j]).replace(/[\s+|]/gm, ' ');
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 			
