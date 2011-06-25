@@ -46,7 +46,7 @@ function wikiit() {
      ]
 	},
 	{
-	hostname: 'news.walla.co.il', minimum:6,
+	hostname: /^\w+\.walla\.co\.il$/, minimum:6,
 	params:[
 		{str : 'וואלה!'},
 		{elem : 'div.wp-0-b:first span:first', match: /מאת:(.*),/, remove:ATags},
