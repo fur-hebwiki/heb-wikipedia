@@ -31,6 +31,7 @@ function wikiit() {
      params:[
 		{str : 'ynet'},
 		[
+			{elements : ['.authorHtmlCss',' ו'] },
 			{elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
 			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/}
 		],
