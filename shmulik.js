@@ -150,14 +150,14 @@ function wikiit() {
       {elements: ["#ctl00_ContentPlaceHolder_Content_Repeater_Humans_ctl00_HyperLink_Human_Name", ' ו']},
       {elem: '#ctl00_ContentPlaceHolder_Content_Label_Title'},
       {str : location.href, match: /it=(\d+)/},
-      {elem: "#ctl00_ContentPlaceHolder_Content_Label_DateBroadcast" , remove:"תאריך הקלטה:" ,split:'/', func:dateFormat}
+      {elem: "#ctl00_ContentPlaceHolder_Content_Label_DateBroadcast" , remove:["תאריך הקלטה:"] ,split:'/', func:dateFormat}
      ]
     },
     {
     hostname: "www.mouse.co.il", //only "CM.articles" have a template!
      params:[
       {str : 'עכבר העיר'},
-      {elem: "p.katava-info:first", match: /מאת: (.*)$/, remove:", עכבר העיר אונליין"},
+      {elem: "p.katava-info:first", match: /מאת: (.*)$/, remove:[", עכבר העיר אונליין"]},
       {telem: ".katava-box.box h1"},
       {str : location.href, match: /item,(.*?),\.aspx$/},
       {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/}
@@ -224,7 +224,7 @@ function wikiit() {
     hostname: /^\w+\.themarker\.com$/i,
      params:[
       {str : 'TheMarker1'},
-      {telem: ".author-bar li:eq(2), .h3_author",  remove:["מאת: "]},
+      {telem: ".author-bar li:eq(2), .h3_author",  remove:["מאת:"]},
       {elem: "h1.mainTitle, h2"},
       {str: location.href, match:/com\/(.*?)$/},
       {telem:".author-bar li:eq(1), .h3_date", match:/(\d+\.\d+\.\d+)/, split:'.',  func:dateFormat},
@@ -330,7 +330,7 @@ function wikiit() {
 			  }
 			}
 
-			params[j] = jQuery.trim(params[j]).replace(/[\s+|]/gm, ' ');
+			params[j] = jQuery.trim(params[j]).replace(/\s+|\|/gm, '  ');
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 			
