@@ -31,7 +31,7 @@ function wbm_add_menus() {
 			if ($.trim(reason) == '')
 				return;
 			message += ' סיבה: ' + reason + ' ~~' + '~~';
-			wbm_save_topage('משתמש:קיפודנחש/ארגח 5', summary, '\n* ' + message, section, function() { alert('בקשתך נשמרה ב-וק:במ')});
+			wbm_save_topage('ויקיפדיה:בקשות ממפעילים', summary, '\n* ' + message, section, function() { alert('בקשתך נשמרה ב-וק:במ')});
 		});
 		$('#ca-history').before($('<li>').append($('<span>').append(a)));
 	}
