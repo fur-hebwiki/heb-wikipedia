@@ -19,7 +19,6 @@ function wbm_save_topage(title, summary, content, section, next) {
 			break;
 		}
 	}
-	
 	$.getJSON(wgScriptPath + '/api.php?', {action: 'query', prop: 'info', intoken: 'edit', titles: title, format: 'json'}, doneGetToken);
 }
 
@@ -39,8 +38,8 @@ function wbm_add_menus() {
 		var badUser = wgTitle.split('/')[0];
 		add_one('חסימה', 'בקשה לחסום משתמש ' + badUser, 2, "\n* {" + "{לחסום|" + badUser + "}}", ' נא לחסום את ' + badUser);
 	}
-	add_one('הגנה', 'בקשה להגן על דף ' + wgTitle, 3, "\n* [[" + wgTitle + "]]", ' נא להגן על [[' + wgTitle + "]]");
-	add_one('מחיקה', 'בקשה למחוק דף ' + wgTitle, 1, "\n* [[" + wgTitle + "]]", ' נא למחוק את [[' + wgTitle + "]]");
+	add_one('הגנה', 'בקשה להגן על דף ' + wgPageName, 3, "\n* [[" + wgPageName + "]]", ' נא להגן על [[' + wgPageName + "]]");
+	add_one('מחיקה', 'בקשה למחוק דף ' + wgPageName, 1, "\n* [[" + wgPageName + "]]", ' נא למחוק את [[' + wgPageName + "]]");
 }
 
 wbm_add_menus();
