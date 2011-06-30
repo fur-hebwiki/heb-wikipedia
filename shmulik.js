@@ -183,7 +183,7 @@ function wikiit() {
       {telem: "font.newsVitzCredit", remove:["NRG מעריב"],},
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
-      {telem: "font.newsVitzCredit:last", split:'/',  func:dateFormat},
+      {telem: "font.newsVitzCredit:last, .opinionMainVitzBody", match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat},
       {str : ''},
       {str : location.href, match: /online\/(.*?)\/ART/},
       {str : location.href, match: /ART(\d+)/}
