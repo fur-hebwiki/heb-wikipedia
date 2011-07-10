@@ -180,10 +180,10 @@ function wikiit() {
     hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},  minimum:8,
      params:[
       {str : 'nrg'},
-      {telem: "font.newsVitzCredit", remove:["NRG מעריב"],},
+      {telem: "font.newsVitzCredit", remove:["NRG מעריב"]},
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
-      {telem: "font.newsVitzCredit:last", split:'/',  func:dateFormat},
+      {telem: "font.newsVitzCredit:last, .opinionMainVitzBody", match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat},
       {str : ''},
       {str : location.href, match: /online\/(.*?)\/ART/},
       {str : location.href, match: /ART(\d+)/}
@@ -250,7 +250,7 @@ function wikiit() {
       {telem: "#ctl00_ContentMain_UcArticle1_lnkWriterName, #ctl00_ContentMain_UcArticle1_lblTopWriterName"},
       {telem: "#ctl00_ContentMain_UcArticle1_lblHead1"},
       {str: location.href, match:/ve\/(.*?)\.html/},
-      {telem:"#ctl00_ContentMain_UcArticle1_lblCreateDate", match:/(\d+\/\d+\/\d+)/m, split:'/',  func:dateFormat},
+      {telem:"#ctl00_ContentMain_UcArticle1_lblCreateDate", match:/(\d+\/\d+\/\d+)/m, split:'/',  func:dateFormat}
      ]
     }
   ];
