@@ -405,7 +405,7 @@ function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
 	body.appendChild(b);
 	b = ltw_copyAttributes(doc.createElement("input"), {type: "button", value: "ביטול", popup: popup, onclick: function(){this.popup.close();}});
 	body.appendChild(b);
-	doc.refCheckBox.onchange();
+	$(doc.refCheckBox).trigger('change');
 }
  
 function ltw_fireLinkTemplatePopup(templateName) {
