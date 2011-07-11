@@ -2,14 +2,11 @@ function mah_init() {
 	
 	function clearCanvas(area) {
 		var context = area.canvasContext;
-		context.clearRect(0,0,context.canvas.width, context.canvas.height);
+		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 	}
 
 	function drawMarker(areas) {
-		var context;
-		var coords;
-		
-		function drawPoly() {
+		function drawPoly(context, coords) {
 			context.beginPath();
 			context.moveTo(coords.shift(), coords.shift());
 			while (coords.length) 
@@ -19,12 +16,12 @@ function mah_init() {
 			context.fill();
 		}
 		
-		function drawRect() {
+		function drawRect(context, coords) {
 			context.strokeRect(coords[0],coords[1],coords[2]-coords[0],coords[3]-coords[1]);
 			context.fillRect(coords[0],coords[1],coords[2]-coords[0],coords[3]-coords[1]);
 		}
 		
-		function drawCircle() {
+		function drawCircle(context, coords) {
 			context.beginPath();
 			context.arc(coords[0],coords[1],coords[2],0,Math.PI*2,true);
 			context.closePath();
@@ -34,19 +31,30 @@ function mah_init() {
 		
 		for (var i in areas) {
 			var area = areas[i];
-			context = area.canvasContext;
-			coords = area.coords.split(',');
-			context.fillStyle = 'rgba(0,0,0,0.4)';
+			var context = area.canvasContext;
+			var coords = area.coords.split(',');
+			context.fillStyle = 'rgba(0,0,0,0.2)';
 			context.strokeStyle = 'yellow';
 			context.lineJoin = 'round';
-			context.lineWidth = 6;
+			context.lineWidth = 3;
 			switch (area.shape) {
-				case 'rect': drawRect(); break;
-				case 'circle': drawCircle(); break;
-				case 'poly': drawPoly(); break;
+				case 'rect': drawRect(context, coords); break;
+				case 'circle': drawCircle(context, coords); break;
+				case 'poly': drawPoly(context, coords); break;
 			}
 		}
 	}
+
+	function backtonormal() {
+		$(this).css({background: ''}); 
+		clearCanvas(this.areas[0]);
+	}
+	
+	function highlight() {
+		$(this).css({background: 'yellow'}); 
+		drawMarker(this.areas);
+	}
+	
 	var myClassName = 'mah_artefact';
 	var artefacts = $('.' + myClassName);
 	for (var i = 0; i < artefacts.length; i++)
@@ -58,7 +66,6 @@ function mah_init() {
 		var areas = parent.find('area');
 		if (!areas.length)
 			continue;
-		parent.css('zIndex', 10);
 		var bgimg = $('<img>');
 		bgimg.toggleClass(myClassName);
 		var width = img.width(), height = img.height();
@@ -66,7 +73,7 @@ function mah_init() {
 		bgimg.css(dims);
 		bgimg.attr('src', img.attr('src'));
 		img.before(bgimg);
-		img.fadeTo(5, 0.4);
+		img.fadeTo(1, 0);
 		var jcanvas = $('<canvas>');
 		jcanvas.toggleClass(myClassName);
 		jcanvas.css(dims);
@@ -82,9 +89,7 @@ function mah_init() {
 		ol.after(div);
 		div.after('<hr class="' + myClassName + '">');
 		
-		var areas = parent.find('area');
 		var lis = {};
-		var highlightList = {background: 'yellow'}, clearList = {background: ''};
 		for (var i = 0; i < areas.length; i++) {
 			var area = areas[i];
 			var li = lis[area.title];
@@ -93,17 +98,16 @@ function mah_init() {
 				li.css({float: 'right', marginLeft: '2em', marginRight: '1em', whiteSpace: 'nowrap'});
 				li[0].areas = [];
 				li.html('<a href="'+areas[i].href+'">' + areas[i].title + '</a>');
+				li[0].highlight = highlight;
+				li[0].backtonormal = backtonormal;
 				ol.append(li);
 			}
 			li[0]['areas'].push(areas[i]);
-			$.extend(area, {li: li, canvasContext: context});
-			$(area).mouseover(function() {
-				drawMarker([this]);
-				this.li.css(highlightList);
-			});
-			$(area).mouseout(function() { clearCanvas(this); this.li.css(clearList)});
-			li.mouseover(function() {$(this).css(highlightList); drawMarker(this.areas);});
-			li.mouseout(function() {$(this).css(clearList); clearCanvas(this.areas[0]);});
+			$.extend(area, {li: li[0], canvasContext: context});
+			$(area).mouseover(function() {this.li.highlight();});
+			$(area).mouseout(function(){this.li.backtonormal();});
+			li.mouseover(function(){this.highlight();});
+			li.mouseout(function(){this.backtonormal();});
 		}
 	}
 }
