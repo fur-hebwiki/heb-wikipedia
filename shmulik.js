@@ -6,6 +6,9 @@ function wikiit() {
 		var m = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
 		if (dateArr instanceof Array)
 		{
+			if (dateArr.length != 3)
+				return '';
+				
 			dateArr[1] = m[Number(dateArr[1])-1];
 			if (Number(dateArr[2])<=50)
 				dateArr[2]=20+dateArr[2];
