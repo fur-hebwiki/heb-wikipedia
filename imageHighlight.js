@@ -33,7 +33,7 @@ function mah_init() {
 			var area = areas[i];
 			var context = area.canvasContext;
 			var coords = area.coords.split(',');
-			context.fillStyle = 'rgba(0,0,0,0.2)';
+			context.fillStyle = 'rgba(0,0,0,0.35)';
 			context.strokeStyle = 'yellow';
 			context.lineJoin = 'round';
 			context.lineWidth = 3;
@@ -45,14 +45,18 @@ function mah_init() {
 		}
 	}
 
+	var canCanvas = $('<canvas>')[0].getContext;
+
 	function backtonormal() {
 		$(this).css({background: ''}); 
-		clearCanvas(this.areas[0]);
+		if (canCanvas)
+			clearCanvas(this.areas[0]);
 	}
 	
 	function highlight() {
 		$(this).css({background: 'yellow'}); 
-		drawMarker(this.areas);
+		if (canCanvas)
+			drawMarker(this.areas);
 	}
 	
 	var myClassName = 'mah_artefact';
@@ -61,29 +65,31 @@ function mah_init() {
 		$(artefacts[i]).remove();
 	var imgs = $(".imagetest").find('img');
 	for (var imgnum = 0; imgnum < imgs.length; imgnum++) {
-		img = $(imgs[imgnum]);
-		parent = img.parent();
+		var img = $(imgs[imgnum]);
+		var parent = img.parent();
 		var areas = parent.find('area');
 		if (!areas.length)
 			continue;
-		var bgimg = $('<img>');
-		bgimg.toggleClass(myClassName);
-		var width = img.width(), height = img.height();
-		var dims = {position: 'absolute', width: width + 'px', height: height + 'px', top: img.position().top + 'px', left: img.position().left + 'px', border: 0}
-		bgimg.css(dims);
-		bgimg.attr('src', img.attr('src'));
-		img.before(bgimg);
-		img.fadeTo(1, 0);
-		var jcanvas = $('<canvas>');
-		jcanvas.toggleClass(myClassName);
-		jcanvas.css(dims);
-		img.before(jcanvas);
-		var canvas = jcanvas[0];
-		canvas.height = height; canvas.width = width;
-		var context = canvas.getContext("2d");
+		if (canCanvas) {
+			var bgimg = $('<img>');
+			bgimg.toggleClass(myClassName);
+			var width = img.width(), height = img.height();
+			var dims = {position: 'absolute', width: width + 'px', height: height + 'px', top: img.position().top + 'px', left: img.position().left + 'px', border: 0}
+			bgimg.css(dims);
+			bgimg.attr('src', img.attr('src'));
+			img.before(bgimg);
+			img.fadeTo(1, 0);
+			var jcanvas = $('<canvas>');
+			jcanvas.toggleClass(myClassName);
+			jcanvas.css(dims);
+			img.before(jcanvas);
+			var canvas = jcanvas[0];
+			canvas.height = height; canvas.width = width;
+			var context = canvas.getContext("2d");
+		}
 		var ol = $('<ol>');
 		ol.toggleClass(myClassName);
-		ol.css({clear: 'both'});
+		ol.css({clear: 'both', marginTop: '1.5em'});
 		parent.after(ol);
 		var div = $('<div class="' + myClassName + '">'); div.css('clear', 'both');
 		ol.after(div);
