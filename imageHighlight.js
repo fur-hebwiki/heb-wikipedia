@@ -33,10 +33,10 @@ function mah_init() {
 			var area = areas[i];
 			var context = area.canvasContext;
 			var coords = area.coords.split(',');
-			context.fillStyle = 'rgba(0,0,0,0.35)';
+			context.fillStyle = 'rgba(0,0,0,0.2)';
 			context.strokeStyle = 'yellow';
 			context.lineJoin = 'round';
-			context.lineWidth = 3;
+			context.lineWidth = 2;
 			switch (area.shape) {
 				case 'rect': drawRect(context, coords); break;
 				case 'circle': drawCircle(context, coords); break;
@@ -63,29 +63,20 @@ function mah_init() {
 	var artefacts = $('.' + myClassName);
 	for (var i = 0; i < artefacts.length; i++)
 		$(artefacts[i]).remove();
-	var imgs = $(".imagetest").find('img');
-	for (var imgnum = 0; imgnum < imgs.length; imgnum++) {
-		var img = $(imgs[imgnum]);
+	$(".imagetest").find('img').each(function() {
+		var img = $(this);
 		var parent = img.parent();
-		var areas = parent.find('area');
-		if (!areas.length)
-			continue;
+		if (!parent.find('area').length)
+			return;
+		var context = null;
 		if (canCanvas) {
-			var bgimg = $('<img>');
-			bgimg.toggleClass(myClassName);
-			var width = img.width(), height = img.height();
-			var dims = {position: 'absolute', width: width + 'px', height: height + 'px', top: img.position().top + 'px', left: img.position().left + 'px', border: 0}
-			bgimg.css(dims);
-			bgimg.attr('src', img.attr('src'));
-			img.before(bgimg);
 			img.fadeTo(1, 0);
-			var jcanvas = $('<canvas>');
-			jcanvas.toggleClass(myClassName);
-			jcanvas.css(dims);
+			var dims = {position: 'absolute', width: img.width() + 'px', height: img.height() + 'px', top: img.position().top + 'px', left: img.position().left + 'px', border: 0}
+			var bgimg = $('<img>').addClass(myClassName).css(dims).attr('src', img.attr('src'));
+			img.before(bgimg);
+			var jcanvas = $('<canvas>').addClass(myClassName).css(dims).attr({width: img.width(), height: img.height()});
 			img.before(jcanvas);
-			var canvas = jcanvas[0];
-			canvas.height = height; canvas.width = width;
-			var context = canvas.getContext("2d");
+			context = jcanvas[0].getContext("2d");
 		}
 		var ol = $('<ol>');
 		ol.toggleClass(myClassName);
@@ -96,26 +87,22 @@ function mah_init() {
 		div.after('<hr class="' + myClassName + '">');
 		
 		var lis = {};
-		for (var i = 0; i < areas.length; i++) {
-			var area = areas[i];
-			var li = lis[area.title];
+		parent.find('area').each(function() {
+			var li = lis[this.title];
 			if (!li) {
-				lis[area.title] = li = $('<li>');
-				li.css({float: 'right', marginLeft: '2em', marginRight: '1em', whiteSpace: 'nowrap'});
-				li[0].areas = [];
-				li.html('<a href="'+areas[i].href+'">' + areas[i].title + '</a>');
-				li[0].highlight = highlight;
-				li[0].backtonormal = backtonormal;
+				lis[this.title] = li = $('<li>')
+					.css({float: 'right', marginLeft: '2em', marginRight: '1em', whiteSpace: 'nowrap'})
+					.append($('<a>', {href: this.href, text: this.title}))
+					.mouseover(function(){this.highlight();})
+					.mouseout(function(){this.backtonormal();});
+				$.extend(li[0], {areas: [], highlight: highlight, backtonormal: backtonormal});
 				ol.append(li);
 			}
-			li[0]['areas'].push(areas[i]);
-			$.extend(area, {li: li[0], canvasContext: context});
-			$(area).mouseover(function() {this.li.highlight();});
-			$(area).mouseout(function(){this.li.backtonormal();});
-			li.mouseover(function(){this.highlight();});
-			li.mouseout(function(){this.backtonormal();});
-		}
-	}
+			li[0].areas.push(this);
+			$.extend(this, {li: li[0], canvasContext: context});
+			$(this).mouseover(function() {this.li.highlight();}).mouseout(function(){this.li.backtonormal();});
+		});
+	});
 }
 
 addOnloadHook(mah_init);
