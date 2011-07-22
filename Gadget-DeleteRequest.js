@@ -33,7 +33,7 @@ function wbm_add_menus() {
 			message += ' סיבה: ' + reason + ' ~~' + '~~';
 			wbm_save_topage('ויקיפדיה:בקשות ממפעילים', summary, '\n* ' + message, section, function() { alert('בקשתך נשמרה ב-וק:במ')});
 		});
-		$('#ca-history').before($('<li>').append($('<span>').append(a)));
+		$('div#p-tb li:last-child').after($('<li>').append($('<span>').append(a)));
 	}
 	if ($('#t-contributions').length) {
 		var badUser = wgTitle.split('/')[0];
