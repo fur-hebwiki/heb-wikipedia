@@ -33,7 +33,11 @@ function wbm_add_menus() {
 			message += ' סיבה: ' + reason + ' ~~' + '~~';
 			wbm_save_topage('ויקיפדיה:בקשות ממפעילים', summary, '\n* ' + message, section, function() { alert('בקשתך נשמרה ב-וק:במ')});
 		});
-		$('div#p-tb li:last-child').after($('<li>').append($('<span>').append(a)));
+		var li = $('<li>').append($('<span>').append(a));
+		if (window.wgPlaceRequestInToolbox)
+			$('div#p-tb li:last-child').after(li);
+		else
+			$('#ca-history').before(li);
 	}
 	if ($('#t-contributions').length) {
 		var badUser = wgTitle.split('/')[0];
@@ -41,7 +45,7 @@ function wbm_add_menus() {
 	}
 	add_one('הגנה', 'בקשה להגן על דף ' + wgPageName, 3, "[[" + wgPageName + "]]", ' נא להגן על [[' + wgPageName + "]]");
 	add_one('מחיקה', 'בקשה למחוק דף ' + wgPageName, 1, "[[" + wgPageName + "]]", ' נא למחוק את [[' + wgPageName + "]]");
-	if (getParamValue('action') == 'historysubmit' && getParamValue('diff')) 
+	if (getParamValue('oldid') && getParamValue('diff')) 
 		add_one('מחיקת גרסה', 'מחיקת גרסה ' + getParamValue('diff') , 5, '[' + window.location + '  גירסה זו]. ', 'מחיקת גירסה');
 }
 
