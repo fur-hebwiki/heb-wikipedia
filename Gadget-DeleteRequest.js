@@ -24,6 +24,8 @@ function wbm_save_topage(title, summary, content, section, next) {
 }
 
 function wbm_add_menus() {
+	var whereToShove = typeof wgPlaceRequestInToolbox == 'undefined' ? 'div#p-cactions div.menu li:last-child' : 'div#p-tb li:last-child';
+				
 	function add_one(caption, tooltip, section, message, summary) {
 		var a = $('<a>', {href: '#', text: caption, title: 'בקשות מפעילים: ' + tooltip});
 		a.click(function() {
@@ -33,14 +35,9 @@ function wbm_add_menus() {
 			message += ' סיבה: ' + reason + ' ~~' + '~~';
 			wbm_save_topage('ויקיפדיה:בקשות ממפעילים', summary, '\n* ' + message, section, function() { alert('בקשתך נשמרה ב-וק:במ')});
 		});
-		var li = $('<li>').append($('<span>').append(a));
-		if (window.wgPlaceRequestInToolbox)
-			$('div#p-tb li:last-child').after(li);
-		else if (window.wgPlaceRequestInMenu)
-			$('div#p-cactions').find('div.menu').find('ul').append(li);
-		else
-			$('#ca-history').before(li);
+		$(whereToShove).after($('<li>').append($('<span>').append(a)));
 	}
+	
 	if ($('#t-contributions').length) {
 		var badUser = wgTitle.split('/')[0];
 		add_one('חסימה', 'בקשה לחסום משתמש ' + badUser, 2, "{{לחסום|" + badUser + "}}", ' נא לחסום את ' + badUser);
@@ -51,5 +48,4 @@ function wbm_add_menus() {
 		add_one('מחיקת גרסה', 'מחיקת גרסה ' + getParamValue('diff') , 5, '[' + window.location + '  גירסה זו]. ', 'מחיקת גירסה');
 }
 
-wgPlaceRequestInMenu = 44
 wbm_add_menus();
