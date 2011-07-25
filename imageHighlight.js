@@ -1,21 +1,22 @@
 function mah_init() {
+
 //add this class to all elements created by the script. the reason is that we call the script again on
 //window resize, and use the class to remove all the "artefacts" we created in the previous run.
 	var myClassName = 'mah_artefact'
-// these are the "2d context" attributes we use for highlighting.
-		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.2)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 2},
+// "2d context" attributes used for highlighting.
+		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.3)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 2},
 // css for a li element: "float" makes the list not 'columninzed'. transpose left and right for ltr.
 		liElementCss = {float: 'right', marginLeft: '2em', marginRight: '1em', whiteSpace: 'nowrap'},
 //css for highlighting a "li" element
 		liHighlighting = {background: 'yellow'},
 //css for un-highlighting li element:
 		liBackToNormal = {background: ''},
-//every imagemap that wants highlighting, needs to reside in a div of this class:
+//every imagemap that wants highlighting, should reside in a div of this class:
 		hilightDivMarker = '.imagetest';
 
 	function drawMarker(context, areas) {
 
-		function drawPoly(coords) {
+		function drawPoly(coords) {	//coords must be of positive even length.
 			context.moveTo(coords.shift(), coords.shift());
 			while (coords.length)
 				context.lineTo(coords.shift(), coords.shift());
@@ -26,7 +27,7 @@ function mah_init() {
 			context.beginPath();
 			switch (areas[i].shape) {
 				case 'rect': drawPoly([coords[0], coords[1], coords[0], coords[3], coords[2], coords[3], coords[2], coords[1]]); break;
-				case 'circle': context.arc(coords[0],coords[1],coords[2],0,Math.PI*2,true); break;
+				case 'circle': context.arc(coords[0],coords[1],coords[2],0,Math.PI*2); break;//x,y,r,startAngle,endAngle
 				case 'poly': drawPoly(coords); break;
 			}
 			context.closePath();

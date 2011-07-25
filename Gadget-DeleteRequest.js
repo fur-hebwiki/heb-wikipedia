@@ -36,6 +36,8 @@ function wbm_add_menus() {
 		var li = $('<li>').append($('<span>').append(a));
 		if (window.wgPlaceRequestInToolbox)
 			$('div#p-tb li:last-child').after(li);
+		else if (window.wgPlaceRequestInMenu)
+			$('div#p-cactions').find('div.menu').find('ul').append(li);
 		else
 			$('#ca-history').before(li);
 	}
@@ -49,4 +51,5 @@ function wbm_add_menus() {
 		add_one('מחיקת גרסה', 'מחיקת גרסה ' + getParamValue('diff') , 5, '[' + window.location + '  גירסה זו]. ', 'מחיקת גירסה');
 }
 
+wgPlaceRequestInMenu = 44
 wbm_add_menus();
