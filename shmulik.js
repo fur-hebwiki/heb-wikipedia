@@ -243,7 +243,7 @@ function wikiit() {
       {str: location.href, match:/L\-(\d+)/},
       {elem:"table[style^=w] span:first", match:/(\d+\.\d+\.\d+)/m, split:'.',  func:dateFormat},
       {str:''},
-      {str: location.href, match:/les\/\d+\,/i, defvalue:"0"}
+      {str: location.href, match:/les\/(\d+)\,/i, defvalue:"0"}
      ]
     },
 	{
@@ -251,7 +251,7 @@ function wikiit() {
      params:[
       {str : 'NFC'},
       {telem: "#ctl00_ContentMain_UcArticle1_lnkWriterName, #ctl00_ContentMain_UcArticle1_lblTopWriterName"},
-      {telem: "#ctl00_ContentMain_UcArticle1_lblHead1"},
+      {telem: "#ctl00_ContentMain_UcArticle1_lblHead1, #ctl00_ContentMain_UcArticle1_lblSpecialTitle"},
       {str: location.href, match:/ve\/(.*?)\.html/},
       {telem:"#ctl00_ContentMain_UcArticle1_lblCreateDate", match:/(\d+\/\d+\/\d+)/m, split:'/',  func:dateFormat}
      ]
