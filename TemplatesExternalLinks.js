@@ -52,7 +52,7 @@ function ltw2_knownLinkTemplates() {
 		"השיעור כשם שמופיע בקישור",
 		"מספר גיליון, תאריך פרסום ומספרי עמודים (אופציונלי)"
 	];
- 
+
 	var templatesDic = {
 		'קישור כללי': [],
 		"הארץ": [1, 2, 3, 4],
@@ -140,7 +140,7 @@ function ltw2_knownLinkTemplates() {
 		$.extend(templatesDic, privateTemplates);
 	return templatesDic;
 }
- 
+
 function ltw2_namedParams(templateName) {
 	var allNamedParam = {
 		'קול הלשון - שיעור': [['וידאו', '"וידאו": רשמו "כן" אם זה שיעור לצפייה'], ['תואר', 'תואר - אם תואר המרצה שונה מ"הרב"']],
@@ -163,10 +163,10 @@ function ltw2_namedParams(templateName) {
 	};
 	return allNamedParam[templateName] || [];
 }
- 
+
 function ltw2_defaultParameters(templateName) { // if parameter has the default value, we omit it
 	var defs = {
-		"דבר": {7: "Ar"}, 
+		"דבר": {7: "Ar"},
 		"מעריב": {7: "Ar"},
 		"הצבי": {7: "Ar"},
 		"הצפירה": {7: "Ar"},
@@ -180,7 +180,7 @@ function ltw2_defaultParameters(templateName) { // if parameter has the default 
 	}
 	return defs[templateName] || {};
 }
- 
+
 function ltw2_templateRegex(templateName) {
 	var regexes = {
 		"nrg": {regex: /\/online\/([^\/]+)\/ART([^\/]*)\/([^\.]+).html/i, params:[6,7,3]},
@@ -242,7 +242,7 @@ function ltw2_templateRegex(templateName) {
 		"מערכות": {regex: /FILES\/(.*)\.pdf/i, params: [3]},
 		"mako": {regex: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, params: [4,3]}
 	}
- 
+
 	// these guys are all the same - it's best to handle them as such.
 	var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS"};
 	var histregex = {regex: /=HISTNAME\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[3,7,4], replace: [[/%2F/gi, '/']]};
@@ -255,23 +255,21 @@ function ltw2_templateRegex(templateName) {
 		$.extend(regexes, privateRegexes);
 	return regexes[templateName];
 }
- 
+
 function ltw2_linkTemplateDialog(dialog, templateName) {
 	var
 		namedParamsList = ltw2_namedParams(templateName),
 		regexDict = ltw2_templateRegex(templateName),
 		paramList = ltw2_knownLinkTemplates()[templateName],
-		orderedFields = [], 
+		orderedFields = [],
 		namedFields = [],
 		table,
 		hasBookMarklet = $.inArray(templateName, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים','ישראל היום','mako']) + 1,
+		defParam = ltw2_defaultParameters(templateName),
 		empty = {val: function(){return '';}};
 
- 
 	function createTemplate() {
-		var defParam = ltw2_defaultParameters(templateName);
 		var par = ["{{" + templateName];
-		
 		for (var i in orderedFields) {
 			var val = orderedFields[i].val();
 			val = $.trim(val).replace('|', '{{!}}');
@@ -296,13 +294,12 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 				code += '|' + pairs.join('|');
 		}
 		code += "}}";
-		if ($('#ltw2_ref').attr('checked')) 
+		if ($('#ltw2_ref').attr('checked'))
 			return "{{הערה|" +  code + "}}";
 		if ($('#ltw2_list').attr('checked'))
 			return "\n* " + code + "\n";
 		return code;
 	}
- 
 
 	function updatePreview(){
 		$('#ltw2_preview').text(createTemplate());
@@ -337,22 +334,22 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 					}
 	}
 	
-	if (hasBookMarklet) 
+	if (hasBookMarklet)
 		dialog.append($('<p>').css({color: 'red', fontWeight: 'bold'}).text('קיים בוקמרקלט שמייצר תבנית "'  +  templateName + '" באופן אוטומטי. אנא שקלו להשתמש בו.')).append($('<hr>'));
 	
-	if (regexDict) 
+	if (regexDict)
 		dialog.append($('<span>').text('הדביקו את הקישור כאן:').css({width: '20em'}))
 			.append($('<input>', {type: "text", maxLength: 600}).css({width: '30em'}).change(extractParamsFromURL))
 			.append($('<hr>'));
 		
 	var table = $('<table>');
-	for (var i in paramList) 
+	for (var i in paramList)
 		if (paramList[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
 			orderedFields.push(empty);
 		else
 			addRow(paramList[i]);
 		
-	for (var i in namedParamsList) 
+	for (var i in namedParamsList)
 		addRow(namedParamsList[i][1], namedParamsList[i][0]);
 	
 	dialog.append(table)
@@ -363,10 +360,12 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 		.append($('<input>', {type: 'checkbox', id: 'ltw2_list'}).change(updatePreview))
 		.append($('<p>').css({height: '1.5em'}))
 		.append($('<p>', {id: 'ltw2_preview'}).css({background: "lightGreen", fontSize: '120%'}).text(createTemplate()));
-	
-	dialog.dialog({});
+	var buttons = {};
+	buttons['אישור'] = function() {insertTags('', '', createTemplate()); dialog.dialog('close');};
+	buttons['ביטול'] = function() {dialog.dialog('close');};
+	dialog.dialog('option', 'buttons', buttons);
 }
- 
+
 function ltw2_fireLinkTemplatePopup() {
 	var title = 'אשף תבניות קישורים',
 		dialog = $('<div>').dialog({
@@ -378,19 +377,15 @@ function ltw2_fireLinkTemplatePopup() {
 						modal: true,
 						close: function() {$(this).remove();},
 					}),
-		buttons = {};
-		
-	buttons['אישור'] = function() {insertTags('', '', createTemplate()); dialog.dialog('close');};
-	buttons['ביטול'] = function() {dialog.dialog('close');};
-	dialog.dialog('option', 'buttons', buttons);
-	var selector = $('<select>').change(function() {
-		if (this.value) {
-			var templateName = this.value;
-			dialog.dialog('option', 'title', title + ' - ' + templateName);
-			$(this).remove();
-			ltw2_linkTemplateDialog(dialog, templateName);
-		}
-	});
+		selector = $('<select>').change(function() {
+			if (this.value) {
+				var templateName = this.value;
+				dialog.dialog('option', 'title', title + ' - ' + templateName);
+				$(this).remove();
+				ltw2_linkTemplateDialog(dialog, templateName);
+			}
+		});
+	
 	selector.append($('<option>', {text: 'בחרו תבנית מהרשימה'}));
 	var fullList = ltw2_knownLinkTemplates();
 	var names = [], hnames = [];
@@ -408,14 +403,11 @@ function ltw2_fireLinkTemplatePopup() {
 		selector.append($('<option>', {text: allnames[i], value: allnames[i]}));
 	dialog.append(selector);
 }
- 
-function ltw2_createLinkTemplatesSelections() {
-	mediaWiki.loader.using('jquery.ui.dialog', function () {
-		var button = $('<input>', {type: 'button', value: '{{w³}}'}).click(ltw2_fireLinkTemplatePopup);
+
+if (wgAction == 'edit')
+	$(document).ready(function() {
+		mediaWiki.loader.using('jquery.ui.dialog', function () {
+		var button = $('<input>', {type: 'button', value: '{{w³}}', title: 'אשף תבניות קישורים'}).click(ltw2_fireLinkTemplatePopup);
 		$('.group-more').append(button);
 		$('div #toolbar').append(button);
-	});
-}
- 
-if (wgAction == 'edit')
-	hookEvent("load", ltw2_createLinkTemplatesSelections);
+	});});
