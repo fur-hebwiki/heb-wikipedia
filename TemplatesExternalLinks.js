@@ -365,17 +365,15 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 		.append($('<p>', {id: 'ltw2_preview'}).css({background: "lightGreen", fontSize: '120%'}).text(createTemplate()));
 	
 	dialog.dialog({});
-	dialog.dialog('option', 'height', 'auto');
-	dialog.dialog('option', 'width', 'auto');
 }
  
 function ltw2_fireLinkTemplatePopup(templateName) {
 	var dialog = $('<div>').css({top: 100}).dialog({
 						id: 'ltw_dialog',
 						title: 'אשף תבניות קישורים - ' + templateName,
-						location: {top: 200, left: 200},
-						minWidth: '36em',
-						height: 600,
+						height: 'auto',
+						width: 'auto',
+						position: [100, 100],
 						modal: true,
 						close: function() {$(this).remove();},
 						buttons: {
