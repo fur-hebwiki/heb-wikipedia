@@ -411,7 +411,7 @@ function ltw2_fireLinkTemplatePopup() {
  
 function ltw2_createLinkTemplatesSelections() {
 	mediaWiki.loader.using('jquery.ui.dialog', function () {
-		var button = $('<input>', {type: 'button', value: 'אתק'}).click(ltw2_fireLinkTemplatePopup);
+		var button = $('<input>', {type: 'button', value: '{{w³}}'}).click(ltw2_fireLinkTemplatePopup);
 		$('.group-more').append(button);
 		$('div #toolbar').append(button);
 	});
