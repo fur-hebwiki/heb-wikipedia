@@ -367,32 +367,31 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 	dialog.dialog({});
 }
  
-function ltw2_fireLinkTemplatePopup(templateName) {
-	var dialog = $('<div>').css({top: 100}).dialog({
+function ltw2_fireLinkTemplatePopup() {
+	var title = 'אשף תבניות קישורים',
+		dialog = $('<div>').dialog({
 						id: 'ltw_dialog',
-						title: 'אשף תבניות קישורים - ' + templateName,
+						title: title,
 						height: 'auto',
 						width: 'auto',
 						position: [100, 100],
 						modal: true,
 						close: function() {$(this).remove();},
-						buttons: {
-								"אישור":
-							function() {
-								insertTags('', '', createTemplate()); //this line is the reason for the whole module...
-								dialog.dialog('close');
-							},
-								"ביטול":
-							function() {
-								dialog.dialog('close');
-							}
-						}
-					});
-	
-	ltw2_linkTemplateDialog(dialog, templateName);
-}
- 
-function ltw2_createSortedTemplatesList() {
+					}),
+		buttons = {};
+		
+	buttons['אישור'] = function() {insertTags('', '', createTemplate()); dialog.dialog('close');};
+	buttons['ביטול'] = function() {dialog.dialog('close');};
+	dialog.dialog('option', 'buttons', buttons);
+	var selector = $('<select>').change(function() {
+		if (this.value) {
+			var templateName = this.value;
+			dialog.dialog('option', 'title', title + ' - ' + templateName);
+			$(this).remove();
+			ltw2_linkTemplateDialog(dialog, templateName);
+		}
+	});
+	selector.append($('<option>', {text: 'בחרו תבנית מהרשימה'}));
 	var fullList = ltw2_knownLinkTemplates();
 	var names = [], hnames = [];
 	var first = 'קישור כללי';
@@ -404,42 +403,19 @@ function ltw2_createSortedTemplatesList() {
 				hnames.push(x);
 	hnames.sort();
 	names.sort(function(a,b){var la=a.toLowerCase(),lb=b.toLowerCase();return la>lb?1:la<lb?-1:0;});
-	return [first].concat(hnames).concat(names);
+	var allnames = [first].concat(hnames).concat(names);
+	for (var i in allnames)
+		selector.append($('<option>', {text: allnames[i], value: allnames[i]}));
+	dialog.append(selector);
 }
  
 function ltw2_createLinkTemplatesSelections() {
-	var select = document.createElement("select");
-	select.onchange = function() {
-		ltw2_fireLinkTemplatePopup(this.value);
-		this.selectedIndex = 0;
-		return false;
-	}
-	select.options.add(new Option("אשף תבניות קישורים", ""));
-	var allnames = ltw2_createSortedTemplatesList();
-	for (var i in allnames)
-		select.options.add(new Option(allnames[i], allnames[i]));
-	var toolbar = document.getElementById("toolbar");
-	if (toolbar)
-		toolbar.appendChild(select);
-}
- 
-function ltw2_advancedFire(context) {
-	ltw2_fireLinkTemplatePopup(this.template);
-}
- 
-function ltw2_createAdvanceToolKit() {
-    var gadget = {label: 'אשף תבניות קישורים', type: 'select', list: []};
-	var templatesList = ltw2_createSortedTemplatesList();
-	for (var i in templatesList)
-        gadget.list.push({label: templatesList[i], action: {type: 'callback', execute: ltw2_advancedFire, template: templatesList[i]}});
-	$j('#wpTextbox1').wikiEditor('addToToolbar', {
-		'section': 'advanced',
-		'group': 'heading',
-		'tools': {'linkTemplateWizard': gadget}
+	mediaWiki.loader.using('jquery.ui.dialog', function () {
+		var button = $('<input>', {type: 'button', value: 'אתק'}).click(ltw2_fireLinkTemplatePopup);
+		$('.group-more').append(button);
+		$('div #toolbar').append(button);
 	});
 }
  
-if (typeof $j != 'undefined' && typeof $j.fn.wikiEditor != 'undefined')
-	$j(document).ready(ltw2_createAdvanceToolKit);
 if (wgAction == 'edit')
 	hookEvent("load", ltw2_createLinkTemplatesSelections);
