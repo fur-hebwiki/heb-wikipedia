@@ -1,42 +1,6 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
- 
-function ltw_createTemplate() {
-	var par = ["{{" + this.templateName];
-	for (var i in this.orderedFields)
-		par.push((this.problematic? (parseInt(i)+1) + "=":"") + $.trim(this.orderedFields[i].value));
-	if (this.defParam)
-		for (var parnum in this.defParam)
-			if (par[parnum] == this.defParam[parnum])
-				par[parnum] = '';
-	while (par.length && !par[par.length-1].length && this.orderedFields[par.length-2].type) // remove tailing empty ordered params.
-		par.pop();
-	var code = par.join("|");
-	if (this.namedFields) {
-		var pairs = ['']; // so we'll get the firs bar
-		for (j in this.namedFields) {
-			var val = $.trim(this.namedFields[j][1].value);
-			if (val.length > 0)
-				pairs.push(this.namedFields[j][0] + '=' + val);
-		}
-		if (pairs.length > 1)
-			code += pairs.join('|');
-	}
-	code += "}}";
-	if (this.refCheckBox.checked)
-		return "{{הערה|1=" +  code + "}}";
-	if (this.listCheckBox.checked)
-		return "\n* " + code + "\n";
-	return code;
-}
- 
-function ltw_copyAttributes(target, source) {for (key in source)target[key] = source[key];return target;}
- 
- 
- 
- 
- 
-function ltw_knownLinkTemplates() {
+function ltw2_knownLinkTemplates() {
 	var constants = ["",
 		"שם המחבר",
 		"כותרת  המאמר",
@@ -59,7 +23,7 @@ function ltw_knownLinkTemplates() {
 		"מספר הסדרה",
 		'מספר סדרת "ART"',
 		"",
-		"תאריך כתבה, בצורה 1949/07/25<br/>כפי שמופיע בקישור",
+		"תאריך כתבה (לדוגמה, 1949/07/25), כפי שמופיע בקישור",
 		"סוג הפרסום, כפי שמופיע בקישור אחרי '=EntityId'. בדרך כלל 'Ar' לכתבה רגילה, 'Pc' לתמונה ו־'Ad' לפרסומת",
 		"שם הספר",
 		"קידומת סוג הכתבה",
@@ -173,11 +137,11 @@ function ltw_knownLinkTemplates() {
 			if (typeof(templatesDic[key][i]) == "number")
 				templatesDic[key][i] = constants[templatesDic[key][i]];
 	if (typeof privateTemplates === "object")
-		ltw_copyAttributes(templatesDic, privateTemplates);
+		$.extend(templatesDic, privateTemplates);
 	return templatesDic;
 }
  
-function ltw_namedParams(templateName) {
+function ltw2_namedParams(templateName) {
 	var allNamedParam = {
 		'קול הלשון - שיעור': [['וידאו', '"וידאו": רשמו "כן" אם זה שיעור לצפייה'], ['תואר', 'תואר - אם תואר המרצה שונה מ"הרב"']],
 		"ספר פרויקט גוטנברג": [["כותב", "שם כותב הספר (אופציונלי)"], ['שם הספר', 'שם הספר (ברירת מחדל: שם הערך)'], ['מספר', 'מספר הספר בפרויקט']],
@@ -200,7 +164,7 @@ function ltw_namedParams(templateName) {
 	return allNamedParam[templateName] || [];
 }
  
-function ltw_defaultParameters(templateName) { // if parameter has the default value, we omit it
+function ltw2_defaultParameters(templateName) { // if parameter has the default value, we omit it
 	var defs = {
 		"דבר": {7: "Ar"}, 
 		"מעריב": {7: "Ar"},
@@ -217,7 +181,7 @@ function ltw_defaultParameters(templateName) { // if parameter has the default v
 	return defs[templateName] || {};
 }
  
-function ltw_templateRegex(templateName) {
+function ltw2_templateRegex(templateName) {
 	var regexes = {
 		"nrg": {regex: /\/online\/([^\/]+)\/ART([^\/]*)\/([^\.]+).html/i, params:[6,7,3]},
 		"NFC": {regex: /Archive\/([^\.]+)\.html/i, params:[3]},
@@ -263,7 +227,7 @@ function ltw_templateRegex(templateName) {
 		"פעמים": {regex: /dbsAttachedFiles\/Article_(.*)\.pdf/i, params:[3]},
 		"תכלת": {regex: /article\.php\?id=(\d+)/i, params:[3]},
 		":אנצ דעת": {regex: /value\.asp\?id1=(\d+)/i, params:[1]},
-		"דעת": {regex: /(?:www\.)?daat\.ac\.il\/(.*)/i, params:[2], problematic:1},
+		"דעת": {regex: /(?:www\.)?daat\.ac\.il\/(.*)/i, params:[2]},
 		"עיתונות יהודית היסטורית 2": {regex: /(?:Key|BaseHref)=([A-Z]{3})\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[2,5,9,6], replace: [[/%2F/gi, '/']]},
 		"Iucnredlist": {regex: /details(?:\.php)?\/(\d+)/, params: [2]},
 		"העין השביעית": {regex: /the7eye\.org\.il\/([^\/]+)\/Pages\/(.*)\.aspx/, params: [5,3]},
@@ -283,139 +247,155 @@ function ltw_templateRegex(templateName) {
 	var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS"};
 	var histregex = {regex: /=HISTNAME\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[3,7,4], replace: [[/%2F/gi, '/']]};
 	for (var template in historic) {
-		var lr = ltw_copyAttributes({}, histregex);
+		var lr = $.extend({}, histregex);
 		lr.regex =  new RegExp(lr.regex.source.replace("HISTNAME", historic[template]));
 		regexes[template] = lr;
 	}
 	if (typeof privateRegexes === "object")
-		ltw_copyAttributes(regexes, privateRegexes);
+		$.extend(regexes, privateRegexes);
 	return regexes[templateName];
 }
  
-function ltw_addFiledToTable(doc, table, param) {
-	var row = table.insertRow(-1) || table[rows[table.rows.length-1]];
-	var cell = row.insertCell(-1) || row.cells[0];
-	cell.innerHTML = param;
-	cell.style.maxWidth = "16em";
-	var field = ltw_copyAttributes(doc.createElement("input"), {type: "text", maxLength: 120, doc: doc});
-	field.onkeyup = field.onmouseup = field.onfocus = field.onblur = ltw_updatePreview;
-	field.style.width = "20em";
-	cell = row.insertCell(-1) || row.cells[1];
-	cell.appendChild(field);
-	return field;
-}
+function ltw2_linkTemplateDialog(dialog, templateName) {
+	var
+		namedParamsList = ltw2_namedParams(templateName),
+		regexDict = ltw2_templateRegex(templateName),
+		paramList = ltw2_knownLinkTemplates()[templateName],
+		orderedFields = [], 
+		namedFields = [],
+		table,
+		hasBookMarklet = $.inArray(templateName, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים','ישראל היום','mako']) + 1,
+		empty = {val: function(){return '';}};
+
  
-function ltw_hasBookMarklet(template) {
-	return $.inArray(template, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים','ישראל היום','mako']) + 1;
-}
- 
-function ltw_popupPredefinedLinkTemplate(templateName, paramList, regexDict) {
-	var hasBookmarklet = ltw_hasBookMarklet(templateName);
-	var namedParamsList = ltw_namedParams(templateName);
-	var height = 160 + 26 * (paramList.length + namedParamsList.length) + (regexDict ? 60 : 0) + (hasBookmarklet ? 60 : 0);
-	for (var i in paramList)
-		height += 18 * Math.floor(paramList[i].length / 33);
-	for (var i in namedParamsList)
-		height += 18 * Math.floor(namedParamsList[i][1].length / 33);
-	var top = (screen.height - height) / 2, left = (screen.width - 550) / 2;
-	var popup = window.open("", "", "resizable=1,height="+height+",width=550,left="+left+",top="+top);
-	var doc = popup.document;
-	doc.write("Fix for FF4");
-	var body = doc.body;
-	ltw_copyAttributes(doc, {
-		title: " הוספת תבנית: " + templateName, 
-		dir: "rtl", 
-		templateName: templateName, 
-		orderedFields: [], 
-		getTemplate: ltw_createTemplate, 
-		updatePreview: function(){this.previewNode.data = this.getTemplate();},
-		problematic: regexDict && regexDict.problematic,
-		defParam: ltw_defaultParameters(templateName)
-	});
-	body.innerHTML = "";
-	if (hasBookmarklet) {
-		var p = doc.createElement("p");
-		p.style.color = 'red';
-		p.appendChild(doc.createTextNode('קיים בוקמרקלט שמייצר תבנית זו באופן אוטומטי. אנא שקלו להשתמש בו.'));
-		body.appendChild(p);
-	}
-	if (regexDict) {
-		body.appendChild(doc.createTextNode('הדביקו את הקישור כאן:'));
-		var b = doc.createElement("input");
-		b.urlInput = doc.createElement("input");
-		ltw_copyAttributes(b.urlInput, { type: "text", maxLength: 600 } );
-		b.urlInput.style.width = "12em";
-		body.appendChild(b.urlInput);
-		ltw_copyAttributes(b, {type: "button", value: "חילוץ פרמטרים מהקישור", regexDict: regexDict, doc: doc, update: ltw_updatePreview });
-		b.onclick = function() {
-			var str = this.urlInput.value;
-			if (this.regexDict.replace)
-				for (var r in this.regexDict.replace)
-					str = str.replace(this.regexDict.replace[r][0], this.regexDict.replace[r][1]);
-			var matches = str.match(this.regexDict.regex);
-			var orderedFields = this.doc.orderedFields, namedFields = this.doc.namedFields;
-			var numOrdered = orderedFields.length, numNamed = namedFields.length;
-			if (matches)
-				for (var i = 1; i < matches.length; i++) {
-					var fieldIndex = this.regexDict.params[i-1] - 1; //parameters are counted from one, we count from 0.
-					if (fieldIndex < numOrdered)
-						orderedFields[fieldIndex].value = matches[i] || '';
-					else if (fieldIndex < numOrdered + numNamed)
-						namedFields[fieldIndex-numOrdered][1].value = matches[i] || '';
-				}
-			this.update();
+	function createTemplate() {
+		var defParam = ltw2_defaultParameters(templateName);
+		var par = ["{{" + templateName];
+		
+		for (var i in orderedFields) {
+			var val = orderedFields[i].val();
+			val = $.trim(val).replace('|', '{{!}}');
+			if (val.indexOf('=') + 1)
+				val = (parseInt(i) + 1) + '=' + val;
+			par.push(val);
 		}
-		body.appendChild(b);
-		body.appendChild(doc.createElement("hr"));
-	}
-	var table = doc.createElement("table");
-	for (var i in paramList) {
-		var param = paramList[i];
-		if (param.length == 0) { // this allow defining an empty parameter. by use of a "pseudo field".
-			doc.orderedFields.push({value:""});
-			continue;
+		for (var parnum in defParam)
+			if (par[parnum] == defParam[parnum])
+				par[parnum] = '';
+		while (par.length && !par[par.length-1].length && orderedFields[par.length-2].length) // last condition is to avoid remving "emptys"
+			par.pop();
+		var code = par.join("|");
+		if (namedFields) {
+			var pairs = [];
+			for (j in namedFields) {
+				var val = $.trim(namedFields[j][1].val()).replace('|', '{{!}}');
+				if (val.length)
+					pairs.push(namedFields[j][0] + '=' + val);
+			}
+			if (pairs.length)
+				code += '|' + pairs.join('|');
 		}
-		doc.orderedFields.push(ltw_addFiledToTable(doc, table, param));
+		code += "}}";
+		if ($('#ltw2_ref').attr('checked')) 
+			return "{{הערה|" +  code + "}}";
+		if ($('#ltw2_list').attr('checked'))
+			return "\n* " + code + "\n";
+		return code;
 	}
-	doc.namedFields = [];
-	for (var i in namedParamsList) {
-		var np = namedParamsList[i];
-		doc.namedFields.push([np[0], ltw_addFiledToTable(doc, table, np[1])]);
+ 
+
+	function updatePreview(){
+		$('#ltw2_preview').text(createTemplate());
 	}
-	body.appendChild(table);
-	body.appendChild(doc.createElement("p"));
-	var p = doc.createElement("p");
-	var checkboxes = {refCheckBox: " הערת שוליים:", listCheckBox: " פריט ברשימה:"}
-	for (var box in checkboxes) {
-		p.appendChild(doc.createTextNode(checkboxes[box]));
-		doc[box] = ltw_copyAttributes(doc.createElement('input'), {type: "checkbox", doc: doc, onchange: ltw_updatePreview});
-		p.appendChild(doc[box]);
+
+	function addRow(labelText, paramName) {
+		var inputField = $('<input>', {type: 'text', width: 600}).css({width: '28em'}).change(updatePreview);
+		var tr = $('<tr>')
+			.append($('<td>').text(labelText).css({maxWidth: '20em'}))
+			.append($('<td>').css({width: '30em'}).append(inputField));
+		if (paramName)
+			namedFields.push([paramName, inputField]);
+		else
+			orderedFields.push(inputField);
+		table.append(tr);
 	}
-	body.appendChild(p);
-	body.appendChild(p = doc.createElement("p"));
-	ltw_copyAttributes(p.style, {background: "blue", color: "white", fontSize: "0.85em"} );
-	p.appendChild(doc.previewNode = doc.createTextNode(' '));
-	body.appendChild(doc.createElement("p"));
-	b = ltw_copyAttributes(doc.createElement("input"), {type:"button", value:"אישור", doc: doc, popup: popup});
-	doc.problematic = regexDict && regexDict.problematic && true;
-	b.onclick = function() {
-		insertTags("", this.doc.getTemplate(), "");
-		this.popup.close();
+	
+	function extractParamsFromURL() {
+				var str = this.value;
+				if (regexDict.replace)
+					for (var r in regexDict.replace)
+						str = str.replace(regexDict.replace[r][0], regexDict.replace[r][1]);
+				var matches = str.match(regexDict.regex);
+				var numOrdered = orderedFields.length, numNamed = namedFields.length;
+				if (matches)
+					for (var i = 1; i < matches.length; i++) {
+						var fieldIndex = regexDict.params[i-1] - 1; //parameters are counted from one, we count from 0.
+						if (fieldIndex < numOrdered)
+							orderedFields[fieldIndex].val(matches[i] || '');
+						else if (fieldIndex < numOrdered + numNamed)
+							namedFields[fieldIndex-numOrdered][1].val(matches[i] || '');
+					}
 	}
-	body.appendChild(b);
-	b = ltw_copyAttributes(doc.createElement("input"), {type: "button", value: "ביטול", popup: popup, onclick: function(){this.popup.close();}});
-	body.appendChild(b);
-	$(doc.refCheckBox).trigger('change');
+	
+	if (hasBookMarklet) 
+		dialog.append($('<p>').css({color: 'red', fontWeight: 'bold'}).text('קיים בוקמרקלט שמייצר תבנית "'  +  templateName + '" באופן אוטומטי. אנא שקלו להשתמש בו.')).append($('<hr>'));
+	
+	if (regexDict) 
+		dialog.append($('<span>').text('הדביקו את הקישור כאן:').css({width: '20em'}))
+			.append($('<input>', {type: "text", maxLength: 600}).css({width: '30em'}).change(extractParamsFromURL))
+			.append($('<hr>'));
+		
+	var table = $('<table>');
+	for (var i in paramList) 
+		if (paramList[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
+			orderedFields.push(empty);
+		else
+			addRow(paramList[i]);
+		
+	for (var i in namedParamsList) 
+		addRow(namedParamsList[i][1], namedParamsList[i][0]);
+	
+	dialog.append(table)
+		.append($('<p>').css({height: '2em'}))
+		.append($('<label>').text(' הערת שוליים '))
+		.append($('<input>', {type: 'checkbox', id: 'ltw2_ref'}).change(updatePreview))
+		.append($('<label>').css({width: '12em'}).text( ' פריט ברשימה '))
+		.append($('<input>', {type: 'checkbox', id: 'ltw2_list'}).change(updatePreview))
+		.append($('<p>').css({height: '1.5em'}))
+		.append($('<p>', {id: 'ltw2_preview'}).css({background: "lightGreen", fontSize: '120%'}).text(createTemplate()));
+	
+	dialog.dialog({});
+	dialog.dialog('option', 'height', 'auto');
+	dialog.dialog('option', 'width', 'auto');
 }
  
-function ltw_fireLinkTemplatePopup(templateName) {
-	var linkTemplates = ltw_knownLinkTemplates();
-	var templateParams = linkTemplates[templateName];
-	ltw_popupPredefinedLinkTemplate(templateName, templateParams, ltw_templateRegex(templateName));
+function ltw2_fireLinkTemplatePopup(templateName) {
+	var dialog = $('<div>').css({top: 100}).dialog({
+						id: 'ltw_dialog',
+						title: 'אשף תבניות קישורים - ' + templateName,
+						location: {top: 200, left: 200},
+						minWidth: '36em',
+						height: 600,
+						modal: true,
+						close: function() {$(this).remove();},
+						buttons: {
+								"אישור":
+							function() {
+								insertTags('', '', createTemplate()); //this line is the reason for the whole module...
+								dialog.dialog('close');
+							},
+								"ביטול":
+							function() {
+								dialog.dialog('close');
+							}
+						}
+					});
+	
+	ltw2_linkTemplateDialog(dialog, templateName);
 }
  
-function ltw_createSortedTemplatesList() {
-	var fullList = ltw_knownLinkTemplates();
+function ltw2_createSortedTemplatesList() {
+	var fullList = ltw2_knownLinkTemplates();
 	var names = [], hnames = [];
 	var first = 'קישור כללי';
 	for (var x in fullList)
@@ -429,15 +409,15 @@ function ltw_createSortedTemplatesList() {
 	return [first].concat(hnames).concat(names);
 }
  
-function ltw_createLinkTemplatesSelections() {
+function ltw2_createLinkTemplatesSelections() {
 	var select = document.createElement("select");
 	select.onchange = function() {
-		ltw_fireLinkTemplatePopup(this.value);
+		ltw2_fireLinkTemplatePopup(this.value);
 		this.selectedIndex = 0;
 		return false;
 	}
 	select.options.add(new Option("אשף תבניות קישורים", ""));
-	var allnames = ltw_createSortedTemplatesList();
+	var allnames = ltw2_createSortedTemplatesList();
 	for (var i in allnames)
 		select.options.add(new Option(allnames[i], allnames[i]));
 	var toolbar = document.getElementById("toolbar");
@@ -445,17 +425,15 @@ function ltw_createLinkTemplatesSelections() {
 		toolbar.appendChild(select);
 }
  
-function ltw_updatePreview() { this.doc.updatePreview(); }
- 
-function ltw_advancedFire(context) {
-	ltw_fireLinkTemplatePopup(this.template);
+function ltw2_advancedFire(context) {
+	ltw2_fireLinkTemplatePopup(this.template);
 }
  
-function ltw_createAdvanceToolKit() {
+function ltw2_createAdvanceToolKit() {
     var gadget = {label: 'אשף תבניות קישורים', type: 'select', list: []};
-	var templatesList = ltw_createSortedTemplatesList();
+	var templatesList = ltw2_createSortedTemplatesList();
 	for (var i in templatesList)
-        gadget.list.push({label: templatesList[i], action: {type: 'callback', execute: ltw_advancedFire, template: templatesList[i]}});
+        gadget.list.push({label: templatesList[i], action: {type: 'callback', execute: ltw2_advancedFire, template: templatesList[i]}});
 	$j('#wpTextbox1').wikiEditor('addToToolbar', {
 		'section': 'advanced',
 		'group': 'heading',
@@ -464,6 +442,6 @@ function ltw_createAdvanceToolKit() {
 }
  
 if (typeof $j != 'undefined' && typeof $j.fn.wikiEditor != 'undefined')
-	$j(document).ready(ltw_createAdvanceToolKit);
+	$j(document).ready(ltw2_createAdvanceToolKit);
 if (wgAction == 'edit')
-	hookEvent("load", ltw_createLinkTemplatesSelections);
+	hookEvent("load", ltw2_createLinkTemplatesSelections);
