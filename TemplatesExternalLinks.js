@@ -370,9 +370,10 @@ if (wgAction == 'edit') $(document).ready(function() {
 		var title = 'אשף תבניות קישורים',
 			dialog = $('<div>', {id: 'ltw_dialog'}).dialog({
 							title: title,
+							resizable: false,
 							height: 'auto',
 							width: 'auto',
-							modal: true,
+							modal: false,
 							close: function() {$(this).remove();},
 						}),
 
