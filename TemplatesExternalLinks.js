@@ -366,7 +366,7 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 	buttons['ביטול'] = function() {dialog.dialog('close');};
 	dialog.dialog('option', 'buttons', buttons);
 	updatePreview();
-	dialog.dialog('option', 'position', [(window.width - $('#ltw_dialog').width()) / 2, (window.height - $('#ltw_dialog').height()) / 2]);
+	dialog.dialog('option', 'position', [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]);
 }
 
 function ltw2_fireLinkTemplatePopup() {
