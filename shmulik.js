@@ -39,6 +39,7 @@ function wikiit() {
 			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/}
 		],
 		[
+			{str : $("meta[property='og:title']").attr("content")},
 			{elem : 'h1'},
 			{elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/}
 		],
