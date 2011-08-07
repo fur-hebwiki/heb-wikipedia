@@ -343,6 +343,7 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 			.append($('<hr>'));
 		
 	var table = $('<table>');
+	dialog.append(table);
 	for (var i in paramList)
 		if (paramList[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
 			orderedFields.push(empty);
@@ -352,28 +353,25 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 	for (var i in namedParamsList)
 		addRow(namedParamsList[i][1], namedParamsList[i][0]);
 	
-	dialog.append(table)
+	dialog/*.append(table)*/
 		.append($('<p>').css({height: '2em'}))
 		.append($('<label>').text(' הערת שוליים '))
 		.append($('<input>', {type: 'checkbox', id: 'ltw2_ref'}).change(updatePreview))
 		.append($('<label>').css({width: '12em'}).text( ' פריט ברשימה '))
 		.append($('<input>', {type: 'checkbox', id: 'ltw2_list'}).change(updatePreview))
 		.append($('<p>').css({height: '1.5em'}))
-		.append($('<p>', {id: 'ltw2_preview'}).css({background: "lightGreen", fontSize: '120%'}).text(createTemplate()));
+		.append($('<p>', {id: 'ltw2_preview'}).css({background: "lightGreen", fontSize: '120%'}));
 	var buttons = {};
 	buttons['אישור'] = function() {insertTags('', '', createTemplate()); dialog.dialog('close');};
 	buttons['ביטול'] = function() {dialog.dialog('close');};
 	dialog.dialog('option', 'buttons', buttons);
-	
-	dialog.dialog('option', 'position', [
-		Math.round((window.width - dialog.parent().attr('clientHeight')) / 2), 
-		Math.round((window.height - dialog.parent().attr('clientWidth')) / 2)]);
+	updatePreview();
+	dialog.dialog('option', 'position', [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]);
 }
 
 function ltw2_fireLinkTemplatePopup() {
 	var title = 'אשף תבניות קישורים',
-		dialog = $('<div>').dialog({
-						id: 'ltw_dialog',
+		dialog = $('<div>', {id: 'ltw_dialog'}).dialog({
 						title: title,
 						height: 'auto',
 						width: 'auto',
