@@ -357,7 +357,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 			.append($('<label>').css({width: '12em'}).text( ' פריט ברשימה '))
 			.append($('<input>', {type: 'checkbox', id: 'ltw2_list'}).change(updatePreview))
 			.append($('<p>').css({height: '1.5em'}))
-			.append($('<p>', {id: 'ltw2_preview'}).css({background: "lightGreen", fontSize: '120%'}));
+			.append($('<p>', {id: 'ltw2_preview'}).css({backgroundColor: "lightGreen", fontSize: '120%', maxWidth: '40em'}));
 		var buttons = {};
 		buttons['אישור'] = function() {insertTags('', '', createTemplate()); dialog.dialog('close');};
 		buttons['ביטול'] = function() {dialog.dialog('close');};
@@ -367,7 +367,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 	}
 
 	function ltw2_fireLinkTemplatePopup() {
-		var title = 'אשף תבניות קישורים',
+		var title = 'יצירת תבנית קישור',
 			dialog = $('<div>', {id: 'ltw_dialog'}).dialog({
 							title: title,
 							resizable: false,
@@ -380,7 +380,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 			selector = $('<select>').change(function() {
 				if (this.value) {
 					var templateName = this.value;
-					dialog.dialog('option', 'title', title + ' - ' + templateName);
+					dialog.dialog('option', 'title', title + ' עבור ' + templateName);
 					$(this).remove();
 					ltw2_linkTemplateDialog(dialog, templateName);
 				}
@@ -405,7 +405,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var button = $('<input>', {type: 'button', value: '{{w³}}', title: 'אשף תבניות קישורים'})
+		var button = $('<img>', {src: 'http://he.wikipedia.org/skins-1.5/common/images/button_extlink.png', 					   title: 'תבנית קישור'})
 		.click(function() {
 			mediaWiki.loader.using('jquery.ui.dialog', ltw2_fireLinkTemplatePopup);
 		});
