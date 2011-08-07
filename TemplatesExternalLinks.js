@@ -1,5 +1,11 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
+
+
+
+
+
+
 function ltw2_knownLinkTemplates() {
 	var constants = ["",
 		"שם המחבר",
@@ -177,7 +183,7 @@ function ltw2_defaultParameters(templateName) { // if parameter has the default 
 		"עיתונות יהודית היסטורית 2": {9: "Ar"},		
 		"ynet": {6: 0, 7: 'articles'},
 		"Xnet": {6: 0, 7: 'articles'}
-	}
+	};
 	return defs[templateName] || {};
 }
 
@@ -274,7 +280,7 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 			var val = orderedFields[i].val();
 			val = $.trim(val).replace('|', '{{!}}');
 			if (val.indexOf('=') + 1)
-				val = (parseInt(i) + 1) + '=' + val;
+				val = (i + 1) + '=' + val;
 			par.push(val);
 		}
 		for (var parnum in defParam)
@@ -306,14 +312,14 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 	}
 
 	function addRow(labelText, paramName) {
-		var inputField = $('<input>', {type: 'text', width: 600}).css({width: '28em'}).change(updatePreview);
+		var inputField = $('<input>', {id: 'ltw2_inputfield_' + paramName, type: 'text', width: 600}).css({width: '28em'}).change(updatePreview);
 		var tr = $('<tr>')
 			.append($('<td>').text(labelText).css({maxWidth: '20em'}))
 			.append($('<td>').css({width: '30em'}).append(inputField));
-		if (paramName)
-			namedFields.push([paramName, inputField]);
-		else
+		if (typeof paramName == 'number')
 			orderedFields.push(inputField);
+		else
+			namedFields.push([paramName, inputField]);
 		table.append(tr);
 	}
 	
@@ -323,15 +329,9 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 					for (var r in regexDict.replace)
 						str = str.replace(regexDict.replace[r][0], regexDict.replace[r][1]);
 				var matches = str.match(regexDict.regex);
-				var numOrdered = orderedFields.length, numNamed = namedFields.length;
 				if (matches)
-					for (var i = 1; i < matches.length; i++) {
-						var fieldIndex = regexDict.params[i-1] - 1; //parameters are counted from one, we count from 0.
-						if (fieldIndex < numOrdered)
-							orderedFields[fieldIndex].val(matches[i] || '');
-						else if (fieldIndex < numOrdered + numNamed)
-							namedFields[fieldIndex-numOrdered][1].val(matches[i] || '');
-					}
+					for (var i = 1; i < matches.length; i++)
+						$('#ltw2_inputfield_' + regexDict.params[i-1]).val(matches[i] || '');
 	}
 	
 	if (hasBookMarklet)
@@ -347,7 +347,7 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 		if (paramList[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
 			orderedFields.push(empty);
 		else
-			addRow(paramList[i]);
+			addRow(paramList[i], parseInt(i, 10) + 1);
 		
 	for (var i in namedParamsList)
 		addRow(namedParamsList[i][1], namedParamsList[i][0]);
@@ -377,6 +377,7 @@ function ltw2_fireLinkTemplatePopup() {
 						modal: true,
 						close: function() {$(this).remove();},
 					}),
+
 		selector = $('<select>').change(function() {
 			if (this.value) {
 				var templateName = this.value;
@@ -408,6 +409,6 @@ if (wgAction == 'edit')
 	$(document).ready(function() {
 		mediaWiki.loader.using('jquery.ui.dialog', function () {
 		var button = $('<input>', {type: 'button', value: '{{w³}}', title: 'אשף תבניות קישורים'}).click(ltw2_fireLinkTemplatePopup);
-		$('.group-more').append(button);
+		$('div.section-advanced > div:last').append(button);
 		$('div #toolbar').append(button);
 	});});
