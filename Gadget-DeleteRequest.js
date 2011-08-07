@@ -25,6 +25,8 @@ function wbm_save_topage(title, summary, content, section, next) {
 
 function wbm_add_menus() {
 	var whereToShove = typeof wgPlaceRequestInToolbox == 'undefined' ? 'div#p-cactions div.menu li:last-child' : 'div#p-tb li:last-child';
+	if ($(whereToShove).length == 0)
+		whereToShove = '#ca-edit';
 				
 	function add_one(caption, tooltip, section, message, summary) {
 		var a = $('<a>', {href: '#', text: caption, title: 'בקשות מפעילים: ' + tooltip});
