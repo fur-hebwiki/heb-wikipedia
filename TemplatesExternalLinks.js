@@ -405,10 +405,14 @@ function ltw2_fireLinkTemplatePopup() {
 	dialog.append(selector);
 }
 
-if (wgAction == 'edit')
+if (wgAction == 'edit') {
+		var button = $('<input>', {type: 'button', value: '{{w³}}', title: 'אשף תבניות קישורים'}).click(function() {
+			mediaWiki.loader.using('jquery.ui.dialog', ltw2_fireLinkTemplatePopup);
+		});
 	$(document).ready(function() {
-		mediaWiki.loader.using('jquery.ui.dialog', function () {
-		var button = $('<input>', {type: 'button', value: '{{w³}}', title: 'אשף תבניות קישורים'}).click(ltw2_fireLinkTemplatePopup);
-		$('div.section-advanced > div:last').append(button);
-		$('div #toolbar').append(button);
-	});});
+		setTimeout(function() {
+			$('div.section-advanced > div:last').append(button);
+			$('div #toolbar').append(button);
+		}, 1000);
+	});
+}
