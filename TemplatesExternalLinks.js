@@ -363,7 +363,10 @@ function ltw2_linkTemplateDialog(dialog, templateName) {
 	var buttons = {};
 	buttons['אישור'] = function() {insertTags('', '', createTemplate()); dialog.dialog('close');};
 	buttons['ביטול'] = function() {dialog.dialog('close');};
-	dialog.dialog('option', 'buttons', buttons);
+
+	dialog.dialog('option', 'position', [
+		Math.round((window.width - dialog.parent().attr('clientHeight')) / 2), 
+		Math.round((window.height - dialog.parent().attr('clientWidth')) / 2)]);
 }
 
 function ltw2_fireLinkTemplatePopup() {
@@ -373,7 +376,6 @@ function ltw2_fireLinkTemplatePopup() {
 						title: title,
 						height: 'auto',
 						width: 'auto',
-						position: [100, 100],
 						modal: true,
 						close: function() {$(this).remove();},
 					}),
