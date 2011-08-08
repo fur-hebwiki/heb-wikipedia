@@ -167,15 +167,16 @@ if (wgAction == 'edit') $(document).ready(function() {
 			if (templatesAr[i].t == templateName) 
 				template = templatesAr[i];
 		
+		var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS"};
+		if (historic[template.t]) {
+			var r = new RegExp('=HISTNAME/(\\d{4}/\\d{1,2}/\\d{1,2})(?:.*&EntityId=|/\\d+/)([A-Z][a-z])(\\d+)'.replace('HISTNAME', historic[template.t]));
+			$.extend(template, {p: [1,2,22,3,7,0,23], def: {7: "Ar"}, r: r, rp: [3,7,4], replace: [[/%2F/gi, '/']], op: [4,6]});
+		}
+
 		for (var i in template.p)
 		if (typeof template.p[i] == "number")
 			template.p[i] = constants[template.p[i]];
 			
-		var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS"};
-		if (historic[template.t]) {
-			var r = new RegExp('=HISTNAME/(\\d{4}/\\d{1,2}/\\d{1,2})(?:.*&EntityId=|/\\d+/)([A-Z][a-z])(\\d+)'.replace('HISTNAME', historic[template.t]));
-			$.extend(template, {p: [1,2,22,3,7,0,23], def: {7: "Ar"}, r: r, rp: [3,7,4], replace: [[/%2F/gi, '/']]});
-		}
 		return template;
 	}
 
@@ -184,7 +185,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 			orderedFields = [],
 			namedFields = [],
 			table,
-			empty = {val: function(){return '';}};
+			empty = {val: function(){return '';}, hasClass: function(){return 0;}};
 
 		function createTemplate() {
 			var par = ["{{" + template.t];
@@ -286,13 +287,14 @@ if (wgAction == 'edit') $(document).ready(function() {
 			.append($('<p>').css({height: '1.5em'}))
 			.append($('<p>', {id: 'ltw2_preview'}).css({backgroundColor: "lightGreen", fontSize: '120%', maxWidth: '40em'}));
 			
-		dialog.dialog({buttons: {
+		dialog.dialog('option', 'buttons', {
 			'אישור': function() {insertTags('', '', createTemplate()); dialog.dialog('close');},
 			'ביטול': function() {dialog.dialog('close');}
-		}});
+		});
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
-		updatePreview();
+		
 		dialog.dialog('option', 'position', [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]);
+		updatePreview();
 	}
 
 	function fireDialog() {
