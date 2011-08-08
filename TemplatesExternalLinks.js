@@ -1,8 +1,12 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
 if (wgAction == 'edit') $(document).ready(function() {
+
+
+
+
 	
-	function ltw2_knownLinkTemplates() {
+	function templates(templateName) {
 		var constants = ["",
 			"שם המחבר",
 			"כותרת  המאמר",
@@ -52,108 +56,14 @@ if (wgAction == 'edit') $(document).ready(function() {
 			"שם הרב",
 			"שם השיעור",
 			"השיעור כשם שמופיע בקישור",
-			"מספר גיליון, תאריך פרסום ומספרי עמודים (אופציונלי)"
+			"מספר גיליון, תאריך פרסום ומספרי עמודים (אופציונלי)",
+			"שם הערך בויקישיבה",
+			"קידומת הקישור, אם שונה מ-www"
 		];
 
-		var templatesDic = {
-			'קישור כללי': [],
-			"הארץ": [1, 2, 3, 4],
-			"דבר": [1,2,22,3,7,0,23],
-			"מעריב": [1,2,22,3,7,0,23],
-			"הצבי": [1,2,22,3,7,0,23],
-			"הצפירה": [1,2,22,3,7,0,23],
-			"המגיד": [1,2,22,3,7,0,23],
-			"חבצלת": [1,2,22,3,7,0,23],
-			"המליץ": [1,2,22,3,7,0,23],
-			"PalPost": [1,2,22,3,7,0,23],
-			'תנ"ך': [8,9,10],
-			"nrg": [1,2,3,4,0,19,20],
-			"Mooma2": [42,3],
-			"בחדרי חרדים": [1,2,3,4],
-			"CIA factbook":["האותיות שמציינות את המדינה"],
-			"HebrewBooks":[1,8,3,4],
-			"mynet":[1,2,3,4,0,5],
-			"NFC":[1,2,3,4],
-			"Onlife":[1,2,3,4],
-			"ynet":[1,2,3,4,0,5,25],
-			"Xnet":[1,2,3,4,0,5,25],
-			"וואלה!":[1,2,3,4,0,26],
-			"גלובס":[1,2,3,4],
-			"כלכליסט":[1,2,3,4,0,19],
-			"נענע10":[1,2,3,4,0,26],
-			"אנציקלופדיה ynet":[27,3,28,4],
-			"תדהר":[29,13,27],
-			"אנשים ישראל":[1,2,3,4],
-			"אתר חיל האוויר":[1,2,3,4],
-			"בלדד השוחי":[3,2,4],
-			"בשבע":[1,2,3,4],
-			"האייל הקורא":[1,2,3,4],
-			"הידען":[1,2,30,4],
-			"המאסף":[1,2,3,4],
-			"חסקין":[3,2],
-			"בבלי":[11,12,13],
-			"משנה":[11,9,14],
-			'רמב"ם':[8,17,9,31],
-			"ירושלמי":[11,9,31],
-			"שולחן ערוך":[33,15,16],
-			"מטח":[1,2,3,4],
-			"גלצ":[1,2,3,4],
-			"ישראל היום":[1,2,3,4],
-			"מממ":[1,2,3,4],
-			"מממ2":[1,2,3,4],
-			"משנה תורה":[12,3,34],
-			"נזכור":[35,3],
-			"סגולה":[1,2,3,4],
-			"ספורט 5":[1,2,3,36,4],
-			"ספסל":[3,18,0],
-			"ספסל מאמן":[3,18,0],
-			"ספרי יזכור":[1,37,3,4],
-			"הספרייה הדיגיטלית":[1,24,3,4],
-			"אורות":[1,2,3,4],
-			"הערוץ האקדמי":[1,34,3,4],
-			"עכבר העיר":[1,2,3,4],
-			"ערוץ7":[1,2,3,4],
-			"פעמים":[1,2,3,38],
-			"תכלת":[1,2,3,4],
-			"אנצ דעת":[3,27],
-			"דעת":[1,39,2],
-			"ויקישיבה":["שם הערך בויקישיבה"],
-			"HebrewBooksPage": [1,8,3,4,40],
-			"גדולי ישראל": [29,40,41,13],
-			"עיתונות יהודית היסטורית 2": [43,44,1,2,22,3,7,0,23],
-			"Iucnredlist": [45,3],
-			"העין השביעית": [1,34,6,4,25],
-			"One": [1,2,3,4],
-			"קול הלשון - שיעור" : [46,47,48,4],
-			"ספר פרויקט גוטנברג": [],
-			"imdb title": [],
-			"imdb name": [],
-			"imdb company": [],
-			"Google book": [],
-			"TheMarker1": [1,2,3,4],
-			"מערכות": [1,2,3,49],
-			"mako": [1,2,3,6,4]
-		};
-		for (var key in templatesDic)
-			for (var i in templatesDic[key])
-				if (typeof(templatesDic[key][i]) == "number")
-					templatesDic[key][i] = constants[templatesDic[key][i]];
-		if (typeof privateTemplates === "object")
-			$.extend(templatesDic, privateTemplates);
-		return templatesDic;
-	}
-
-	function ltw2_namedParams(templateName) {
-		var allNamedParam = {
-			'קול הלשון - שיעור': [['וידאו', '"וידאו": רשמו "כן" אם זה שיעור לצפייה'], ['תואר', 'תואר - אם תואר המרצה שונה מ"הרב"']],
-			"ספר פרויקט גוטנברג": [["כותב", "שם כותב הספר (אופציונלי)"], ['שם הספר', 'שם הספר (ברירת מחדל: שם הערך)'], ['מספר', 'מספר הספר בפרויקט']],
-			"imdb title": [['id', 'המספר שמופיע בקישור'], ['title', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך']],
-			"imdb name": [['id', 'המספר שמופיע בקישור'], ['name', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך']],
-			"imdb company": [['id', 'המספר שמופיע בקישור'], ['company', 'הכותרת שתופיע בקישור']],
-			"Google book": [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)'],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך']],
-			"TheMarker1": [['5','קידומת הקישור, אם שונה מ-www']],
-			'קישור כללי': [
-				['כתובת', 'הקישור (כלומר ה-URL) עצמו'],
+		var templatesAr = [
+			{t: 'קישור כללי', np: [
+				['כתובת', 'הקישור (כלומר ה-URL) עצמו'], 
 				['כותרת', 'שם המאמר המקושר'],
 				['הכותב', 'שמות כותבי המאמר'],
 				['תאריך', 'תאריך המאמר'],
@@ -161,117 +71,123 @@ if (wgAction == 'edit') $(document).ready(function() {
 				['שפה', 'שפה (אם המאמר לא בעברית)'],
 				['פורמט', 'פורמט המאמר, אם אינו HTML (למשל PDF, DOC, וכן הלאה'],
 				['ציטוט', 'ציטוט משפט מהדף המקושר (יכול לעזור במציאת הדף בעתיד, אם הקישור ישתנה)']
-			]
-		};
-		return allNamedParam[templateName] || [];
-	}
-
-	function ltw2_defaultParameters(templateName) { // if parameter has the default value, we omit it
-		var defs = {
-			"דבר": {7: "Ar"},
-			"מעריב": {7: "Ar"},
-			"הצבי": {7: "Ar"},
-			"הצפירה": {7: "Ar"},
-			"המגיד": {7: "Ar"},
-			"המליץ": {7: "Ar"},
-			"חבצלת": {7: "Ar"},
-			"PalPost": {7: "Ar"},
-			"עיתונות יהודית היסטורית 2": {9: "Ar"},		
-			"ynet": {6: 0, 7: 'articles'},
-			"Xnet": {6: 0, 7: 'articles'}
-		};
-		return defs[templateName] || {};
-	}
-
-	function ltw2_templateRegex(templateName) {
-		var regexes = {
-			"nrg": {regex: /\/online\/([^\/]+)\/ART([^\/]*)\/([^\.]+).html/i, params:[6,7,3]},
-			"NFC": {regex: /Archive\/([^\.]+)\.html/i, params:[3]},
-			"HebrewBooks": {regex: /hebrewbooks\.org\/(\d+)/i, params:[3]},
-			"mynet": {regex: /articles\/(\d+),7340,L-(\d+),00\.html/i, params:[6,3]},
-			"Onlife": {regex: /onlife\.co\.il\/([^\/]+)\/(.*)/i, params:[1,3]},
-			"PalPost": {regex: /BaseHref=PLS\/(\d{4}\/\d{1,2}\/\d{1,2})&EntityId=Ar(\d+)/i, params:[3,4]},
-			"ynet": {regex: /ynet\.co\.il\/([^\/]+)\/(\d+),7340,L-(\d+),00.html/i, params:[7,6,3]},
-			"Xnet": {regex: /([^\/]+)\/(\d+),\d+,L-(\d+),00.html/i, params:[7,6,3]},
-			"Mooma2": {regex: /\?ArtistId=(\d+)/i, params:[2]},
-			"HebrewBooksPage": {regex: /pdfpager\.aspx\?.*req=(\d+).*&pgnum=(\d+)/i, params:[3,5]},
-			"בחדרי חרדים" : { regex: /\/Article\.aspx\?id=(\d+)/i, params:[3]},
-			"וואלה!": {regex: /\?w=\/(\d+)\/(\d+)/i, params:[6,3]},
-			"גלובס": {regex: /\/news\/article.aspx\?did=(\d+)/i, params:[3]},
-			"כלכליסט": {regex: /\/articles\/(\d+),7340,L-(\d+),00/i, params:[6,3]},
-			"נענע10": {regex: /http:\/\/([a-z]*)\.nana10\.co\.il\/Article\/\?ArticleID=(\d+)/i, params:[6,3]},
-			"אנציקלופדיה ynet": {regex: /\/yaan\/0,7340,L-(\d+)-([^-]*)-FreeYaan,00.html/i, params:[2,3]},
-			"אנשים ישראל": {regex: /.*itemID=(\d+)&/i, params:[3]},
-			"אתר חיל האוויר": {regex: /\/([^\/]*)-he\//i, params:[3]},
-			"בלדד השוחי": {regex: /ArticleID(\d*)/i, params:[1]},
-			"בשבע": {regex: /Article.aspx\/(\d+)/i, params:[3]},
-			"האייל הקורא": {regex: /story(?:_|\?id=)(\d+)/i, params:[3]},
-			"הידען": {regex: /hayadan\.org\.il\/([^\/]*)/i, params:[3]},
-			"המאסף": {regex: /notimportant\.co\.il\/?p=(\d+)/i, params:[3]},
-			"חסקין": {regex: /ArticleNum=(\d+)/i, params:[1]},
-			"הארץ": {regex: /(?:spages\/|itemNo=)(\d+)/i, params:[3]},
-			"גלצ": {regex: /NewsArticle\.aspx\?NewsId\=(\d+)/i, params:[3]},
-			"ישראל היום": {regex: /newsletter_article\.php\?id=(\d+)/i, params:[3]},
-			"מממ": {regex: /data\/pdf\/([^\.])\.pdf/i, params:[3]},
-			"מממ2": {regex: /data\/docs\/([^\.])\.rtf/i, params:[3]},
-			"משנה תורה": {regex: /mechon-mamre.org\/\i\/(\d+)\.htm/i, params:[2]},
-			"נזכור": {regex: /HalalKorot\.aspx\?id=(\d+)/i, params:[2]},
-			"סגולה": {regex: /view-article\.asp\?article=(\d+)/i, params:[3]},
-			"ספורט 5": {regex: /articles\.aspx\?FolderID=(\d+)&docID=(\d+)/i, params:[4,3]},
-			"ספסל": {regex: /hplayer\.aspx\?id=(\d+)/i, params:[1]},
-			"ספסל מאמן": {regex: /hstaff\.aspx\?id=(\d+)/i, params:[1]},
-			"ספרי יזכור": {regex: /yizkor\.nypl\.org\/index\.php\?id=(\d+)/i, params:[3]},
-			"הספרייה הדיגיטלית": {regex: /nnl\/dig\/books\/([^\.]+)\.html/i, params:[3]},
-			"אורות": {regex: /Article\.aspx\?ID=(\d+)/i, params:[3]},
-			"הערוץ האקדמי": {regex: /programs\/Item\.aspx\?it=(\d+)/i, params:[3]},
-			"עכבר העיר": {regex: /CM\.articles_item,(.*),\.aspx/i, params:[3]},
-			"ערוץ7": {regex: /News\.aspx\/(\d+)/i, params:[3]},
-			"פעמים": {regex: /dbsAttachedFiles\/Article_(.*)\.pdf/i, params:[3]},
-			"תכלת": {regex: /article\.php\?id=(\d+)/i, params:[3]},
-			":אנצ דעת": {regex: /value\.asp\?id1=(\d+)/i, params:[1]},
-			"דעת": {regex: /(?:www\.)?daat\.ac\.il\/(.*)/i, params:[2]},
-			"עיתונות יהודית היסטורית 2": {regex: /(?:Key|BaseHref)=([A-Z]{3})\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[2,5,9,6], replace: [[/%2F/gi, '/']]},
-			"Iucnredlist": {regex: /details(?:\.php)?\/(\d+)/, params: [2]},
-			"העין השביעית": {regex: /the7eye\.org\.il\/([^\/]+)\/Pages\/(.*)\.aspx/, params: [5,3]},
-			"One": {regex: /(?:Article[\d\-\/,]*\/|id=)([\d\-\/,]*\d)/, params: [3]},
-			"קול הלשון - שיעור": {regex: /(?:PathFile=|Source=)([^&]*)/i, params:[3]},
-			"ספר פרויקט גוטנברג": {regex: /ebooks\/(\d+)/i, params: [3]},
-			"imdb title": {regex: /title\/tt(\d+)/i, params: [1]},
-			"imdb name": {regex: /name\/nm(\d+)/i, params: [1]},
-			"imdb company": {regex: /company\/co(\d+)/i, params: [1]},
-			"Google book" : {regex: /id=([^&]*)/, params: [1]},
-			"TheMarker1": {regex: /http:\/\/(?:www)?(.*)\.themarker\.com\/([^\?]+)/i, params: [5,3]},
-			"מערכות": {regex: /FILES\/(.*)\.pdf/i, params: [3]},
-			"mako": {regex: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, params: [4,3]}
+			]},
+			{t: 'הארץ', p: [1, 2, 3, 4], r: /(?:spages\/|itemNo=)(\d+)/i, rp: [3], bm: 1},
+			{t: 'דבר'},
+			{t: 'מעריב'},
+			{t: 'הצבי'},
+			{t: 'הצפירה'},
+			{t: 'המגיד'},
+			{t: 'חבצלת'},
+			{t: 'המליץ'},
+			{t: 'PalPost'},
+			{t: 'תנ"ך', p: [8,9,10]},
+			{t: 'nrg', p: [1,2,3,4,0,19,20], r: /\/online\/([^\/]+)\/ART([^\/]*)\/([^\.]+).html/i, rp: [6,7,3], bm: 1},
+			{t: 'Mooma2', p: [42,3], r: /\?ArtistId=(\d+)/i, rp: [2]},
+			{t: 'בחדרי חרדים', p: [1,2,3,4], r: /\/Article\.aspx\?id=(\d+)/i, rp: [3], bm: 1},
+			{t: 'CIA factbook', p: ["האותיות שמציינות את המדינה"]},
+			{t: 'mynet', p: [1,2,3,4,0,5], r: /articles\/(\d+),7340,L-(\d+),00\.html/i, rp: [6,3]},
+			{t: 'NFC', p: [1,2,3,4], r: /Archive\/([^\.]+)\.html/i, rp: [3]},
+			{t: 'Onlife', p: [1,2,3,4], r: /onlife\.co\.il\/([^\/]+)\/(.*)/i, rp: [1,3]},
+			{t: 'ynet', p: [1,2,3,4,0,5,25], def: {6: 0, 7: 'articles'}, r: /ynet\.co\.il\/([^\/]+)\/(\d+),7340,L-(\d+),00.html/i, rp: [7,6,3], bm: 1},
+			{t: 'Xnet', p: [1,2,3,4,0,5,25], def: {6: 0, 7: 'articles'}, r: /([^\/]+)\/(\d+),\d+,L-(\d+),00.html/i, rp: [7,6,3], bm: 1},
+			{t: 'וואלה!', p: [1,2,3,4,0,26], r: /\?w=\/(\d+)\/(\d+)/i, rp: [6,3], bm: 1},
+			{t: 'גלובס', p: [1,2,3,4], r: /\/news\/article.aspx\?did=(\d+)/i, rp: [3], bm: 1},
+			{t: 'כלכליסט', p: [1,2,3,4,0,19], r: /\/articles\/(\d+),7340,L-(\d+),00/i, rp: [6,3]},
+			{t: 'נענע10', p: [1,2,3,4,0,26], r: /http:\/\/([a-z]*)\.nana10\.co\.il\/Article\/\?ArticleID=(\d+)/i, rp: [6,3], bm: 1},
+			{t: 'אנציקלופדיה ynet', p: [27,3,28,4], r: /\/yaan\/0,7340,L-(\d+)-([^-]*)-FreeYaan,00.html/i, rp: [2,3]},
+			{t: 'תדהר', p: [29,13,27]},
+			{t: 'אנשים ישראל', p: [1,2,3,4], r: /.*itemID=(\d+)&/i, rp: [3]},
+			{t: 'אתר חיל האוויר', p: [1,2,3,4], r: /\/([^\/]*)-he\//i, rp: [3]},
+			{t: 'בלדד השוחי', p: [3,2,4], r: /ArticleID(\d*)/i, rp: [1]},
+			{t: 'בשבע', p: [1,2,3,4], r: /Article.aspx\/(\d+)/i, rp: [3]},
+			{t: 'האייל הקורא', p: [1,2,3,4], r: /story(?:_|\?id=)(\d+)/i, rp: [3]},
+			{t: 'הידען', p: [1,2,30,4], r: /hayadan\.org\.il\/([^\/]*)/i, rp: [3]},
+			{t: 'המאסף', p: [1,2,3,4], r: /notimportant\.co\.il\/?p=(\d+)/i, rp: [3]},
+			{t: 'חסקין', p: [3,2], r: /ArticleNum=(\d+)/i, rp: [1]},
+			{t: 'בבלי', p: [11,12,13]},
+			{t: 'משנה', p: [11,9,14]},
+			{t: 'רמב"ם', p: [8,17,9,31]},
+			{t: 'ירושלמי', p: [11,9,31]},
+			{t: 'שולחן ערוך', p: [33,15,16]},
+			{t: 'מטח', p: [1,2,3,4]},
+			{t: 'גלצ', p: [1,2,3,4], r: /NewsArticle\.aspx\?NewsId\=(\d+)/i, rp: [3]},
+			{t: 'ישראל היום', p: [1,2,3,4], r: /newsletter_article\.php\?id=(\d+)/i, rp: [3], bm: 1},
+			{t: 'מממ', p: [1,2,3,4], r: /data\/pdf\/([^\.])\.pdf/i, rp: [3]},
+			{t: 'מממ2', p: [1,2,3,4], r: /data\/docs\/([^\.])\.rtf/i, rp: [3]},
+			{t: 'משנה תורה', p: [12,3,34], r: /mechon-mamre.org\/\i\/(\d+)\.htm/i, rp: [2]},
+			{t: 'נזכור', p: [35,3], r: /HalalKorot\.aspx\?id=(\d+)/i, rp: [2]},
+			{t: 'סגולה', p: [1,2,3,4], r: /view-article\.asp\?article=(\d+)/i, rp: [3]},
+			{t: 'ספורט 5', p: [1,2,3,36,4], r: /articles\.aspx\?FolderID=(\d+)&docID=(\d+)/i, rp: [4,3]},
+			{t: 'ספסל', p: [3,18,0], r: /hplayer\.aspx\?id=(\d+)/i, rp: [1]},
+			{t: 'ספסל מאמן', p: [3,18,0], r: /hstaff\.aspx\?id=(\d+)/i, rp: [1]},
+			{t: 'ספרי יזכור', p: [1,37,3,4], r: /yizkor\.nypl\.org\/index\.php\?id=(\d+)/i, rp: [3]},
+			{t: 'הספרייה הדיגיטלית', p: [1,24,3,4], r: /nnl\/dig\/books\/([^\.]+)\.html/i, rp: [3]},
+			{t: 'אורות', p: [1,2,3,4], r: /Article\.aspx\?ID=(\d+)/i, rp: [3]},
+			{t: 'הערוץ האקדמי', p: [1,34,3,4], r: /programs\/Item\.aspx\?it=(\d+)/i, rp: [3], bm: 1},
+			{t: 'עכבר העיר', p: [1,2,3,4], r: /CM\.articles_item,(.*),\.aspx/i, rp: [3], bm: 1},
+			{t: 'ערוץ7', p: [1,2,3,4], r: /News\.aspx\/(\d+)/i, rp: [3], bm: 1},
+			{t: 'פעמים', p: [1,2,3,38], r: /dbsAttachedFiles\/Article_(.*)\.pdf/i, rp: [3]},
+			{t: 'תכלת', p: [1,2,3,4], r: /article\.php\?id=(\d+)/i, rp: [3]},
+			{t: 'אנצ דעת', p: [3,27], r: /value\.asp\?id1=(\d+)/i, rp: [1]},
+			{t: 'דעת', p: [1,39,2], r: /(?:www\.)?daat\.ac\.il\/(.*)/i, rp: [2]},
+			{t: 'ויקישיבה', p: [50]},
+			{t: 'HebrewBooks', p: [1,8,3,4], r: /hebrewbooks\.org\/(\d+)/i, rp: [3]},
+			{t: 'HebrewBooksPage', p: [1,8,3,4,40], r: /pdfpager\.aspx\?.*req=(\d+).*&pgnum=(\d+)/i, rp: [3,5]},
+			{t: 'גדולי ישראל', p: [29,40,41,13]},
+			{t: 'עיתונות יהודית היסטורית 2', p: [43,44,1,2,22,3,7,0,23], def: {9: "Ar"}, r: /(?:Key|BaseHref)=([A-Z]{3})\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, rp: [2,5,9,6], replace: [[/%2F/gi, '/']]},
+			{t: 'Iucnredlist', p: [45,3], r: /details(?:\.php)?\/(\d+)/, rp: [2]},
+			{t: 'העין השביעית', p: [1,34,6,4,25], r: /the7eye\.org\.il\/([^\/]+)\/Pages\/(.*)\.aspx/, rp: [5,3], bm: 1},
+			{t: 'One', p: [1,2,3,4], r: /(?:Article[\d\-\/,]*\/|id=)([\d\-\/,]*\d)/, rp: [3], bm: 1},
+			{t: 'קול הלשון - שיעור', p: [46,47,48,4], np: [['וידאו', '"וידאו": רשמו "כן" אם זה שיעור לצפייה'], ['תואר', 'תואר - אם תואר המרצה שונה מ"הרב"']], r: /(?:PathFile=|Source=)([^&]*)/i, rp: [3]},
+			{t: 'ספר פרויקט גוטנברג', np: [["כותב", "שם כותב הספר (אופציונלי)"], ['שם הספר', 'שם הספר (ברירת מחדל: שם הערך)'], ['מספר', 'מספר הספר בפרויקט']], r: /ebooks\/(\d+)/i, rp: [3]},
+			{t: 'imdb title', np: [['id', 'המספר שמופיע בקישור'], ['title', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך']], r: /title\/tt(\d+)/i, rp: [1]},
+			{t: 'imdb name', np: [['id', 'המספר שמופיע בקישור'], ['name', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך']], r: /name\/nm(\d+)/i, rp: [1]},
+			{t: 'imdb company', np: [['id', 'המספר שמופיע בקישור'], ['company', 'הכותרת שתופיע בקישור']], r: /company\/co(\d+)/i, rp: [1]},
+			{t: 'Google book', np: [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)'],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך']], r: /id=([^&]*)/, rp: [1]},
+			{t: 'TheMarker1', p: [1,2,3,4,51], r: /http:\/\/(?:www)?(.*)\.themarker\.com\/([^\?]+)/i, rp: [5,3]},
+			{t: 'מערכות', p: [1,2,3,49], r: /FILES\/(.*)\.pdf/i, rp: [3]},
+			{t: 'mako', p: [1,2,3,6,4], r: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, rp: [4,3], bm: 1},
+			];
+		
+		if (! templateName) {
+			var en = /^[a-z]/;
+			function compare(t1, t2) {
+				var gen = 'קישור כללי', a = t1.t.toLowerCase(), b = t2.t.toLowerCase();
+				if (a == gen ^ b == gen) return (b == gen) - (a == gen);
+				if (en.test(a) - en.test(b)) return en.test(a) - en.test(b); // all hebrew before all english
+				return a > b ? 1 : (a < b ? -1 : 0);
+			}
+			templatesAr.sort(compare);
+			return templatesAr;
 		}
-
-		// these guys are all the same - it's best to handle them as such.
+		
+		var template;
+		for (var i in templatesAr) 
+			if (templatesAr[i].t == templateName) 
+				template = templatesAr[i];
+		
+		for (var i in template.p)
+		if (typeof template.p[i] == "number")
+			template.p[i] = constants[template.p[i]];
+			
 		var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS"};
-		var histregex = {regex: /=HISTNAME\/(\d{4}\/\d{1,2}\/\d{1,2})(?:.*&EntityId=|\/\d+\/)([A-Z][a-z])(\d+)/i, params:[3,7,4], replace: [[/%2F/gi, '/']]};
-		for (var template in historic) {
-			var lr = $.extend({}, histregex);
-			lr.regex =  new RegExp(lr.regex.source.replace("HISTNAME", historic[template]));
-			regexes[template] = lr;
+		if (historic[template.t]) {
+			var r = new RegExp('=HISTNAME/(\\d{4}/\\d{1,2}/\\d{1,2})(?:.*&EntityId=|/\\d+/)([A-Z][a-z])(\\d+)'.replace('HISTNAME', historic[template.t]));
+			$.extend(template, {p: [1,2,22,3,7,0,23], def: {7: "Ar"}, r: r, rp: [3,7,4], replace: [[/%2F/gi, '/']]});
 		}
-		if (typeof privateRegexes === "object")
-			$.extend(regexes, privateRegexes);
-		return regexes[templateName];
+		return template;
 	}
 
-	function ltw2_linkTemplateDialog(dialog, templateName) {
+	function templateDialog(dialog, template) {
 		var
-			namedParamsList = ltw2_namedParams(templateName),
-			regexDict = ltw2_templateRegex(templateName),
-			paramList = ltw2_knownLinkTemplates()[templateName],
 			orderedFields = [],
 			namedFields = [],
 			table,
-			hasBookMarklet = $.inArray(templateName, ['ynet', 'הארץ', 'nrg', 'וואלה!', 'ערוץ 7', 'נענע10', 'גלובס', 'עכבר העיר', 'הערוץ האקדמי', 'העין השביעית', 'Xnet' ,'One', 'בחדרי חרדים','ישראל היום','mako']) + 1,
-			defParam = ltw2_defaultParameters(templateName),
 			empty = {val: function(){return '';}};
 
 		function createTemplate() {
-			var par = ["{{" + templateName];
+			var par = ["{{" + template.t];
 			for (var i in orderedFields) {
 				var val = orderedFields[i].val();
 				val = $.trim(val).replace('|', '{{!}}');
@@ -279,9 +195,10 @@ if (wgAction == 'edit') $(document).ready(function() {
 					val = (i + 1) + '=' + val;
 				par.push(val);
 			}
-			for (var parnum in defParam)
-				if (par[parnum] == defParam[parnum])
-					par[parnum] = '';
+			if (template.def)
+				for (var parnum in template.def)
+					if (par[parnum] == template.def[parnum])
+						par[parnum] = '';
 			while (par.length && !par[par.length-1].length && orderedFields[par.length-2].length) // last condition is to avoid remving "emptys"
 				par.pop();
 			var code = par.join("|");
@@ -303,9 +220,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 			return code;
 		}
 
-		function updatePreview(){
-			$('#ltw2_preview').text(createTemplate());
-		}
+		function updatePreview(){$('#ltw2_preview').text(createTemplate());}
 
 		function addRow(labelText, paramName) {
 			var inputField = $('<input>', {id: 'ltw2_inputfield_' + paramName, type: 'text', width: 600}).css({width: '28em'}).bind('input', updatePreview);
@@ -321,37 +236,38 @@ if (wgAction == 'edit') $(document).ready(function() {
 		
 		function extractParamsFromURL() {
 			var str = this.value;
-			if (regexDict.replace)
-				for (var r in regexDict.replace)
-					str = str.replace(regexDict.replace[r][0], regexDict.replace[r][1]);
-			var matches = str.match(regexDict.regex);
+			if (template.replace)
+				for (var r in template.replace)
+					str = str.replace(template.replace[r][0], template.replace[r][1]);
+			var matches = str.match(template.r);
 			if (matches)
 				for (var i = 1; i < matches.length; i++)
-					$('#ltw2_inputfield_' + regexDict.params[i-1]).val(matches[i] || '');
+					$('#ltw2_inputfield_' + template.rp[i-1]).val(matches[i] || '');
 			updatePreview();
 		}
 		
-		if (hasBookMarklet)
-			dialog.append($('<p>').css({color: 'red', fontWeight: 'bold'}).text('קיים בוקמרקלט שמייצר תבנית "'  +  templateName + '" באופן אוטומטי. אנא שקלו להשתמש בו.')).append($('<hr>'));
+		if (template.bm)
+			dialog.append($('<p>').css({color: 'red', fontWeight: 'bold'}).text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו.')).append($('<hr>'));
 		
-		if (regexDict)
+		if (template.r)
 			dialog.append($('<span>').text('הדביקו את הקישור כאן:').css({width: '20em'}))
 				.append($('<input>', {type: "text", maxLength: 600}).css({width: '30em'}).bind('input', extractParamsFromURL))
 				.append($('<hr>'));
 			
 		var table = $('<table>');
-		dialog.append(table);
-		for (var i in paramList)
-			if (paramList[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
+		
+		dialog.append(table); //have to do it here (before adding the rows), otherwise column width comes out wrong.
+		
+		for (var i in template.p)
+			if (template.p[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
 				orderedFields.push(empty);
 			else
-				addRow(paramList[i], parseInt(i, 10) + 1);
+				addRow(template.p[i], parseInt(i, 10) + 1);
 			
-		for (var i in namedParamsList)
-			addRow(namedParamsList[i][1], namedParamsList[i][0]);
+		for (var i in template.np)
+			addRow(template.np[i][1], template.np[i][0]);
 		
-		dialog/*.append(table)*/
-			.append($('<p>').css({height: '2em'}))
+		dialog.append($('<p>').css({height: '2em'}))
 			.append($('<label>').text(' הערת שוליים '))
 			.append($('<input>', {type: 'checkbox', id: 'ltw2_ref'}).change(updatePreview))
 			.append($('<label>').css({width: '12em'}).text( ' פריט ברשימה '))
@@ -362,13 +278,14 @@ if (wgAction == 'edit') $(document).ready(function() {
 		buttons['אישור'] = function() {insertTags('', '', createTemplate()); dialog.dialog('close');};
 		buttons['ביטול'] = function() {dialog.dialog('close');};
 		dialog.dialog('option', 'buttons', buttons);
+		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
 		updatePreview();
 		dialog.dialog('option', 'position', [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]);
 	}
 
-	function ltw2_fireLinkTemplatePopup() {
+	function fireDialog() {
 		var title = 'יצירת תבנית קישור',
-			dialog = $('<div>', {id: 'ltw_dialog'}).dialog({
+			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8'}).dialog({
 							title: title,
 							resizable: false,
 							height: 'auto',
@@ -379,35 +296,24 @@ if (wgAction == 'edit') $(document).ready(function() {
 
 			selector = $('<select>').change(function() {
 				if (this.value) {
-					var templateName = this.value;
-					dialog.dialog('option', 'title', title + ' עבור ' + templateName);
+					var template = templates(this.value);
+					dialog.dialog('option', 'title', title + ' עבור ' + template.t);
 					$(this).remove();
-					ltw2_linkTemplateDialog(dialog, templateName);
+					templateDialog(dialog, template);
 				}
 			});
 		
 		selector.append($('<option>', {text: 'בחרו תבנית מהרשימה'}));
-		var fullList = ltw2_knownLinkTemplates();
-		var names = [], hnames = [];
-		var first = 'קישור כללי';
-		for (var x in fullList)
-			if (x.match(/^[a-zA-Z]/))
-				names.push(x);
-			else
-				if (x != first)
-					hnames.push(x);
-		hnames.sort();
-		names.sort(function(a,b){var la=a.toLowerCase(),lb=b.toLowerCase();return la>lb?1:la<lb?-1:0;});
-		var allnames = [first].concat(hnames).concat(names);
-		for (var i in allnames)
-			selector.append($('<option>', {text: allnames[i], value: allnames[i]}));
+		var fullList = templates(false);
+		for (var i in fullList)
+			selector.append($('<option>', {text: fullList[i].t, value: fullList[i].t}));
 		dialog.append(selector);
 	}
 
 	setTimeout(function() {
 		var button = $('<img>', {src: 'http://he.wikipedia.org/skins-1.5/common/images/button_extlink.png', 					   title: 'תבנית קישור'})
 		.click(function() {
-			mediaWiki.loader.using('jquery.ui.dialog', ltw2_fireLinkTemplatePopup);
+			mediaWiki.loader.using('jquery.ui.dialog', fireDialog);
 		});
 		$('div.section-advanced > div:last').append(button);
 		$('div #toolbar').append(button);
