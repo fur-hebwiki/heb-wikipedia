@@ -284,6 +284,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 	}
 
 	function fireDialog() {
+		$('#ltw_dialog').remove(); // kill existing popup when button is pressed again.
 		var title = 'יצירת תבנית קישור',
 			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8'}).dialog({
 							title: title,
