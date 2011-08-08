@@ -181,17 +181,15 @@ if (wgAction == 'edit') $(document).ready(function() {
 	}
 
 	function templateDialog(dialog, template) {
-		var
-			orderedFields = [],
+		var	orderedFields = [],
 			namedFields = [],
-			table,
+			table = $('<table>'),
 			empty = {val: function(){return '';}, hasClass: function(){return 0;}};
 
-		function createTemplate() {
+		function createWikiCode() {
 			var par = ["{{" + template.t];
 			for (var i in orderedFields) {
-				var val = orderedFields[i].val();
-				val = $.trim(val).replace('|', '{{!}}');
+				var val = $.trim(orderedFields[i].val()).replace('|', '{{!}}');
 				if (val.indexOf('=') + 1)
 					val = (i + 1) + '=' + val;
 				par.push(val);
@@ -222,7 +220,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 		}
 
 		function updatePreview(){
-			$('#ltw2_preview').text(createTemplate());
+			$('#ltw2_preview').text(createWikiCode());
 			var good = true;
 			var f = orderedFields.concat(namedFields)
 			for (i in f)
@@ -258,19 +256,27 @@ if (wgAction == 'edit') $(document).ready(function() {
 		}
 		
 		if (template.bm)
-			dialog.append($('<p>').css({color: 'red', fontWeight: 'bold'}).text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו.')).append($('<hr>'));
+			dialog.append($('<p>').css({color: 'red', fontWeight: 'bold'})
+				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו.'))
+				.append($('<hr>'));
 		
 		if (template.r)
 			dialog.append($('<span>').text('הדביקו את הקישור כאן:').css({width: '20em'}))
 				.append($('<input>', {type: "text", maxLength: 600}).css({width: '30em'}).bind('input', extractParamsFromURL))
 				.append($('<hr>'))
-				.append($('<p>').text('השדות המסומנים באדום הם חובה, השאר אופציונליים'));
-			
-		var table = $('<table>');
+				
+		dialog
+			.append($('<p>').text('השדות המסומנים באדום הם חובה, השאר אופציונליים'))
+			.append(table)
+			.append($('<p>').css({height: '2em'}))
+			.append($('<label>').text(' הערת שוליים '))
+			.append($('<input>', {type: 'checkbox', id: 'ltw2_ref'}).change(updatePreview))
+			.append($('<label>').css({width: '12em'}).text( ' פריט ברשימה '))
+			.append($('<input>', {type: 'checkbox', id: 'ltw2_list'}).change(updatePreview))
+			.append($('<p>').css({height: '1.5em'}))
+			.append($('<p>', {id: 'ltw2_preview'}).css({backgroundColor: "lightGreen", fontSize: '120%', maxWidth: '40em'}));
 		
-		dialog.append(table); //have to do it here (before adding the rows), otherwise column width comes out wrong.
-		
-		for (var i = 0; i < template.p.length; i++)
+		for (var i = 0; i < (template.p || []).length; i++)
 			if (template.p[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
 				orderedFields.push(empty);
 			else
@@ -279,21 +285,17 @@ if (wgAction == 'edit') $(document).ready(function() {
 		for (var i in template.np)
 			addRow(template.np[i][1], template.np[i][0], template.np[i][2]);
 		
-		dialog.append($('<p>').css({height: '2em'}))
-			.append($('<label>').text(' הערת שוליים '))
-			.append($('<input>', {type: 'checkbox', id: 'ltw2_ref'}).change(updatePreview))
-			.append($('<label>').css({width: '12em'}).text( ' פריט ברשימה '))
-			.append($('<input>', {type: 'checkbox', id: 'ltw2_list'}).change(updatePreview))
-			.append($('<p>').css({height: '1.5em'}))
-			.append($('<p>', {id: 'ltw2_preview'}).css({backgroundColor: "lightGreen", fontSize: '120%', maxWidth: '40em'}));
 			
 		dialog.dialog('option', 'buttons', {
-			'אישור': function() {insertTags('', '', createTemplate()); dialog.dialog('close');},
+			'אישור': function() {insertTags('', '', createWikiCode()); dialog.dialog('close');},
 			'ביטול': function() {dialog.dialog('close');}
 		});
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
-		
-		dialog.dialog('option', 'position', [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]);
+		dialog.dialog('option', {
+			height: 'auto',
+			width: 'auto',
+			position: [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]
+		});
 		updatePreview();
 	}
 
@@ -301,21 +303,15 @@ if (wgAction == 'edit') $(document).ready(function() {
 		$('#ltw_dialog').remove(); // kill existing popup when button is pressed again.
 		var title = 'יצירת תבנית קישור',
 			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8'}).dialog({
-							title: title,
-							resizable: false,
-							height: 'auto',
-							width: 'auto',
-							modal: false,
-							close: function() {$(this).remove();},
-						}),
-
+				title: title,
+				resizable: false,
+				close: function() {$(this).remove();},
+			}),
 			selector = $('<select>').change(function() {
-				if (this.value) {
-					var template = templates(this.value);
-					dialog.dialog('option', 'title', title + ' עבור ' + template.t);
-					$(this).remove();
-					templateDialog(dialog, template);
-				}
+				if (! this.value) return;
+				dialog.dialog('option', 'title', title + ' עבור ' + this.value);
+				$(this).remove();
+				templateDialog(dialog, templates(this.value));
 			});
 		
 		selector.append($('<option>', {text: 'בחרו תבנית מהרשימה'}));
@@ -326,7 +322,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var button = $('<img>', {src: 'http://he.wikipedia.org/skins-1.5/common/images/button_extlink.png', 					   title: 'תבנית קישור'})
+		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/e/ea/Button_easy_cite.png', title: 'תבנית קישור'})
 		.click(function() {
 			mediaWiki.loader.using('jquery.ui.dialog', fireDialog);
 		});
