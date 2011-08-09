@@ -322,7 +322,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/e/ea/Button_easy_cite.png', title: 'תבנית קישור'})
+		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור'})
 		.click(function() {
 			mediaWiki.loader.using('jquery.ui.dialog', fireDialog);
 		});
