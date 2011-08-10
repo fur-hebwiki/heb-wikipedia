@@ -98,7 +98,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 			{t: 'אנציקלופדיה ynet', p: [27,3,28,4], r: /\/yaan\/0,7340,L-(\d+)-([^-]*)-FreeYaan,00.html/i, rp: [2,3], op: [3]},
 			{t: 'תדהר', p: [29,13,27], op: [2]},
 			{t: 'אנשים ישראל', p: [1,2,3,4], r: /.*itemID=(\d+)&/i, rp: [3], op: [3]},
-			{t: 'אתר חיל האוויר', p: [1,2,3,4], r: /\/([^\/]*)-he\//i, rp: [3]},
+			{t: 'אתר חיל האוויר', p: [1,2,3,4], r: /\/([^\/]*)-he\//i, rp: [3], op: [3]},
 			{t: 'בלדד השוחי', p: [3,2,4], r: /ArticleID(\d*)/i, rp: [1], op: [2]},
 			{t: 'בשבע', p: [1,2,3,4], r: /Article.aspx\/(\d+)/i, rp: [3], op: [3]},
 			{t: 'האייל הקורא', p: [1,2,3,4], r: /story(?:_|\?id=)(\d+)/i, rp: [3], op: [3]},
@@ -188,7 +188,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 
 		function createWikiCode() {
 			var par = ["{{" + template.t];
-			for (var i in orderedFields) {
+			for (var i = 0; i < orderedFields.length; i++) {
 				var val = $.trim(orderedFields[i].val()).replace('|', '{{!}}');
 				if (val.indexOf('=') + 1)
 					val = (i + 1) + '=' + val;
