@@ -184,10 +184,16 @@ function wikiit() {
     hostname: "www.nrg.co.il", condition: function(){return ($("h1:first").length == 0)},  minimum:8,
      params:[
       {str : 'nrg'},
-      {telem: "font.newsVitzCredit", remove:["NRG מעריב"]},
+      [
+		{telem: "font.newsVitzCredit", remove:["NRG מעריב"]},
+		{elem: "td.newsVitzCredit", match:/^(.*?)<br>/ ,remove:["NRG מעריב"]}
+      ],
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
-      {telem: "font.newsVitzCredit:last, .opinionMainVitzBody", match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat},
+      [
+		{telem: "font.newsVitzCredit:last, .opinionMainVitzBody", match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat},
+		{elem: "td.newsVitzCredit",  match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
+	  ],
       {str : ''},
       {str : location.href, match: /online\/(.*?)\/ART/},
       {str : location.href, match: /ART(\d+)/}
