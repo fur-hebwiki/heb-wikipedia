@@ -1,6 +1,6 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
-if (wgAction == 'edit') $(document).ready(function() {
+if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 
 
@@ -227,6 +227,8 @@ if (wgAction == 'edit') $(document).ready(function() {
 				if (f[i].hasClass('ltw_required') && $.trim(f[i].val()).length == 0)
 					good = false;
 			$(".ui-dialog-buttonpane button:contains('אישור')").button(good ? "enable" : "disable");
+			$('#ltw2_list').attr('disabled', $('#ltw2_ref').attr('checked'));
+			$('#ltw2_ref').attr('disabled', $('#ltw2_list').attr('checked'));
 		}
 
 		function addRow(labelText, paramName, optional) {
