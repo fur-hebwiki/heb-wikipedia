@@ -258,7 +258,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		}
 		
 		if (template.bm)
-			dialog.append($('<p>').css({color: 'red', fontWeight: 'bold'})
+			dialog.append($('<p>', {title: 'ראו דף "עזרה:בוקמרקלטים"'}).css({color: 'red', fontWeight: 'bold'})
 				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו.'))
 				.append($('<hr>'));
 		
@@ -321,6 +321,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		for (var i in fullList)
 			selector.append($('<option>', {text: fullList[i].t, value: fullList[i].t}));
 		dialog.append(selector);
+		dialog.append($('<p>').css({fontSize: '0.8em'}).text('עזרה ודיווח על בעיות בדף "עזרה:אשף תבניות קישורים"'));
 	}
 
 	setTimeout(function() {
