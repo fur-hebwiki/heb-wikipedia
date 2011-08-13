@@ -110,7 +110,7 @@ function wikiit() {
       {str : 'גלובס'},
       {elem:'#coteret_Writer, .g_Article_Author, #F_Author' , remove:[/<.*?>/gmi , /&nbsp;/gmi,'מאת '] },
       {elem:'#F_Title, .mainArticletitle' },
-      {str : location.href, match: /=(.*?)$/},
+      {str : location.href, match: /=(\d+)/},
       {elem:'#coteret_Modified, #F_Modified_on, .g_Article_DateTime', match:/^(.*),/, split:'/', func:dateFormat}
      ]
     },
