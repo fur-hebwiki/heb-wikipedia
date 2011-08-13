@@ -2,7 +2,7 @@
 
 function riwt_short_date() {
     var date = new Date();
-	var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
+    var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
 	return date.getUTCDate() + '/' + (1+date.getUTCMonth()) + '/' + date.getUTCFullYear() + ' ' + date.getUTCHours() + ':' + min;
 }
 
@@ -16,7 +16,9 @@ function riwt_save_topage(title, summary, content, section, next) {
 	}
 	
 	function tokenReceived(token) {
-		var param = {action: 'edit', title: title, summary: summary, token: token, section: section || '0', format: 'json'};
+		var param = {action: 'edit', title: title, summary: summary, token: token, format: 'json'};
+		if (typeof section == 'number')
+			param.section = section;
 		$.extend(param, content);
 		$.post(wgScriptPath + '/api.php?', param, doneSave);
 	}
@@ -55,7 +57,7 @@ function riwt_handle_removed(current, removed, pagesWithTemplate, data, sanitize
 }
 
 function riwt_process_current(current, sanitizedRemoved, progress) {
-	var stale = {}, work = current.slice(), threshold = new Date() - 1000 * 60 * 60 * 24 * 21; //three weeks
+	var dateLastEdit = {}, work = current.slice(), threshold = new Date() - 1000 * 60 * 60 * 24 * 21; //three weeks
 	progress.lastLine(progress.lastLine() + ' - בוצע');
 	progress.lastLine('', 1);
 	nextSlice(work.splice(0, 50));
@@ -65,14 +67,28 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 		progress.lastLine(message + done + '/' + todo);
 	}
 	
-	function isold(ts) {
+	function getDate(ts) {
 		dar = ts.split(/[^\d]/); // timestamp looks like so: "2011-05-05T18:56:27Z"
 		var month = parseInt(dar[1],10) - 1; // "Date" expexts months in the range of 0..11, timestamp is more conventional.
-		return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]) < threshold;
+		return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]);
 	}
 	
 	function storeCurrent() {
-		riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: '#' + current.join('\n#')}, 0,
+		function daysStale(article) {
+			var now = new Date();
+			var diff = now - dateLastEdit[article].ts;
+			return Math.round(diff / 1000 / 3600 / 24);
+		}
+		
+		current.sort(function(a, b) {return dateLastEdit[a].ts - dateLastEdit[b].ts;});
+		var text = '==ערכים עם תבנית {{תב|בעבודה}} (מספר הימים מעריכה אחרונה, העורך האחרון)==\n\n';
+		text += '(שימו לב: השם בסוגריים הוא העורך האחרון שערך את הערך, ולאו דווקא העורך שהניח את התבנית)\n\n';
+		for (var i in current) {
+			article = current[i];
+			text += '#[[' + article + ']] {{כ}} (' + daysStale(article) + ', [[משתמש:' + dateLastEdit[article].user + ']])\n';
+		}
+		
+		riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: text}, '',
 			function() {
 				progress.lastLine('הסקריפט סיים לרוץ. התבנית הוסרה מ-' + sanitizedRemoved.length + ' דפים ', 1);
 				progress.closeIt();
@@ -82,19 +98,15 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 	
 	function nextSlice(slice) {
 		report();
-		riwt_get_json({action: 'query', prop: 'revisions', rvprop: 'timestamp', titles: slice.join('|').replace(/&/g, '%26')}, function(data) {
+		riwt_get_json({action: 'query', prop: 'revisions', rvprop: 'timestamp|user', titles: slice.join('|').replace(/&/g, '%26')}, function(data) {
 			if (data.query && data.query.pages)
 				for (var pageid in data.query.pages) {
 					var page = data.query.pages[pageid];
-					stale[page.title] = isold(page.revisions[0].timestamp);
+					dateLastEdit[page.title] = {ts: getDate(page.revisions[0].timestamp), user: page.revisions[0].user};
 				}
 			if (work.length)
 				nextSlice(work.splice(0, 50));
 			else {
-				for (var i in current) {
-					var bold = stale[current[i]] ? "'''" : "";
-					current[i] = bold + '[[' + current[i] + ']]' + bold;
-				}
 				if (sanitizedRemoved.length > 0)
 					riwt_save_topage(riwt_page_name(1), 'עדכון '  + riwt_short_date(),
 						{prependtext: '\n====הרצה בתאריך ' + riwt_short_date() + '====\n*[[' + sanitizedRemoved.join(']]\n*[[') + ']]\n'}, 
@@ -116,7 +128,7 @@ function riwt_analyze_results(data, pagesWithTemplate, progress) {
 	if (data && data.parse && data.parse.links)
 		for (var i in data.parse.links) {
 			var link = data.parse.links[i], title = link['*'];
-			if (title && link['exists'] == '' && !pagesWithTemplate[title])
+			if (title && ! /(משתמש:|תבנית:)/.test(title) && ! link['exists'] == '' && !pagesWithTemplate[title])
 				removed.push(title);
 		}
 	current = [];
