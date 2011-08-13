@@ -262,6 +262,16 @@ function wikiit() {
       {str: location.href, match:/ve\/(.*?)\.html/},
       {telem:"#ctl00_ContentMain_UcArticle1_lblCreateDate", match:/(\d+\/\d+\/\d+)/m, split:'/',  func:dateFormat}
      ]
+    },
+    { //even this is not exactly "External Link Template"
+	hostname: "aleph.nli.org.il",
+     params:[
+      {str : 'מאמר'},
+      {telem: "#fullRecordView th:contains(מחבר):first + td"},
+      {telem: "#fullRecordView th:contains(כותר):first + td"},
+      {telem: "#fullRecordView th:contains(בתוך):first + td"},
+      {telem: "#fullRecordView th:contains(מס' מערכת):first + td", prefix: "רמבי="}
+     ]
     }
   ];
  
@@ -339,8 +349,11 @@ function wikiit() {
 				params[j] = curParam.func[funcIdx](params[j]);
 			  }
 			}
+			
+			if (typeof curParam.prefix != "undefined")
+				params[j] = curParam.prefix + params[j];
 
-			params[j] = jQuery.trim(unescape(params[j].replace("&nbsp;"," ")).replace(/\s+|\|/gm, ' '));
+			params[j] = jQuery.trim(unescape(params[j].replace(/&nbsp;|\u202B|\u202C/gm," ").replace(/\s+|\|/gm, ' ')));
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 			
