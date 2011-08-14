@@ -275,6 +275,7 @@ function wikiit() {
     }
   ];
  
+  var isFound = false;
   for (var i in data)
   {
     if (location.hostname.match(data[i].hostname)
@@ -378,10 +379,12 @@ function wikiit() {
 			params.pop();
 		
 		prompt("Your template:", '{{' + params.join('|') + '}}');
+		isFound = true;
 		break;
 	}
-	
   }
+  
+  if (!isFound)  alert("This site\page isn't supported by the bookmarklet.");
 }
 (function ()
 {
