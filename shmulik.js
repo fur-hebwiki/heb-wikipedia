@@ -267,9 +267,12 @@ function wikiit() {
 	hostname: "aleph.nli.org.il",
      params:[
       {str : 'מאמר'},
-      {telem: "#fullRecordView th:contains(מחבר):first + td"},
-      {telem: "#fullRecordView th:contains(כותר):first + td"},
-      {telem: "#fullRecordView th:contains(בתוך):first + td"},
+      {telem: "#fullRecordView th:contains(מחבר):first + td", func:function(str){var strs = str.match(/^(.*?), (.*?)$/); return (strs.length==3)?(strs[2]+" "+strs[1]):str;}},
+      {telem: "#fullRecordView th:contains(כותר):first + td", match:/^(.*?)\.?[\s\u202c]*$/},
+      {telem: "#fullRecordView th:contains(בתוך):first + td", match:/^(.*?) \(/},
+      {str:''},
+      {telem: "#fullRecordView th:contains(בתוך):first + td", match:/\((.*?)\)/, func:function(yh){return yh.substring(0,yh.length-1) + '"' + yh.substr(yh.length-1);}},
+      {telem: "#fullRecordView th:contains(בתוך):first + td", match:/(\d+\-\d+)/},
       {telem: "#fullRecordView th:contains(מס' מערכת):first + td", prefix: "רמבי="}
      ]
     }
@@ -384,7 +387,7 @@ function wikiit() {
 	}
   }
   
-  if (!isFound)  alert("This site\page isn't supported by the bookmarklet.");
+  if (!isFound)  alert("This site\\page isn't supported by the bookmarklet.");
 }
 (function ()
 {
