@@ -110,7 +110,7 @@ function wikiit() {
       {str : 'גלובס'},
       {elem:'#coteret_Writer, .g_Article_Author, #F_Author' , remove:[/<.*?>/gmi , /&nbsp;/gmi,'מאת '] },
       {elem:'#F_Title, .mainArticletitle' },
-      {str : location.href, match: /=(.*?)$/},
+      {str : location.href, match: /=(\d+)/},
       {elem:'#coteret_Modified, #F_Modified_on, .g_Article_DateTime', match:/^(.*),/, split:'/', func:dateFormat}
      ]
     },
@@ -262,9 +262,23 @@ function wikiit() {
       {str: location.href, match:/ve\/(.*?)\.html/},
       {telem:"#ctl00_ContentMain_UcArticle1_lblCreateDate", match:/(\d+\/\d+\/\d+)/m, split:'/',  func:dateFormat}
      ]
+    },
+    { //even this is not exactly "External Link Template"
+	hostname: "aleph.nli.org.il",
+     params:[
+      {str : 'מאמר'},
+      {telem: "#fullRecordView th:contains(מחבר):first + td", func:function(str){var strs = str.match(/^(.*?), (.*?)$/); return (strs.length==3)?(strs[2]+" "+strs[1]):str;}},
+      {telem: "#fullRecordView th:contains(כותר):first + td", match:/^(.*?)\.?[\s\u202c]*$/},
+      {telem: "#fullRecordView th:contains(בתוך):first + td", match:/^(.*?) \(/},
+      {str:''},
+      {telem: "#fullRecordView th:contains(בתוך):first + td", match:/\((.*?)\)/, func:function(yh){return yh.substring(0,yh.length-1) + '"' + yh.substr(yh.length-1);}},
+      {telem: "#fullRecordView th:contains(בתוך):first + td", match:/(\d+\-\d+)/},
+      {telem: "#fullRecordView th:contains(מס' מערכת):first + td", prefix: "רמבי="}
+     ]
     }
   ];
  
+  var isFound = false;
   for (var i in data)
   {
     if (location.hostname.match(data[i].hostname)
@@ -339,8 +353,11 @@ function wikiit() {
 				params[j] = curParam.func[funcIdx](params[j]);
 			  }
 			}
+			
+			if (typeof curParam.prefix != "undefined")
+				params[j] = curParam.prefix + params[j];
 
-			params[j] = jQuery.trim(unescape(params[j].replace("&nbsp;"," ")).replace(/\s+|\|/gm, ' '));
+			params[j] = jQuery.trim(unescape(params[j].replace(/&nbsp;|\u202B|\u202C/gm," ").replace(/\s+|\|/gm, ' ')));
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 			
@@ -365,10 +382,12 @@ function wikiit() {
 			params.pop();
 		
 		prompt("Your template:", '{{' + params.join('|') + '}}');
+		isFound = true;
 		break;
 	}
-	
   }
+  
+  if (!isFound)  alert("This site\\page isn't supported by the bookmarklet.");
 }
 (function ()
 {
