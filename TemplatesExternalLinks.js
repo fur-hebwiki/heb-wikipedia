@@ -147,7 +147,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 			{t: 'Google book', np: [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)', 1],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך', 1]], r: /id=([^&]*)/, rp: [1]},
 			{t: 'TheMarker1', p: [1,2,3,4,51], r: /http:\/\/(?:www)?(.*)\.themarker\.com\/([^\?]+)/i, rp: [5,3], op: [3,4]},
 			{t: 'מערכות', p: [1,2,3,49], r: /FILES\/(.*)\.pdf/i, rp: [3], op: [3]},
-			{t: 'mako', p: [1,2,3,6,4], r: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, rp: [4,3], bm: 1, op: [4]},
+			{t: 'mako', p: [1,2,3,6,4], r: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, rp: [4,3], bm: 1, op: [4]}
 			];
 		
 		if (! templateName) {
@@ -305,7 +305,7 @@ if (wgAction == 'edit') $(document).ready(function() {
 			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8'}).dialog({
 				title: title,
 				resizable: false,
-				close: function() {$(this).remove();},
+				close: function() {$(this).remove();}
 			}),
 			selector = $('<select>').change(function() {
 				if (! this.value) return;
