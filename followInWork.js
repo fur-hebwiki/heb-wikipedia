@@ -187,7 +187,7 @@ function riwt_doit() {
 						modal: true,
 						resizable: false,
 						draggable: false,
-						closeOnEscape: false,
+						closeOnEscape: false
 					});
 					$('.ui-dialog-titlebar').hide();
 				},
@@ -205,7 +205,7 @@ function riwt_doit() {
 						document.body.style.cursor = '';
 					})));
 				},
-				lines: ['<div id="riwt_dialog" style="font-size:2em;">'],
+				lines: ['<div id="riwt_dialog" style="font-size:2em;">']
 			};
 
 			progress.init();
