@@ -16,7 +16,9 @@ function riwt_save_topage(title, summary, content, section, next) {
 	}
 	
 	function tokenReceived(token) {
-		var param = {action: 'edit', title: title, summary: summary, token: token, section: section || '0', format: 'json'};
+		var param = {action: 'edit', title: title, summary: summary, token: token, format: 'json'};
+		if (typeof section == 'number')
+			param.section = section;
 		$.extend(param, content);
 		$.post(wgScriptPath + '/api.php?', param, doneSave);
 	}
@@ -55,7 +57,7 @@ function riwt_handle_removed(current, removed, pagesWithTemplate, data, sanitize
 }
 
 function riwt_process_current(current, sanitizedRemoved, progress) {
-	var stale = {}, work = current.slice(), threshold = new Date() - 1000 * 60 * 60 * 24 * 21; //three weeks
+	var dateLastEdit = {}, work = current.slice(), threshold = new Date() - 1000 * 60 * 60 * 24 * 21; //three weeks
 	progress.lastLine(progress.lastLine() + ' - בוצע');
 	progress.lastLine('', 1);
 	nextSlice(work.splice(0, 50));
@@ -65,14 +67,33 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 		progress.lastLine(message + done + '/' + todo);
 	}
 	
-	function isold(ts) {
+	function howOld(ts) {
 		dar = ts.split(/[^\d]/); // timestamp looks like so: "2011-05-05T18:56:27Z"
 		var month = parseInt(dar[1],10) - 1; // "Date" expexts months in the range of 0..11, timestamp is more conventional.
-		return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]) < threshold;
+		return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]);
 	}
 	
 	function storeCurrent() {
-		riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: '#' + current.join('\n#')}, 0,
+		function daysStale(article) {
+			var now = new Date();
+			var diff = now - dateLastEdit[article];
+			return Math.round(diff / 1000 / 3600 / 24);
+		}
+		
+		var fresh = [], stale = [];
+		for (var i in current) {
+			article = current[i];
+			if (dateLastEdit[article] > threshold)
+				fresh.push(article);
+			else
+				stale.push(article);
+			stale.sort(function(a, b) {return dateLastEdit[a] - dateLastEdit[b];});
+		}
+		var text = '__TOC__\n\n\n#[[' + fresh.join(']]\n#[[') + ']]\n\n==ערכים עתיקים (מספר הימים מעריכה אחרונה)==\n\n';
+		for (var i in stale) 
+			text += '#[[' + stale[i] + ']] {{כ}} (' + daysStale(stale[i]) + ')\n';
+		
+		riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: text}, '',
 			function() {
 				progress.lastLine('הסקריפט סיים לרוץ. התבנית הוסרה מ-' + sanitizedRemoved.length + ' דפים ', 1);
 				progress.closeIt();
@@ -86,15 +107,11 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 			if (data.query && data.query.pages)
 				for (var pageid in data.query.pages) {
 					var page = data.query.pages[pageid];
-					stale[page.title] = isold(page.revisions[0].timestamp);
+					dateLastEdit[page.title] = howOld(page.revisions[0].timestamp);
 				}
 			if (work.length)
 				nextSlice(work.splice(0, 50));
 			else {
-				for (var i in current) {
-					var bold = stale[current[i]] ? "'''" : "";
-					current[i] = bold + '[[' + current[i] + ']]' + bold;
-				}
 				if (sanitizedRemoved.length > 0)
 					riwt_save_topage(riwt_page_name(1), 'עדכון '  + riwt_short_date(),
 						{prependtext: '\n====הרצה בתאריך ' + riwt_short_date() + '====\n*[[' + sanitizedRemoved.join(']]\n*[[') + ']]\n'}, 
