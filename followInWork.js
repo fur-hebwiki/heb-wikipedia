@@ -129,7 +129,7 @@ function riwt_analyze_results(data, pagesWithTemplate, progress) {
 	if (data && data.parse && data.parse.links)
 		for (var i in data.parse.links) {
 			var link = data.parse.links[i], title = link['*'];
-			if (title && ! /(משתמש:|תבנית:)/.test(title) && ! link['exists'] == '' && !pagesWithTemplate[title])
+			if (title && ! /(משתמש:|תבנית:)/.test(title) && link['exists'] == '' && !pagesWithTemplate[title])
 				removed.push(title);
 		}
 	current = [];
