@@ -9,12 +9,12 @@ function riwt_short_date() {
 function riwt_save_topage(title, summary, content, section, next) {
 
 	function doneSave(data) {
-		if (data && data.error) 
+		if (data && data.error)
 			alert('error saving: ' + data.error['info']);
 		else if (data && data.edit && data.edit.result == 'Success' && typeof next == 'function')
 			next();
 	}
-	
+
 	function tokenReceived(token) {
 		var param = {action: 'edit', title: title, summary: summary, token: token, format: 'json'};
 		if (typeof section == 'number')
@@ -66,21 +66,21 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 		var message = 'כותב את רשימת הדפים עם התבנית ', todo = current.length, done = todo - work.length;
 		progress.lastLine(message + done + '/' + todo);
 	}
-	
+
 	function getDate(ts) {
 		dar = ts.split(/[^\d]/); // timestamp looks like so: "2011-05-05T18:56:27Z"
 		var month = parseInt(dar[1],10) - 1; // "Date" expexts months in the range of 0..11, timestamp is more conventional.
 		return new Date(dar[0],month,dar[2],dar[3],dar[4],dar[5]);
 	}
-	
+
 	function storeCurrent() {
-	
+
 		function daysStale(article) {
 			var now = new Date();
 			var diff = now - dateLastEdit[article].ts;
 			return Math.round(diff / 1000 / 3600 / 24);
 		}
-		
+
 		current.sort(function(a, b) {return dateLastEdit[a].ts - dateLastEdit[b].ts;});
 		var text = '==ערכים עם תבנית {{תב|בעבודה}} (מספר הימים מעריכה אחרונה, העורך האחרון)==\n\n';
 		text += '(שימו לב: השם בסוגריים הוא העורך האחרון שערך את הערך, ולאו דווקא העורך שהניח את התבנית)\n\n';
@@ -88,7 +88,7 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 			article = current[i];
 			text += '#[[' + article + ']] {{כ}} (' + daysStale(article) + ', [[משתמש:' + dateLastEdit[article].user + ']])\n';
 		}
-		
+
 		riwt_save_topage(riwt_page_name(0), 'עדכון '  + riwt_short_date(), {text: text}, '',
 			function() {
 				progress.lastLine('הסקריפט סיים לרוץ. התבנית הוסרה מ-' + sanitizedRemoved.length + ' דפים ', 1);
@@ -96,7 +96,7 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 			}
 		);
 	}
-	
+
 	function nextSlice(slice) {
 		report();
 		riwt_get_json({action: 'query', prop: 'revisions', rvprop: 'timestamp|user', titles: slice.join('|').replace(/&/g, '%26')}, function(data) {
@@ -110,7 +110,7 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 			else {
 				if (sanitizedRemoved.length > 0)
 					riwt_save_topage(riwt_page_name(1), 'עדכון '  + riwt_short_date(),
-						{prependtext: '\n====הרצה בתאריך ' + riwt_short_date() + '====\n*[[' + sanitizedRemoved.join(']]\n*[[') + ']]\n'}, 
+						{prependtext: '\n====הרצה בתאריך ' + riwt_short_date() + '====\n*[[' + sanitizedRemoved.join(']]\n*[[') + ']]\n'},
 						1,
 						function() {
 							progress.lastLine('כותב את רשימת הדפים מהם הוסרה התבנית', 1);
@@ -163,11 +163,11 @@ function riwt_get_current_list(data, pagesWithTemplate, progress) {
 }
 
 
-function riwt_page_name(type, full) {	
-	return (full ? wgServer + '/w/index.php?title=' : '') + 
+function riwt_page_name(type, full) {
+	return (full ? wgServer + '/w/index.php?title=' : '') +
 		'ויקיפדיה:ערכים מהם הוסרה תבנית בעבודה' +
 	(type == 0 ?
-	'/דפים עם התבנית' 
+	'/דפים עם התבנית'
 	: '');
 }
 
@@ -200,14 +200,14 @@ function riwt_doit() {
 				},
 				closeIt: function() {
 					var d = this.dialog;
-					d.append($('<p>').append($('<input>', {type: 'button', value: 'סגור'}).click(function() { 
+					d.append($('<p>').append($('<input>', {type: 'button', value: 'סגור'}).click(function() {
 						$(d).dialog('close');
 						document.body.style.cursor = '';
 					})));
 				},
 				lines: ['<div id="riwt_dialog" style="font-size:2em;">'],
 			};
-			
+
 			progress.init();
 			progress.lastLine(' ');
 			riwt_get_current_list(false, {}, progress);
