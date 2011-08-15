@@ -10,13 +10,10 @@ $(document).ready(function() {
 						if (data && 1 in data) {
 							$this.suggestions('suggestions',data[1]);
 							if (data[1].length < 8) {
-								var orig = data[1];
-								var hes = "qwertyuiopasdfghjkl;zxcvbnm,./'קראטוןםפשדגכעיחלךףזסבהנמצתץ";
-								var alt = '';
+								var orig = data[1], var alt = '', lq = query.toLowerCase(), hes = "qwertyuiopasdfghjkl;zxcvbnm,./'קראטוןםפשדגכעיחלךףזסבהנמצתץ";
 								for (var i = 0; i < query.length; i++) {
-									var c = query[i].toLowerCase();
-									var ic = hes.indexOf(c);
-									alt += ic + 1 ? hes[(ic + 29) % 58] : c;
+									var ic = hes.indexOf(lq[i]);
+									alt += ic + 1 ? hes[(ic + 29) % 58] : lq[i];
 								}
 								$.ajax({url:wgScriptPath+'/api.php',
 									data:{'action':'opensearch','search': alt, limit: 12 - orig.length, 'namespace': 0, 'suggest': ''},
