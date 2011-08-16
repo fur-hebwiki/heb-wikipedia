@@ -246,7 +246,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		}
 		
 		function extractParamsFromURL() {
-			var str = this.value;
+			var str = $('#ltw_urlinput').val();
 			if (template.replace)
 				for (var r in template.replace)
 					str = str.replace(template.replace[r][0], template.replace[r][1]);
@@ -264,7 +264,8 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		
 		if (template.r)
 			dialog.append($('<span>').text('הדביקו את הקישור כאן:').css({width: '20em'}))
-				.append($('<input>', {type: "text", maxLength: 600}).css({width: '30em'}).bind('input', extractParamsFromURL))
+				.append($('<input>', {type: "text", id: 'ltw_urlinput', maxLength: 600}).css({width: '26em'}).bind('input', extractParamsFromURL))
+				.append($('<input>', {type: 'button', value: 'חילוץ'}).click(extractParamsFromURL))
 				.append($('<hr>'))
 				
 		dialog
