@@ -63,13 +63,14 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 		var templatesAr = [
 			{t: 'קישור כללי', np: [
-				['כתובת', 'הקישור (כלומר ה-URL) עצמו'],
-				['כותרת', 'שם המאמר המקושר'],
 				['הכותב', 'שמות כותבי המאמר', 1],
+				['כותרת', 'שם המאמר המקושר'],
+				['כתובת', 'הקישור (כלומר ה-URL) עצמו'],
 				['תאריך', 'תאריך המאמר', 1],
 				['עמודים', 'מספר העמודים', 1],
+				['מידע נוסף', 'מידע נוסף (לא תאריך)', 1],
 				['שפה', 'שפה (אם המאמר לא בעברית)', 1],
-				['פורמט', 'פורמט המאמר, אם אינו HTML (למשל PDF, DOC, וכן הלאה', 1],
+				['פורמט', 'פורמט המאמר, אם אינו‏ HTML‏ ‏(PDF או DOC)', 1],
 				['ציטוט', 'ציטוט משפט מהדף המקושר (יכול לעזור במציאת הדף בעתיד, אם הקישור ישתנה)', 1]
 			]},
 			{t: 'הארץ', p: [1,2,3,4], r: /(?:spages\/|itemNo=)(\d+)/i, rp: [3], bm: 1, op: [3]},
@@ -181,6 +182,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	}
 
 	function templateDialog(dialog, template) {
+		var brainDamage = $.browser.msie && $.browser.version < 8;
 		var	orderedFields = [],
 			namedFields = [],
 			table = $('<table>'),
@@ -221,17 +223,21 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 		function updatePreview(){
 			$('#ltw2_preview').text(createWikiCode());
-			var good = true;
-			var f = orderedFields.concat(namedFields)
-			for (i in f)
+			var canOK = 'enable';
+			var f = orderedFields.concat([]); //clone - we don't want to touch orderedFields.
+			for (var i in namedFields)
+				f.push(namedFields[i][1]);
+			for (var i in f)
 				if (f[i].hasClass('ltw_required') && $.trim(f[i].val()).length == 0)
-					good = false;
-			$(".ui-dialog-buttonpane button:contains('אישור')").button(good ? "enable" : "disable");
-			$('#ltw2_list').attr('disabled', $('#ltw2_ref').attr('checked'));
-			$('#ltw2_ref').attr('disabled', $('#ltw2_list').attr('checked'));
-			var width = $('#ltw_dialog').width(); //this line and the next two are because of ie.
-			$('.ui-dialog-titlebar').width(width);
-			$('.ui-dialog-buttonpane').width(width);
+					canOK = 'disable';
+			$(".ui-dialog-buttonpane button:contains('אישור')").button(canOK);
+			$('#ltw2_list').attr('disabled', $('#ltw2_ref').attr('checked'));//disable list if ref
+			$('#ltw2_ref').attr('disabled', $('#ltw2_list').attr('checked'));//disable ref if list
+			if (brainDamage) { //IOW: internet explorer.
+				var width = $('#ltw_dialog').width() - 12;
+				$('.ui-dialog-titlebar').width(width);
+				$('.ui-dialog-buttonpane').width(width);
+			}
 		}
 
 		function addRow(labelText, paramName, optional) {
