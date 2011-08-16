@@ -5,7 +5,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 
 
-	
+
 	function templates(templateName) {
 		var constants = ["",
 			"שם המחבר",
@@ -63,7 +63,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 		var templatesAr = [
 			{t: 'קישור כללי', np: [
-				['כתובת', 'הקישור (כלומר ה-URL) עצמו'], 
+				['כתובת', 'הקישור (כלומר ה-URL) עצמו'],
 				['כותרת', 'שם המאמר המקושר'],
 				['הכותב', 'שמות כותבי המאמר', 1],
 				['תאריך', 'תאריך המאמר', 1],
@@ -149,7 +149,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			{t: 'מערכות', p: [1,2,3,49], r: /FILES\/(.*)\.pdf/i, rp: [3], op: [3]},
 			{t: 'mako', p: [1,2,3,6,4], r: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, rp: [4,3], bm: 1, op: [4]}
 			];
-		
+
 		if (! templateName) {
 			var en = /^[a-z]/;
 			function compare(t1, t2) {
@@ -161,12 +161,12 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			templatesAr.sort(compare);
 			return templatesAr;
 		}
-		
+
 		var template;
-		for (var i in templatesAr) 
-			if (templatesAr[i].t == templateName) 
+		for (var i in templatesAr)
+			if (templatesAr[i].t == templateName)
 				template = templatesAr[i];
-		
+
 		var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS"};
 		if (historic[template.t]) {
 			var r = new RegExp('=HISTNAME/(\\d{4}/\\d{1,2}/\\d{1,2})(?:.*&EntityId=|/\\d+/)([A-Z][a-z])(\\d+)'.replace('HISTNAME', historic[template.t]));
@@ -176,7 +176,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		for (var i in template.p)
 		if (typeof template.p[i] == "number")
 			template.p[i] = constants[template.p[i]];
-			
+
 		return template;
 	}
 
@@ -229,10 +229,13 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			$(".ui-dialog-buttonpane button:contains('אישור')").button(good ? "enable" : "disable");
 			$('#ltw2_list').attr('disabled', $('#ltw2_ref').attr('checked'));
 			$('#ltw2_ref').attr('disabled', $('#ltw2_list').attr('checked'));
+			var width = $('#ltw_dialog').width(); //this line and the next two are because of ie.
+			$('.ui-dialog-titlebar').width(width);
+			$('.ui-dialog-buttonpane').width(width);
 		}
 
 		function addRow(labelText, paramName, optional) {
-			var inputField = $('<input>', {id: 'ltw2_inputfield_' + paramName, type: 'text', width: 600}).css({width: '28em'}).bind('input', updatePreview);
+			var inputField = $('<input>', {id: 'ltw2_inputfield_' + paramName, type: 'text', width: 600}).css({width: '28em'}).bind('paste cut drop input change', updatePreview);
 			if (! (optional || 0))
 				inputField.addClass('ltw_required').css({border: '1px red solid'});
 			var tr = $('<tr>')
@@ -244,7 +247,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 				namedFields.push([paramName, inputField]);
 			table.append(tr);
 		}
-		
+
 		function extractParamsFromURL() {
 			var str = $('#ltw_urlinput').val();
 			if (template.replace)
@@ -256,18 +259,17 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 					$('#ltw2_inputfield_' + template.rp[i-1]).val(matches[i] || '');
 			updatePreview();
 		}
-		
+
 		if (template.bm)
 			dialog.append($('<p>', {title: 'ראו דף "עזרה:בוקמרקלטים"'}).css({color: 'red', fontWeight: 'bold'})
 				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו.'))
 				.append($('<hr>'));
-		
+
 		if (template.r)
 			dialog.append($('<span>').text('הדביקו את הקישור כאן:').css({width: '20em'}))
-				.append($('<input>', {type: "text", id: 'ltw_urlinput', maxLength: 600}).css({width: '26em'}).bind('input', extractParamsFromURL))
-				.append($('<input>', {type: 'button', value: 'חילוץ'}).click(extractParamsFromURL))
+				.append($('<input>', {type: "text", id: 'ltw_urlinput', maxLength: 600}).css({width: '26em'}).bind('paste cut drop input change', extractParamsFromURL))
 				.append($('<hr>'))
-				
+
 		dialog
 			.append($('<p>').text('השדות המסומנים באדום הם חובה, השאר אופציונליים'))
 			.append(table)
@@ -278,17 +280,18 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			.append($('<input>', {type: 'checkbox', id: 'ltw2_list'}).change(updatePreview))
 			.append($('<p>').css({height: '1.5em'}))
 			.append($('<p>', {id: 'ltw2_preview'}).css({backgroundColor: "lightGreen", fontSize: '120%', maxWidth: '40em'}));
-		
+
+
 		for (var i = 0; i < (template.p || []).length; i++)
 			if (template.p[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
 				orderedFields.push(empty);
 			else
 				addRow(template.p[i], parseInt(i, 10) + 1, template.op && ($.inArray(i, template.op)+1));
-			
+
 		for (var i in template.np)
 			addRow(template.np[i][1], template.np[i][0], template.np[i][2]);
-		
-			
+
+
 		dialog.dialog('option', 'buttons', {
 			'אישור': function() {insertTags('', '', createWikiCode()); dialog.dialog('close');},
 			'ביטול': function() {dialog.dialog('close');}
@@ -299,13 +302,15 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			width: 'auto',
 			position: [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]
 		});
+		$('.ui-dialog-buttonpane').css({direction: 'ltr'});
+		$('.ui-dialog-buttonpane > button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
 		updatePreview();
 	}
 
 	function fireDialog() {
 		$('#ltw_dialog').remove(); // kill existing popup when button is pressed again.
 		var title = 'יצירת תבנית קישור',
-			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8'}).dialog({
+			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8', maxWidth: '58em'}).dialog({
 				title: title,
 				resizable: false,
 				close: function() {$(this).remove();}
@@ -316,13 +321,13 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 				$(this).remove();
 				templateDialog(dialog, templates(this.value));
 			});
-		
+
 		selector.append($('<option>', {text: 'בחרו תבנית מהרשימה'}));
 		var fullList = templates(false);
 		for (var i in fullList)
 			selector.append($('<option>', {text: fullList[i].t, value: fullList[i].t}));
 		dialog.append(selector);
-		dialog.append($('<p>').css({fontSize: '0.8em'}).text('עזרה ודיווח על בעיות בדף "עזרה:אשף תבניות קישורים"'));
+		dialog.append($('<p>').css({fontSize: '0.8em'}).text('הוראות שימוש ודיווח על בעיות בדף "עזרה:אשף תבניות קישורים"'));
 	}
 
 	setTimeout(function() {
