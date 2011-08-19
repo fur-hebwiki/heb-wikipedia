@@ -270,7 +270,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		
 		if (template.bm)
 			dialog.append($('<p>', {title: 'ראו דף "עזרה:בוקמרקלטים"'}).css({color: 'red', fontWeight: 'bold'})
-				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו. (ראו "עזרה:בוקמרקלטים")'))
+				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו (ראו "עזרה:בוקמרקלטים").'))
 				.append($('<hr>'));
 
 		if (template.r)
@@ -300,7 +300,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			addRow(template.np[i][1], template.np[i][0], template.np[i][2]);
 
 		var valIndex = 0;
-		while (values && values.length && valIndex < orderedFields.length) {
+		while (values && values.length) {
 			var next = values.shift();
 			var pair = next.split('=');
 			if (pair.length > 1) {
@@ -314,7 +314,8 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 						orderedFields[valIndex - 1].val(pair[1]);
 				}
 			} else 
-				orderedFields[valIndex++].val(pair[0]);
+				if (valIndex < orderedFields.length)
+					orderedFields[valIndex++].val(pair[0]);
 		}
 
 		dialog.dialog('option', 'buttons', {
@@ -391,7 +392,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור', 'class':'tool tool-button'})
+		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור'})
 		.click(function() {
 			mediaWiki.loader.using('jquery.ui.dialog', fireDialog);
 		});
