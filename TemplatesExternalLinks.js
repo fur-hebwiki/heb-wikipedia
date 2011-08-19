@@ -270,7 +270,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		
 		if (template.bm)
 			dialog.append($('<p>', {title: 'ראו דף "עזרה:בוקמרקלטים"'}).css({color: 'red', fontWeight: 'bold'})
-				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו.'))
+				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו. (ראו "עזרה:בוקמרקלטים")'))
 				.append($('<hr>'));
 
 		if (template.r)
@@ -300,7 +300,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			addRow(template.np[i][1], template.np[i][0], template.np[i][2]);
 
 		var valIndex = 0;
-		while (values.length && valIndex < orderedFields.length) {
+		while (values && values.length && valIndex < orderedFields.length) {
 			var next = values.shift();
 			var pair = next.split('=');
 			if (pair.length > 1) {
