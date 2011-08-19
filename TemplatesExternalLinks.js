@@ -181,7 +181,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		return template;
 	}
 
-	function templateDialog(dialog, template) {
+	function templateDialog(dialog, template, values) {
 		var brainDamage = $.browser.msie && $.browser.version < 8;
 		var	orderedFields = [],
 			namedFields = [],
@@ -266,6 +266,8 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			updatePreview();
 		}
 
+		$('.ltw_disposable').remove();
+		
 		if (template.bm)
 			dialog.append($('<p>', {title: 'ראו דף "עזרה:בוקמרקלטים"'}).css({color: 'red', fontWeight: 'bold'})
 				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו.'))
@@ -297,6 +299,23 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		for (var i in template.np)
 			addRow(template.np[i][1], template.np[i][0], template.np[i][2]);
 
+		var valIndex = 0;
+		while (values.length && valIndex < orderedFields.length) {
+			var next = values.shift();
+			var pair = next.split('=');
+			if (pair.length > 1) {
+				if (isNaN(pair[0])) {
+					for (var named in namedFields)
+						if (namedFields[named][0] == $.trim(pair[0]))
+							namedFields[named][1].val(pair[1]);
+				} else {
+					valIndex = parseInt(pair[0], 10);
+					if (valIndex <= orderedFields.length)
+						orderedFields[valIndex - 1].val(pair[1]);
+				}
+			} else 
+				orderedFields[valIndex++].val(pair[0]);
+		}
 
 		dialog.dialog('option', 'buttons', {
 			'אישור': function() {insertTags('', '', createWikiCode()); dialog.dialog('close');},
@@ -312,28 +331,63 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		$('.ui-dialog-buttonpane > button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
 		updatePreview();
 	}
+	
+	function findSelected() {
+		if (document.selection && document.selection.createRange)
+			return document.selection.createRange().text;
+		else if (currentFocused.selectionStart) {
+			var start = currentFocused.selectionStart;
+			var end   = currentFocused.selectionEnd;
+			return $(currentFocused).val().substring(start, end);
+		}
+		return '';
+	}
 
+	
 	function fireDialog() {
-		$('#ltw_dialog').remove(); // kill existing popup when button is pressed again.
-		var title = 'יצירת תבנית קישור',
+	
+		var killold = $('#ltw_dialog').remove(), // kill existing popup when button is pressed again.
+			title = 'יצירת תבנית קישור',
 			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8', maxWidth: '58em'}).dialog({
 				title: title,
 				resizable: false,
 				close: function() {$(this).remove();}
 			}),
-			selector = $('<select>').change(function() {
-				if (! this.value) return;
-				dialog.dialog('option', 'title', title + ' עבור ' + this.value);
-				$(this).remove();
-				templateDialog(dialog, templates(this.value));
-			});
-
+			fullList = templates(false),
+			allTemplates = [];
+		
+		function fromTemplate(text) {
+			var regex = new RegExp('\\{\\{(' + allTemplates.join('|') + ')([^}]*)');
+			match = text.match(regex);
+			if (match) {
+				template = match[1];
+				values = match[2].split('|');
+				values.shift();
+				templateDialog(dialog, templates(template), values);
+				return true;
+			}
+			return false;
+		}
+	
+		
+		for (var i in fullList) 
+			allTemplates.push(fullList[i].t);
+		
+		if (fromTemplate(findSelected()))
+			return;
+		
+		var selector = $('<select>', {'class': 'ltw_disposable'}).change(function() { // class in quotes - reserved word.
+			if (! this.value) return;
+			dialog.dialog('option', 'title', title + ' עבור ' + this.value);
+			$(this).remove();
+			templateDialog(dialog, templates(this.value));
+		});
 		selector.append($('<option>', {text: 'בחרו תבנית מהרשימה'}));
-		var fullList = templates(false);
-		for (var i in fullList)
-			selector.append($('<option>', {text: fullList[i].t, value: fullList[i].t}));
+		for (var i in allTemplates)
+			selector.append($('<option>', {text: allTemplates[i], value: allTemplates[i]}));
 		dialog.append(selector);
-		dialog.append($('<p>').css({fontSize: '0.8em'}).text('הוראות שימוש ודיווח על בעיות בדף "עזרה:אשף תבניות קישורים"'));
+		dialog.append($('<p>').text('או הדביקו כאן תבנית לעריכה:'));
+		dialog.append($('<input>', {type: 'text', maxLength: 1000, 'class': 'ltw_disposable'}).css({width: '14em'}).bind('paste cut drop input change', function() {fromTemplate(this.value);}));
 	}
 
 	setTimeout(function() {
