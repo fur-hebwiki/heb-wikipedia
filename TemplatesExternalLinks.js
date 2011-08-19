@@ -391,7 +391,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור', class:'tool tool-button'})
+		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור', 'class':'tool tool-button'})
 		.click(function() {
 			mediaWiki.loader.using('jquery.ui.dialog', fireDialog);
 		});
