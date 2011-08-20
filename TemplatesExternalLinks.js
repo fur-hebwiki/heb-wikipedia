@@ -319,8 +319,15 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		}
 
 		dialog.dialog('option', 'buttons', {
-			'אישור': function() {insertTags('', '', createWikiCode()); dialog.dialog('close');},
-			'ביטול': function() {dialog.dialog('close');}
+			'אישור':
+				function() {
+					insertTags('', createWikiCode(), ''); 
+					dialog.dialog('close');
+				},
+			'ביטול':
+			function() {
+				dialog.dialog('close');
+			}
 		});
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
 		dialog.dialog('option', {
@@ -392,7 +399,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור'})
+		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: '2-תבנית קישור', 'class': 'tool tool-button'})
 		.click(function() {
 			mediaWiki.loader.using('jquery.ui.dialog', fireDialog);
 		});
