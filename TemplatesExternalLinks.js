@@ -399,7 +399,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	setTimeout(function() {
 		var buttonImage = 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
 		$('div #toolbar').append( // "old style"
-			$('<img>', {src: buttonImage, title: '2-תבנית קישור', 'class': 'mw-toolbar-editbutton'})
+			$('<img>', {src: buttonImage, title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
 			.css({cursor: 'pointer'})
 			.click(function() {mediaWiki.loader.using('jquery.ui.dialog', fireDialog);})
 		);
