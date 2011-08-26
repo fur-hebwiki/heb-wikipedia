@@ -56,9 +56,10 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			"שם הרב",
 			"שם השיעור",
 			"השיעור כשם שמופיע בקישור",
-			"מספר גיליון, תאריך פרסום ומספרי עמודים (אופציונלי)",
+			"מספר גיליון, תאריך פרסום ומספרי עמודים",
 			"שם הערך בויקישיבה",
-			"קידומת הקישור, אם שונה מ-www"
+			"קידומת הקישור, אם שונה מ-www",
+			"האותיות שמציינות את המדינה"
 		];
 
 		var templatesAr = [
@@ -86,7 +87,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			{t: 'nrg', p: [1,2,3,4,0,19,20], r: /\/online\/([^\/]+)\/ART([^\/]*)\/([^\.]+).html/i, rp: [6,7,3], bm: 1, op:[3,4,5,6]},
 			{t: 'Mooma2', p: [42,3], r: /\?ArtistId=(\d+)/i, rp: [2]},
 			{t: 'בחדרי חרדים', p: [1,2,3,4], r: /\/Article\.aspx\?id=(\d+)/i, rp: [3], bm: 1, op: [3]},
-			{t: 'CIA factbook', p: ["האותיות שמציינות את המדינה"]},
+			{t: 'CIA factbook', p: [52]},
 			{t: 'mynet', p: [1,2,3,4,0,5], r: /articles\/(\d+),7340,L-(\d+),00\.html/i, rp: [6,3], op: [3,4,5,6]},
 			{t: 'NFC', p: [1,2,3,4], r: /Archive\/([^\.]+)\.html/i, rp: [3], op: [3]},
 			{t: 'Onlife', p: [1,2,3,4], r: /onlife\.co\.il\/([^\/]+)\/(.*)/i, rp: [1,3], op: [3]},
@@ -108,7 +109,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			{t: 'חסקין', p: [3,2], r: /ArticleNum=(\d+)/i, rp: [1]},
 			{t: 'בבלי', p: [11,12,13], op: [2]},
 			{t: 'משנה', p: [11,9,14], op: [2]},
-			{t: 'רמב"ם', p: [8,17,9,31], op: [2]},
+			{t: 'רמב"ם', p: [8,17,9,31], op: [0,3]},
 			{t: 'ירושלמי', p: [11,9,31], op: [2]},
 			{t: 'שולחן ערוך', p: [33,15,16], op: [2]},
 			{t: 'מטח', p: [1,2,3,4], op: [3]},
@@ -141,11 +142,11 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			{t: 'העין השביעית', p: [1,34,6,4,25], r: /the7eye\.org\.il\/([^\/]+)\/Pages\/(.*)\.aspx/, rp: [5,3], bm: 1, op: [3,4]},
 			{t: 'One', p: [1,2,3,4], r: /(?:Article[\d\-\/,]*\/|id=)([\d\-\/,]*\d)/, rp: [3], bm: 1, op: [3]},
 			{t: 'קול הלשון - שיעור', p: [46,47,48,4], np: [['וידאו', '"וידאו": רשמו "כן" אם זה שיעור לצפייה'], ['תואר', 'תואר - אם תואר המרצה שונה מ"הרב"']], r: /(?:PathFile=|Source=)([^&]*)/i, rp: [3], op: [3]},
-			{t: 'ספר פרויקט גוטנברג', np: [["כותב", "שם כותב הספר (אופציונלי)", 1], ['שם הספר', 'שם הספר (ברירת מחדל: שם הערך)', 1], ['מספר', 'מספר הספר בפרויקט']], r: /ebooks\/(\d+)/i, rp: [3]},
+			{t: 'ספר פרויקט גוטנברג', np: [["כותב", "שם כותב הספר", 1], ['שם הספר', 'שם הספר (ברירת מחדל: שם הערך)', 1], ['מספר', 'מספר הספר בפרויקט']], r: /ebooks\/(\d+)/i, rp: [3]},
 			{t: 'imdb title', np: [['id', 'המספר שמופיע בקישור'], ['title', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך', 1]], r: /title\/tt(\d+)/i, rp: [1]},
 			{t: 'imdb name', np: [['id', 'המספר שמופיע בקישור'], ['name', 'הכותרת שתופיע בקישור (אופציונלי: ברירת מחדל - שם הערך', 1]], r: /name\/nm(\d+)/i, rp: [1]},
 			{t: 'imdb company', np: [['id', 'המספר שמופיע בקישור'], ['company', 'הכותרת שתופיע בקישור']], r: /company\/co(\d+)/i, rp: [1]},
-			{t: 'Google book', np: [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר (אופציונלי)', 1],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך', 1]], r: /id=([^&]*)/, rp: [1]},
+			{t: 'Google book', np: [['מזהה','מזהה הספר באתר גוגל'],['כותב','שם כותב/י הספר', 1],['שם הספר','שם הספר (אופציונלי) - ללא הפרמטר יוצג שם הערך', 1]], r: /id=([^&]*)/, rp: [1]},
 			{t: 'TheMarker1', p: [1,2,3,4,51], r: /http:\/\/(?:www)?(.*)\.themarker\.com\/([^\?]+)/i, rp: [5,3], op: [3,4]},
 			{t: 'מערכות', p: [1,2,3,49], r: /FILES\/(.*)\.pdf/i, rp: [3], op: [3]},
 			{t: 'mako', p: [1,2,3,6,4], r: /www\.mako\.co\.il\/(.*?)\/Article-(.*?)\.htm/i, rp: [4,3], bm: 1, op: [4]}
@@ -190,12 +191,9 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 		function createWikiCode() {
 			var par = ["{{" + template.t];
-			for (var i = 0; i < orderedFields.length; i++) {
-				var val = $.trim(orderedFields[i].val()).replace('|', '{{!}}');
-				if (val.indexOf('=') + 1)
-					val = (i + 1) + '=' + val;
-				par.push(val);
-			}
+			for (var i = 0; i < orderedFields.length; i++)
+				par.push($.trim(orderedFields[i].val()).replace(/\|/g, '{{!}}').replace(/=/g, '{{=}}'));
+
 			if (template.def)
 				for (var parnum in template.def)
 					if (par[parnum] == template.def[parnum])
@@ -206,7 +204,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			if (namedFields) {
 				var pairs = [];
 				for (j in namedFields) {
-					var val = $.trim(namedFields[j][1].val()).replace('|', '{{!}}');
+					var val = $.trim(namedFields[j][1].val()).replace(/\|/g, '{{!}}');
 					if (val.length)
 						pairs.push(namedFields[j][0] + '=' + val);
 				}
@@ -267,7 +265,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		}
 
 		$('.ltw_disposable').remove();
-		
+
 		if (template.bm)
 			dialog.append($('<p>', {title: 'ראו דף "עזרה:בוקמרקלטים"'}).css({color: 'red', fontWeight: 'bold'})
 				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו (ראו "עזרה:בוקמרקלטים").'))
@@ -313,14 +311,21 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 					if (valIndex <= orderedFields.length)
 						orderedFields[valIndex - 1].val(pair[1]);
 				}
-			} else 
+			} else
 				if (valIndex < orderedFields.length)
 					orderedFields[valIndex++].val(pair[0]);
 		}
 
 		dialog.dialog('option', 'buttons', {
-			'אישור': function() {insertTags('', '', createWikiCode()); dialog.dialog('close');},
-			'ביטול': function() {dialog.dialog('close');}
+			'אישור':
+				function() {
+					insertTags('', createWikiCode(), '');
+					dialog.dialog('close');
+				},
+			'ביטול':
+			function() {
+				dialog.dialog('close');
+			}
 		});
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
 		dialog.dialog('option', {
@@ -332,7 +337,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		$('.ui-dialog-buttonpane > button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
 		updatePreview();
 	}
-	
+
 	function findSelected() {
 		if (document.selection && document.selection.createRange)
 			return document.selection.createRange().text;
@@ -344,9 +349,9 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		return '';
 	}
 
-	
+
 	function fireDialog() {
-	
+
 		var killold = $('#ltw_dialog').remove(), // kill existing popup when button is pressed again.
 			title = 'יצירת תבנית קישור',
 			dialog = $('<div>', {id: 'ltw_dialog'}).css({backgroundColor: '#E8E8E8', maxWidth: '58em'}).dialog({
@@ -356,7 +361,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			}),
 			fullList = templates(false),
 			allTemplates = [];
-		
+
 		function fromTemplate(text) {
 			var regex = new RegExp('\\{\\{(' + allTemplates.join('|') + ')([^}]*)');
 			match = text.match(regex);
@@ -369,14 +374,14 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			}
 			return false;
 		}
-	
-		
-		for (var i in fullList) 
+
+
+		for (var i in fullList)
 			allTemplates.push(fullList[i].t);
-		
+
 		if (fromTemplate(findSelected()))
 			return;
-		
+
 		var selector = $('<select>', {'class': 'ltw_disposable'}).change(function() { // class in quotes - reserved word.
 			if (! this.value) return;
 			dialog.dialog('option', 'title', title + ' עבור ' + this.value);
@@ -387,16 +392,29 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		for (var i in allTemplates)
 			selector.append($('<option>', {text: allTemplates[i], value: allTemplates[i]}));
 		dialog.append(selector);
-		dialog.append($('<p>').text('או הדביקו כאן תבנית לעריכה:'));
+		dialog.append($('<p>', {'class': 'ltw_disposable'}).text('או הדביקו כאן תבנית לעריכה:'));
 		dialog.append($('<input>', {type: 'text', maxLength: 1000, 'class': 'ltw_disposable'}).css({width: '14em'}).bind('paste cut drop input change', function() {fromTemplate(this.value);}));
 	}
 
 	setTimeout(function() {
-		var button = $('<img>', {src: 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור'})
-		.click(function() {
-			mediaWiki.loader.using('jquery.ui.dialog', fireDialog);
-		});
-		$('div.section-advanced > div:last').append(button);
-		$('div #toolbar').append(button);
+		var buttonImage = 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
+		$('div #toolbar').append( // "old style"
+			$('<img>', {src: buttonImage, title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
+			.css({cursor: 'pointer'})
+			.click(function() {mediaWiki.loader.using('jquery.ui.dialog', fireDialog);})
+		);
+		$('#wpTextbox1').wikiEditor('addToToolbar', {
+				section: 'advanced',
+				group: 'more',
+				tools: {
+					'linkTemplatewizard': {
+						label: 'תבנית קישור',
+						type: 'button',
+						icon: buttonImage,
+						action: {type: 'callback', execute: fireDialog}
+					}
+				}
+			});
+		$('div #toolbar').append(button);	//"old" toolbar
 	}, 1000);
 });
