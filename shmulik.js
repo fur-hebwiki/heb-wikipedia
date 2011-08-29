@@ -25,7 +25,7 @@ function wikiit() {
  
 	var ATags = [/<a .*?>/gi, /<\/a>/gi];
  
-	function match (str, expr){str = str.match(expr); return str?str[1]:''}
+	function match (str, expr){str = str?str.match(expr):str; return (str&&str.length>1)?str[1]:''}
  
   var data = 
   [
@@ -57,7 +57,7 @@ function wikiit() {
 		{elem : 'div.wp-0-b:first span:first', match: /מאת:(.*),/, remove:ATags},
 		{elem : 'h1'},
 		{str : location.href, match:/w=\/\d*\/(\d+)/},
-		{elem:["h1","parent","children","eq,2"], match:/,(.*),/},
+		[ {elem:["h1","parent","children","eq,2"], match:/,(.*),/}, {telem: ".w2.txt-w:last", match:/, (\d+ ב.*? \d+),/ }],
 		{str : ''},
 		{str : location.href, match:/w=\/(\d*)\/\d+/}
      ]
@@ -223,7 +223,7 @@ function wikiit() {
     hostname: "www.mako.co.il",
      params:[
       {str : 'mako'},
-      {telem: ".writerData *:visible:first"},
+      {telem: ".writerData *:visible:first", shouldnt:/\d+\/\d+\/\d+/},
       {telem: "h1"},
       {str: location.href, match:/Article-(.*?).htm/},
       {str: location.href, match:/www\.mako\.co\.il\/(.*?)\/Article/},
@@ -361,7 +361,9 @@ function wikiit() {
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 			
-			
+			if (typeof curParam.shouldnt != "undefined" && typeof params[j] == "string" && params[j].match(curParam.shouldnt))
+				params[j] = '';
+				
 			
 			if ((params[j] == '') && (data[i].params[j] instanceof Array) && (k < data[i].params[j].length - 1))
 			{
