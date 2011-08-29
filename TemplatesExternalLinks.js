@@ -415,6 +415,5 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 					}
 				}
 			});
-		$('div #toolbar').append(button);	//"old" toolbar
 	}, 1000);
 });
