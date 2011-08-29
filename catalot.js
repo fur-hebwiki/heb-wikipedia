@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 // <source lang="javascript">
-=======
-﻿// <source lang="javascript">
->>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
 //
 // Cat-A-Lot
 // Changes category of multiple files (or pages)
@@ -17,7 +13,7 @@
 // http://commons.wikimedia.org/wiki/MediaWiki_talk:Gadget-Cat-a-lot.js/translating
 //
 var catALot = {
-	apiUrl: wgScriptPath + "/api.php",
+    apiUrl: wgScriptPath + "/api.php",
 	searchmode: false,
 	version: 2.18,
 	setHeight: 450,
@@ -53,7 +49,6 @@ var catALot = {
 	findAllLabels: function () {
 		this.labels = $('#mw-pages').find('li');
 		var subCats =  $('#mw-subcategories').find('.CategoryTreeItem');
-<<<<<<< HEAD
 		for (var sub = 0; sub < subCats.length; sub++) {
 			var a = $(subCats[sub]).find('a');
 			if (a.length) {
@@ -62,30 +57,14 @@ var catALot = {
 			}
 		}
 		$('#bodyContent').find('li>a, .CategoryTreeLabel').each(function(){this.href = null;});
-=======
-		for (var sub = 0; sub < subCats.length; sub++)
-			subCats[sub]['subcat'] = 1;
-		$.extend(this.labels, subCats);
-		var links = $('#bodyContent').find('li>a');
-		$.extend(links, $('#bodyContent').find('.CategoryTreeLabel'));
-		for (var a in links)
-			links[a].href = null;
->>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
 	},
 
 	getMarkedLabels: function () {
 		var marked = [];
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
 		this.selectedLabels.each(function () {
-<<<<<<< HEAD
 			var file = $(this).find('a[title]');
 			marked.push([file.attr('title'), $(this)]);
-=======
-			var file = $(this).find('a[title]') && $(this).find('a[title]').attr('title');
-			file = file || $(this).find('a')[0].innerHTML;
-			var extra = this['subcat'] ? catALot.localCatName + ':' : '';
-			marked.push([extra + file, $(this)]);
->>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
 		});
 		return marked;
 	},
@@ -268,7 +247,7 @@ var catALot = {
 			this.updateCounter();
 			return;
 		}
-
+                
 		var data = {
 			action: 'edit',
 			summary: comment,
@@ -278,6 +257,11 @@ var catALot = {
 			basetimestamp: timestamp,
 			text: text
 		};
+
+                var isBot=$.inArray('bot', wgUserGroups)>-1;
+                if(isBot){
+		   data.bot = '1';
+		}
 		this.doAPICall(data, function (ret) {
 			catALot.updateCounter();
 		});
@@ -415,9 +399,9 @@ var catALot = {
 			}
 
 			// Can't move to source category
-			if (list[i] != wgTitle && this.searchmode) li.append(' ').append(add);
-			else if (list[i] != wgTitle && !this.searchmode) li.append(' ').append(move).append(' ').append(copy);
-			li.append(symbol).append(' ').append(link);
+			if (list[i] != wgTitle && this.searchmode) li.append(' ').append(add);
+			else if (list[i] != wgTitle && !this.searchmode) li.append(' ').append(move).append(' ').append(copy);
+			li.append(symbol).append(' ').append(link);
 
 			domlist.append(li);
 		}
@@ -596,8 +580,4 @@ if ((wgNamespaceNumber == -1 && wgCanonicalSpecialPageName == "Search") || wgNam
 	});
 }
 
-<<<<<<< HEAD
 // </source>
-=======
-// </source>
->>>>>>> 9f0cc8c966644cf9a2ec7c30f4cc2c31e9ed0c5d
