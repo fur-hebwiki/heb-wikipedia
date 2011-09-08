@@ -22,6 +22,13 @@ function wikiit() {
 		}
 		return jQuery.trim(dateArr);
 	}
+	
+	function engDateParse(engDate)
+	{
+		var m = ["January" , "February" , "March" , "April", "May", "June", "July", "August", "September", "October","November", "December"];
+		engDate = engDate.match(/(\w+) (\d+), (\d+)/);
+		return [engDate[2], (m.indexOf(engDate[1]) + 1) , engDate[3] ];
+	}
  
 	var ATags = [/<a .*?>/gi, /<\/a>/gi];
  
@@ -36,7 +43,10 @@ function wikiit() {
 		[
 			{elements : ['.authorHtmlCss',' ו'] },
 			{elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
-			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/}
+			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/},
+			{telem : ".text16w" , match:/\/(.*?)$/},
+			{telem : ".text16w"},
+			
 		],
 		[
 			{str : $("meta[property='og:title']").attr("content")},
@@ -81,7 +91,10 @@ function wikiit() {
       {telem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}, remove:"מאת " },
       {elem:'.t18B:first', func:function(str){return $("<span>" + str.replace('|',' - ').replace(/<br.*?>/gmi,' ') + "</span>").text();}},
       {str : location.href, match:[/^.*\/(\d+)/, /No=(\d+)/]},
-      {telem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
+      [
+		{telem: '.t16red:visible:first', match:/(\d+\/\d+\/\d+)/, split:'/' , func:dateFormat},
+		{telem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
+      ]
      ]
     },
     {
@@ -275,6 +288,16 @@ function wikiit() {
       {telem: "#fullRecordView th:contains(בתוך):first + td", match:/(\d+\-\d+)/},
       {telem: "#fullRecordView th:contains(מס' מערכת):first + td", prefix: "רמבי="}
      ]
+    },
+    { // for [[user:Ofekalef]]
+	hostname: "www.rollingstone.com",
+     params:[
+      {str : 'רולינג סטון'},
+      {telem: ".author", remove:["By"]},
+      [{telem: "h1"}, {elements:["h3:first, h4"," - ", true]}],
+      {str: location.href, match:/rollingstone.com\/(.*)$/},
+      {telem:".date", match:/(\w+ \d+, \d+)/m, func:[engDateParse, dateFormat]}
+     ]
     }
   ];
  
@@ -372,11 +395,10 @@ function wikiit() {
 				continue;
 			}
 				
-			
+			k = 0;
 		}
 			catch(e) {}
 				
-		k = 0;
 		
 		var minimum = (typeof data[i].minimum != "undefined") ? (data[i].minimum) : (0);
 			
