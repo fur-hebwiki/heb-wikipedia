@@ -1,8 +1,8 @@
 ﻿// riwt: Identify Removal of [[תבנית:בעבודה]] and log pages that lost it on [[ויקיפדיה:ערכים מהם הוסרה תבנית בעבודה]]
 
 function riwt_short_date() {
-    var date = new Date();
-    var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
+	var date = new Date();
+	var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
 	return date.getUTCDate() + '/' + (1+date.getUTCMonth()) + '/' + date.getUTCFullYear() + ' ' + date.getUTCHours() + ':' + min;
 }
 
@@ -82,8 +82,7 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 		}
 
 		current.sort(function(a, b) {return dateLastEdit[a].ts - dateLastEdit[b].ts;});
-		var text = '==ערכים עם תבנית {{תב|בעבודה}} (מספר הימים מעריכה אחרונה, העורך האחרון)==\n\n';
-		text += '(שימו לב: השם בסוגריים הוא העורך האחרון שערך את הערך, ולאו דווקא העורך שהניח את התבנית)\n\n';
+		var text = '{{/פתיח}}\n';
 		for (var i in current) {
 			article = current[i];
 			text += '#[[' + article + ']] {{כ}} (' + daysStale(article) + ', [[משתמש:' + dateLastEdit[article].user + ']])\n';
@@ -217,5 +216,5 @@ function riwt_doit() {
 	});
 }
 
-addPortletLink('p-tb', 'javascript:riwt_doit()', 'סקריפט "איבדו בעבודה" 2');
+addPortletLink('p-tb', 'javascript:riwt_doit()', 'סקריפט "איבדו בעבודה"');
 addPortletLink('p-tb', 'javascript:window.location=riwt_page_name(1, true);', 'דפים שאיבדו "בעבודה"');
