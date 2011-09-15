@@ -1,19 +1,8 @@
 $(document).ready(function() {
 	var linksPortalName = 'myLinksPortal';
 	
-	function getState() {return parseInt($.cookie(linksPortalName, {path: '/'}) || 0);}
-	
-	function toggleState() {
-		var state = getState() ^ 1;
-		var div = $('div#' + linksPortalName);
-		var classes = ['extended', 'collapsed'];
-		if (!state)
-			classes.reverse();
-		div.addClass(classes[0])
-			.removeClass(classes[1])
-			.filter('h5 > div').css({display: state ? 'block' : 'hidden'});
-		$.cookie(linksPortalName, state, {'expires':30,'path':'/'});
-	}
+	function getState() {return $.cookie('vector-nav-' + linksPortalName, {path: '/'}) == 'true';}
+
 	$.getJSON(mw.util.wikiScript('api'),
 		{action: 'parse', page: 'User:' + wgUserName + '/הקישורים שלי', format: 'json'}, function(data) {
 			
@@ -29,11 +18,9 @@ $(document).ready(function() {
 				});
 				$('#mw-panel > div.portal:eq(0)').after(
 					div
-					.append($('<h5>').text('הקישורים שלי').click(toggleState))
-					.append($('<div>', {'class': 'body'}).css({display: getState() ? 'block' : 'hidden'})
-							.append(ul)
-					)
-				);
+					.append($('<h5>').text('הקישורים שלי'))
+					.append($('<div>', {'class': 'body'}).css({display: getState() ? 'block' : 'hidden'}).append(ul))
+					);
 				}
 			});
 });
