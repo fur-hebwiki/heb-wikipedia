@@ -87,15 +87,12 @@ function wikiit() {
     {
     hostname: "www.haaretz.co.il", 
      params:[
-      {str : 'הארץ'},
-      {telem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}, remove:"מאת " },
-      {elem:'.t18B:first', func:function(str){return $("<span>" + str.replace('|',' - ').replace(/<br.*?>/gmi,' ') + "</span>").text();}},
-      {str : location.href, match:[/^.*\/(\d+)/, /No=(\d+)/]},
-      [
-		{telem: '.t16red:visible:first', match:/(\d+\/\d+\/\d+)/, split:'/' , func:dateFormat},
-		{telem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
-      ]
-     ]
+      {str : 'הארץ 0'},
+      {telem:'.autorBarWriters',  remove:['מאת '] },
+      {telem:'h1.mainTitle'},
+      {str : location.href, match:/(\d\.\d+)$/},
+	  {telem: '.prsnlArticleEnvelope .author-bar li:eq(1)', match:/(\d+\.\d+\.\d+)/, split:'.' , func:dateFormat}
+	  ]
     },
     {
     hostname: "www.inn.co.il", hrefmatch:/www\.inn\.co\.il.*Besheva/i,
@@ -199,7 +196,8 @@ function wikiit() {
       {str : 'nrg'},
       [
 		{telem: "font.newsVitzCredit", remove:["NRG מעריב"]},
-		{elem: "td.newsVitzCredit", match:/^(.*?)<br>/ ,remove:["NRG מעריב"]}
+		{elem: "td.newsVitzCredit", match:/^(.*?)<br>/ ,remove:["NRG מעריב"]},
+		{telem: "font.newsVitzBody:first", match:/^(.*)/ ,remove:["NRG מעריב"]}
       ],
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
