@@ -88,10 +88,10 @@ function wikiit() {
     hostname: "www.haaretz.co.il", 
      params:[
       {str : 'הארץ 0'},
-      {telem:'.autorBarAnchor'},
+      {telem:'.autorBarWriters',  remove:['מאת '] },
       {telem:'h1.mainTitle'},
       {str : location.href, match:/(\d\.\d+)$/},
-	  {telem: '.prsnlArticleEnvelope .author-bar li:eq(1)', match:/(\d+\.\d+\.d+)/, split:'.' , func:dateFormat}
+	  {telem: '.prsnlArticleEnvelope .author-bar li:eq(1)', match:/(\d+\.\d+\.\d+)/, split:'.' , func:dateFormat}
 	  ]
     },
     {
