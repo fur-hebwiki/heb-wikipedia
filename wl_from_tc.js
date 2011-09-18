@@ -10,7 +10,7 @@ function wlinrc_done() {
 	if (this.readyState != 4) // this is some ajax incantation - ony "4" is good.
 		return;
 	var span = this.span;
-	if ($.inArray(wgCanonicalSpecialPageName, ['Watchlist']) + 1) {
+	if (wgCanonicalSpecialPageName == 'Watchlist') {
 		span.parentNode.removeChild(span);
 		return;
 	}
