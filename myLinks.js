@@ -1,7 +1,7 @@
 $(document).ready(function() {
 	var linksPortalName = 'myLinksPortal';
 	
-	function getState() {return parseInt($.cookie(linksPortalName, {path: '/'}) || 0);}
+	function getState() {return parseInt($.cookie('vector-nav-' + linksPortalName, {path: '/'}) == 'true');}
 	
 	function toggleState() {
 		var state = getState() ^ 1;
@@ -12,7 +12,6 @@ $(document).ready(function() {
 		div.addClass(classes[0])
 			.removeClass(classes[1])
 			.filter('h5 > div').css({display: state ? 'block' : 'hidden'});
-		$.cookie(linksPortalName, state, {'expires':30,'path':'/'});
 	}
 	$.getJSON(mw.util.wikiScript('api'),
 		{action: 'parse', page: 'User:' + wgUserName + '/הקישורים שלי', format: 'json'}, function(data) {
