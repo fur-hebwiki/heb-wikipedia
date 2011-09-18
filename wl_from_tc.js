@@ -10,7 +10,7 @@ function wlinrc_done() {
 	if (this.readyState != 4) // this is some ajax incantation - ony "4" is good.
 		return;
 	var span = this.span;
-	if ($.inArray(wgCanonicalSpecialPageName, ['Watchlist', 'Contributions']) + 1) {
+	if ($.inArray(wgCanonicalSpecialPageName, ['Watchlist']) + 1) {
 		span.parentNode.removeChild(span);
 		return;
 	}
@@ -79,11 +79,6 @@ function wlinrc_addWatchListLinks() {
 		if (a.length)
 			wlinrc_addWatchListLink(tds[i], a[0]);
 	}
-	if (wgCanonicalSpecialPageName == 'Contributions') {
-		var lis = $("#bodyContent").find("li");
-		for (var i = 0; i < lis.length; i++) 
-			wlinrc_addWatchListLink(lis[i]);
-	}
 	if (wgCanonicalSpecialPageName == 'Newpages') {
 		var lis = $(".mw-newpages-time").parent();
 		for (var i = 0; i < lis.length; i++) {
@@ -94,5 +89,5 @@ function wlinrc_addWatchListLinks() {
 	}
 }
 
-if ($.inArray(wgCanonicalSpecialPageName, ['Recentchanges', 'Watchlist', 'Contributions', 'Newpages']) + 1)
+if ($.inArray(wgCanonicalSpecialPageName, ['Recentchanges', 'Watchlist', 'Newpages']) + 1)
 	hookEvent("load", wlinrc_addWatchListLinks);
