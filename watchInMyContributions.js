@@ -14,7 +14,7 @@ function readWatchList(continuation) {
 				watchList[val.title] = true;
 			});
 		if (data && data['query-continue'])
-			readWatchList(data['query-continue']['watchlist'][0]['wlstart']);
+			readWatchList(data['query-continue']['watchlist']['wlstart']);
 		else
 			colorWatched();
 	});
