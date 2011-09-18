@@ -74,7 +74,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 				['פורמט', 'פורמט המאמר, אם אינו‏ HTML‏ ‏(PDF או DOC)', 1],
 				['ציטוט', 'ציטוט משפט מהדף המקושר (יכול לעזור במציאת הדף בעתיד, אם הקישור ישתנה)', 1]
 			]},
-			{t: 'הארץ', p: [1,2,3,4], r: /(?:spages\/|itemNo=)(\d+)/i, rp: [3], bm: 1, op: [3]},
+			{t: 'הארץ 0', p: [1,2,3,4], r: /([.\d]+)$/i, rp: [3], bm: 1, op: [0,3]},
 			{t: 'דבר'},
 			{t: 'מעריב'},
 			{t: 'הצבי'},
@@ -415,6 +415,5 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 					}
 				}
 			});
-		$('div #toolbar').append(button);	//"old" toolbar
 	}, 1000);
 });

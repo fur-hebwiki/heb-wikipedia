@@ -22,10 +22,17 @@ function wikiit() {
 		}
 		return jQuery.trim(dateArr);
 	}
+	
+	function engDateParse(engDate)
+	{
+		var m = ["January" , "February" , "March" , "April", "May", "June", "July", "August", "September", "October","November", "December"];
+		engDate = engDate.match(/(\w+) (\d+), (\d+)/);
+		return [engDate[2], (m.indexOf(engDate[1]) + 1) , engDate[3] ];
+	}
  
 	var ATags = [/<a .*?>/gi, /<\/a>/gi];
  
-	function match (str, expr){str = str.match(expr); return str?str[1]:''}
+	function match (str, expr){str = str?str.match(expr):str; return (str&&str.length>1)?str[1]:''}
  
   var data = 
   [
@@ -36,7 +43,10 @@ function wikiit() {
 		[
 			{elements : ['.authorHtmlCss',' ו'] },
 			{elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
-			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/}
+			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/},
+			{telem : ".text16w" , match:/\/(.*?)$/},
+			{telem : ".text16w"},
+			
 		],
 		[
 			{str : $("meta[property='og:title']").attr("content")},
@@ -57,7 +67,7 @@ function wikiit() {
 		{elem : 'div.wp-0-b:first span:first', match: /מאת:(.*),/, remove:ATags},
 		{elem : 'h1'},
 		{str : location.href, match:/w=\/\d*\/(\d+)/},
-		{elem:["h1","parent","children","eq,2"], match:/,(.*),/},
+		[ {elem:["h1","parent","children","eq,2"], match:/,(.*),/}, {telem: ".w2.txt-w:last", match:/, (\d+ ב.*? \d+),/ }],
 		{str : ''},
 		{str : location.href, match:/w=\/(\d*)\/\d+/}
      ]
@@ -77,12 +87,12 @@ function wikiit() {
     {
     hostname: "www.haaretz.co.il", 
      params:[
-      {str : 'הארץ'},
-      {telem:'.t12:eq(4) .tUbl2, .t12:eq(4)', func:function(str){return str.replace('|',' - ')}, remove:"מאת " },
-      {elem:'.t18B:first', func:function(str){return $("<span>" + str.replace('|',' - ').replace(/<br.*?>/gmi,' ') + "</span>").text();}},
-      {str : location.href, match:[/^.*\/(\d+)/, /No=(\d+)/]},
-      {telem: '.t11:eq(3)', match:/^.* (.*?)$/, split:'/' , func:dateFormat}
-     ]
+      {str : 'הארץ 0'},
+      {telem:'.autorBarWriters',  remove:['מאת '] },
+      {telem:'h1.mainTitle'},
+      {str : location.href, match:/(\d\.\d+)$/},
+	  {telem: '.prsnlArticleEnvelope .author-bar li:eq(1)', match:/(\d+\.\d+\.\d+)/, split:'.' , func:dateFormat}
+	  ]
     },
     {
     hostname: "www.inn.co.il", hrefmatch:/www\.inn\.co\.il.*Besheva/i,
@@ -186,7 +196,8 @@ function wikiit() {
       {str : 'nrg'},
       [
 		{telem: "font.newsVitzCredit", remove:["NRG מעריב"]},
-		{elem: "td.newsVitzCredit", match:/^(.*?)<br>/ ,remove:["NRG מעריב"]}
+		{elem: "td.newsVitzCredit", match:/^(.*?)<br>/ ,remove:["NRG מעריב"]},
+		{telem: "font.newsVitzBody:first", match:/^(.*)/ ,remove:["NRG מעריב"]}
       ],
       {telem: "#titleS1"},
       {str : location.href, match: /(\d+\/\d+)\.html/},
@@ -223,7 +234,7 @@ function wikiit() {
     hostname: "www.mako.co.il",
      params:[
       {str : 'mako'},
-      {telem: ".writerData *:visible:first"},
+      {telem: ".writerData *:visible:first", shouldnt:/\d+\/\d+\/\d+/},
       {telem: "h1"},
       {str: location.href, match:/Article-(.*?).htm/},
       {str: location.href, match:/www\.mako\.co\.il\/(.*?)\/Article/},
@@ -274,6 +285,16 @@ function wikiit() {
       {telem: "#fullRecordView th:contains(בתוך):first + td", match:/\((.*?)\)/, func:function(yh){return yh.substring(0,yh.length-1) + '"' + yh.substr(yh.length-1);}},
       {telem: "#fullRecordView th:contains(בתוך):first + td", match:/(\d+\-\d+)/},
       {telem: "#fullRecordView th:contains(מס' מערכת):first + td", prefix: "רמבי="}
+     ]
+    },
+    { // for [[user:Ofekalef]]
+	hostname: "www.rollingstone.com",
+     params:[
+      {str : 'רולינג סטון'},
+      {telem: ".author", remove:["By"]},
+      [{telem: "h1"}, {elements:["h3:first, h4"," - ", true]}],
+      {str: location.href, match:/rollingstone.com\/(.*)$/},
+      {telem:".date", match:/(\w+ \d+, \d+)/m, func:[engDateParse, dateFormat]}
      ]
     }
   ];
@@ -361,7 +382,9 @@ function wikiit() {
 			if (typeof curParam.defvalue != "undefined" && params[j] == curParam.defvalue)
 				params[j] = '';
 			
-			
+			if (typeof curParam.shouldnt != "undefined" && typeof params[j] == "string" && params[j].match(curParam.shouldnt))
+				params[j] = '';
+				
 			
 			if ((params[j] == '') && (data[i].params[j] instanceof Array) && (k < data[i].params[j].length - 1))
 			{
@@ -370,11 +393,10 @@ function wikiit() {
 				continue;
 			}
 				
-			
+			k = 0;
 		}
 			catch(e) {}
 				
-		k = 0;
 		
 		var minimum = (typeof data[i].minimum != "undefined") ? (data[i].minimum) : (0);
 			

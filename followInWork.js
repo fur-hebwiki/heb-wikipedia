@@ -1,8 +1,8 @@
 ﻿// riwt: Identify Removal of [[תבנית:בעבודה]] and log pages that lost it on [[ויקיפדיה:ערכים מהם הוסרה תבנית בעבודה]]
 
 function riwt_short_date() {
-    var date = new Date();
-    var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
+	var date = new Date();
+	var min = (date.getUTCMinutes() < 10 ? '0' : '') + date.getUTCMinutes();
 	return date.getUTCDate() + '/' + (1+date.getUTCMonth()) + '/' + date.getUTCFullYear() + ' ' + date.getUTCHours() + ':' + min;
 }
 
@@ -48,7 +48,7 @@ function riwt_handle_removed(current, removed, pagesWithTemplate, data, sanitize
 				sanitizedRemoved.push(title);
 		}
 	if (removed.length)
-		riwt_get_json({action: 'query', titles: removed.splice(0,50).join('|'), redirects: ''},
+		riwt_get_json({action: 'query', titles: removed.splice(0, 20).join('|'), redirects: ''},
 				  function(newdata){current, riwt_handle_removed(current, removed, pagesWithTemplate, newdata, sanitizedRemoved, progress);});
 	else {
 		sanitizedRemoved.sort();
@@ -60,7 +60,7 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 	var dateLastEdit = {}, work = current.slice(), threshold = new Date() - 1000 * 60 * 60 * 24 * 21; //three weeks
 	progress.lastLine(progress.lastLine() + ' - בוצע');
 	progress.lastLine('', 1);
-	nextSlice(work.splice(0, 50));
+	nextSlice(work.splice(0, 20));
 
 	function report() {
 		var message = 'כותב את רשימת הדפים עם התבנית ', todo = current.length, done = todo - work.length;
@@ -82,8 +82,7 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 		}
 
 		current.sort(function(a, b) {return dateLastEdit[a].ts - dateLastEdit[b].ts;});
-		var text = '==ערכים עם תבנית {{תב|בעבודה}} (מספר הימים מעריכה אחרונה, העורך האחרון)==\n\n';
-		text += '(שימו לב: השם בסוגריים הוא העורך האחרון שערך את הערך, ולאו דווקא העורך שהניח את התבנית)\n\n';
+		var text = '{{/פתיח}}\n';
 		for (var i in current) {
 			article = current[i];
 			text += '#[[' + article + ']] {{כ}} (' + daysStale(article) + ', [[משתמש:' + dateLastEdit[article].user + ']])\n';
@@ -102,11 +101,13 @@ function riwt_process_current(current, sanitizedRemoved, progress) {
 		riwt_get_json({action: 'query', prop: 'revisions', rvprop: 'timestamp|user', titles: slice.join('|').replace(/&/g, '%26')}, function(data) {
 			if (data.query && data.query.pages)
 				for (var pageid in data.query.pages) {
+					if (pageid < 0)
+						continue;
 					var page = data.query.pages[pageid];
 					dateLastEdit[page.title] = {ts: getDate(page.revisions[0].timestamp), user: page.revisions[0].user};
 				}
 			if (work.length)
-				nextSlice(work.splice(0, 50));
+				nextSlice(work.splice(0, 20));
 			else {
 				if (sanitizedRemoved.length > 0)
 					riwt_save_topage(riwt_page_name(1), 'עדכון '  + riwt_short_date(),
