@@ -5,16 +5,14 @@ if (wgCanonicalNamespace == "Special" && wgCanonicalSpecialPageName == "Contribu
 var watchList = {};
 
 function readWatchList(continuation) {
-	var params = {action: 'query', list: 'watchlist', wllimit: 500, format: 'json'};
+	var params = {action: 'query', list: 'watchlistraw', wrlimit: 500, format: 'json'};
 	if (continuation)
-		params.wlstart = continuation;
+		params.wrcontinue = continuation;
 	$.getJSON(mw.util.wikiScript('api'), params, function(data) {
-		if (data && data.query && data.query.watchlist)
-			$.each(data.query.watchlist, function(key, val) { 
-				watchList[val.title] = true;
-			});
+		if (data && data.watchlistraw)
+			$.each(data.watchlistraw, function(key, val) { watchList[val.title] = true; });
 		if (data && data['query-continue'])
-			readWatchList(data['query-continue']['watchlist']['wlstart']);
+			readWatchList(data['query-continue']['watchlistraw']['wrcontinue']);
 		else
 			colorWatched();
 	});
@@ -44,7 +42,9 @@ function watchIt(span, page, line) {
 	var params = {action: 'watch', title: page, format: 'json'};
 	if (watched)
 		params.unwatch = '';
-	$.getJSON(mw.util.wikiScript('api'), params, function() {
+	if (mw && mw.user && mw.user.tokens)
+		params.token = mw.user.tokens.get('watchToken');
+	$.post(mw.util.wikiScript('api'), params, function() {
 		span.toggleClass('unwatchit-link  watchit-link')
 			.text(watchText(watched))
 			.attr({title: watchTitle(watched)});
