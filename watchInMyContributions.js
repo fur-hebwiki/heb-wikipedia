@@ -53,8 +53,8 @@ function watchIt(span, page, line) {
 }
 		
 $("<style type='text/css'> \n" +
-	".unwatchit-link{color:#f00; cursor: pointer;}  \n" +
-	".watchit-link{color:#080; cursor: pointer;}  \n" +
+	".unwatchit-link{color:#a00; cursor: pointer;}  \n" +
+	".watchit-link{color:#008; cursor: pointer;}  \n" +
 	".iswatched{font-weight: bolder;}  \n" +
 	"</style> "
 ).appendTo("head");
