@@ -6,7 +6,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 
 
-	function templates(templateName) {
+    function templates(templateName) {
 		var constants = ["",
 			"שם המחבר",
 			"כותרת  המאמר",
@@ -74,7 +74,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 				['פורמט', 'פורמט המאמר, אם אינו‏ HTML‏ ‏(PDF או DOC)', 1],
 				['ציטוט', 'ציטוט משפט מהדף המקושר (יכול לעזור במציאת הדף בעתיד, אם הקישור ישתנה)', 1]
 			]},
-			{t: 'הארץ 0', p: [1,2,3,4], r: /([.\d]+)$/i, rp: [3], bm: 1, op: [0,3]},
+			{t: 'הארץ', p: [1,2,3,4], r: /([.\d]+)$/i, rp: [3], bm: 1, op: [0,3]},
 			{t: 'דבר'},
 			{t: 'מעריב'},
 			{t: 'הצבי'},
@@ -397,12 +397,13 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var buttonImage = 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
+		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
 		$('div #toolbar').append( // "old style"
 			$('<img>', {src: buttonImage, title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
 			.css({cursor: 'pointer'})
 			.click(function() {mediaWiki.loader.using('jquery.ui.dialog', fireDialog);})
 		);
+               if(typeof $.wikiEditor!='undefined')
 		$('#wpTextbox1').wikiEditor('addToToolbar', {
 				section: 'advanced',
 				group: 'more',
