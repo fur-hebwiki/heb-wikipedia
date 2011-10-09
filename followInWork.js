@@ -7,36 +7,18 @@ function riwt_short_date() {
 }
 
 function riwt_save_topage(title, summary, content, section, next) {
-
-	function doneSave(data) {
+	var param = {action: 'edit', title: title, summary: summary, token: mw.user.tokens.get('editToken'), format: 'json'};
+	if (typeof section == 'number')
+		param.section = section;
+	$.post(mw.util.wikiScript('api'), $.extend(param, content), function (data) {
 		if (data && data.error)
 			alert('error saving: ' + data.error['info']);
 		else if (data && data.edit && data.edit.result == 'Success' && typeof next == 'function')
 			next();
-	}
-
-	function tokenReceived(token) {
-		var param = {action: 'edit', title: title, summary: summary, token: token, format: 'json'};
-		if (typeof section == 'number')
-			param.section = section;
-		$.extend(param, content);
-		$.post(wgScriptPath + '/api.php?', param, doneSave);
-	}
-
-	function doneGetToken(data) {
-		for (var page in data.query.pages) {
-			tokenReceived(data.query.pages[page].edittoken);
-			break;
-		}
-	}
-
-	riwt_get_json({action: 'query', prop: 'info', intoken: 'edit', titles: title}, doneGetToken);
+	});
 }
 
-function riwt_get_json(params, func) {
-	params.format = 'json';
-	$.getJSON(wgScriptPath + '/api.php?', params, func);
-}
+function riwt_get_json(params, func) {$.getJSON(mw.util.wikiScript('api'), $.extend(params, {format: 'json'}), func);}
 
 function riwt_handle_removed(current, removed, pagesWithTemplate, data, sanitizedRemoved, progress) {
 	message = 'מנקה את רשימת הדפים מהם הוסרה התבנית';
@@ -130,7 +112,7 @@ function riwt_analyze_results(data, pagesWithTemplate, progress) {
 	if (data && data.parse && data.parse.links)
 		for (var i in data.parse.links) {
 			var link = data.parse.links[i], title = link['*'];
-			if (title && ! /(משתמש:|תבנית:)/.test(title) && link['exists'] == '' && !pagesWithTemplate[title])
+			if (title && ! /(משתמשת?:|תבנית:)/.test(title) && link['exists'] == '' && !pagesWithTemplate[title])
 				removed.push(title);
 		}
 	current = [];
