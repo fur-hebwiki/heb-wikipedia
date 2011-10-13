@@ -9,7 +9,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	function templates(templateName) {
 		var constants = ["",
 			"שם המחבר",
-			"כותרת  המאמר",
+			"כותרת המאמר",
 			"מספר (כפי שמופיע בקישור)",
 			"מידע נוסף, למשל תאריך. נסו לשמור על הפורמט '30 באוגוסט 1958'",
 			"מספר הסדרה",
@@ -74,7 +74,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 				['פורמט', 'פורמט המאמר, אם אינו‏ HTML‏ ‏(PDF או DOC)', 1],
 				['ציטוט', 'ציטוט משפט מהדף המקושר (יכול לעזור במציאת הדף בעתיד, אם הקישור ישתנה)', 1]
 			]},
-			{t: 'הארץ', p: [1,2,3,4], r: /(?:spages\/|itemNo=)(\d+)/i, rp: [3], bm: 1, op: [3]},
+			{t: 'הארץ', p: [1,2,3,4], r: /([.\d]+)$/i, rp: [3], bm: 1, op: [0,3]},
 			{t: 'דבר'},
 			{t: 'מעריב'},
 			{t: 'הצבי'},
@@ -213,7 +213,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 			}
 			code += "}}";
 			if ($('#ltw2_ref').attr('checked'))
-				return "{{הערה|" +  code + "}}";
+				return "{{הערה|" + code + "}}";
 			if ($('#ltw2_list').attr('checked'))
 				return "\n* " + code + "\n";
 			return code;
@@ -268,7 +268,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 		if (template.bm)
 			dialog.append($('<p>', {title: 'ראו דף "עזרה:בוקמרקלטים"'}).css({color: 'red', fontWeight: 'bold'})
-				.text('קיים בוקמרקלט שמייצר תבנית "'  +  template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו (ראו "עזרה:בוקמרקלטים").'))
+				.text('קיים בוקמרקלט שמייצר תבנית "' + template.t + '" באופן אוטומטי. אנא שקלו להשתמש בו (ראו "עזרה:בוקמרקלטים").'))
 				.append($('<hr>'));
 
 		if (template.r)
@@ -289,7 +289,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 
 
 		for (var i = 0; i < (template.p || []).length; i++)
-			if (template.p[i].length == 0)  // this allow defining an empty parameter. by use of a "pseudo field".
+			if (template.p[i].length == 0)	// this allow defining an empty parameter. by use of a "pseudo field".
 				orderedFields.push(empty);
 			else
 				addRow(template.p[i], parseInt(i, 10) + 1, template.op && ($.inArray(i, template.op)+1));
@@ -397,13 +397,14 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 	}
 
 	setTimeout(function() {
-		var buttonImage = 'http://upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
+		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
 		$('div #toolbar').append( // "old style"
 			$('<img>', {src: buttonImage, title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
 			.css({cursor: 'pointer'})
 			.click(function() {mediaWiki.loader.using('jquery.ui.dialog', fireDialog);})
 		);
-		$('#wpTextbox1').wikiEditor('addToToolbar', {
+		if (typeof $.wikiEditor != 'undefined')
+			$('#wpTextbox1').wikiEditor('addToToolbar', {
 				section: 'advanced',
 				group: 'more',
 				tools: {

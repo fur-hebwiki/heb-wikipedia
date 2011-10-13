@@ -6,11 +6,8 @@ function wlinrc_setText(element, text) {
 		element.textContent = text;
 }
 
-function wlinrc_done() {
-	if (this.readyState != 4) // this is some ajax incantation - ony "4" is good.
-		return;
-	var span = this.span;
-	if ($.inArray(wgCanonicalSpecialPageName, ['Watchlist', 'Contributions']) + 1) {
+function wlinrc_done(span) {
+	if (wgCanonicalSpecialPageName == 'Watchlist') {
 		span.parentNode.removeChild(span);
 		return;
 	}
@@ -21,15 +18,15 @@ function wlinrc_done() {
 }
 
 function wlinrc_watchme() {
-	var ajax = sajax_init_object();
-	ajax.open('GET', 'http://he.wikipedia.org/w/api.php?action=watch' + 
-				'&title=' + this.target.replace(' ', '_') + 
-				(this.isWatched ? '&unwatch=' : ''));
-	ajax.onreadystatechange = wlinrc_done;
-	ajax.span = this;
+	var params = {action: 'watch', title: this.target.replace(' ', '_') , format: 'json'};
+	if (this.isWatched)
+		params.unwatch = '';
+	if (mw && mw.user && mw.user.tokens)
+		params.token = mw.user.tokens.get('watchToken');
+	var span = this;
+	$.post(mw.util.wikiScript('api'), params, function() { wlinrc_done(span); })
 	wlinrc_setText(this.firstChild, '[נשלח...]');
 	this.style.color = 'orange';
-	ajax.send(null);	
 }
 
 function wlinrc_addWatchListLink(element, anchor) {
@@ -79,11 +76,6 @@ function wlinrc_addWatchListLinks() {
 		if (a.length)
 			wlinrc_addWatchListLink(tds[i], a[0]);
 	}
-	if (wgCanonicalSpecialPageName == 'Contributions') {
-		var lis = $("#bodyContent").find("li");
-		for (var i = 0; i < lis.length; i++) 
-			wlinrc_addWatchListLink(lis[i]);
-	}
 	if (wgCanonicalSpecialPageName == 'Newpages') {
 		var lis = $(".mw-newpages-time").parent();
 		for (var i = 0; i < lis.length; i++) {
@@ -94,5 +86,5 @@ function wlinrc_addWatchListLinks() {
 	}
 }
 
-if ($.inArray(wgCanonicalSpecialPageName, ['Recentchanges', 'Watchlist', 'Contributions', 'Newpages']) + 1)
+if ($.inArray(wgCanonicalSpecialPageName, ['Recentchanges', 'Watchlist', 'Newpages']) + 1)
 	hookEvent("load", wlinrc_addWatchListLinks);
