@@ -87,8 +87,8 @@ function wikiit() {
     {
     hostname: "www.haaretz.co.il", 
      params:[
-      {str : 'הארץ 0'},
-      {telem:'.autorBarWriters',  remove:['מאת '] },
+      {str : 'הארץ'},
+      {telem: "#content  .author-bar li:eq(0)",  remove:['מאת '] },
       {telem:'h1.mainTitle'},
       {str : location.href, match:/(\d\.\d+)$/},
 	  {telem: '.prsnlArticleEnvelope .author-bar li:eq(1)', match:/(\d+\.\d+\.\d+)/, split:'.' , func:dateFormat}
@@ -171,7 +171,7 @@ function wikiit() {
     hostname: "www.mouse.co.il", //only "CM.articles" have a template!
      params:[
       {str : 'עכבר העיר'},
-      {elem: "p.katava-info:first", match: /מאת: (.*)$/, remove:[", עכבר העיר אונליין"]},
+      {elem: "p.katava-info:first", match: /מאת: (.*?),/, remove:[", עכבר העיר אונליין"]},
       {telem: ".katava-box.box h1"},
       {str : location.href, match: /item,(.*?),\.aspx$/},
       {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/}
@@ -295,6 +295,24 @@ function wikiit() {
       [{telem: "h1"}, {elements:["h3:first, h4"," - ", true]}],
       {str: location.href, match:/rollingstone.com\/(.*)$/},
       {telem:".date", match:/(\w+ \d+, \d+)/m, func:[engDateParse, dateFormat]}
+     ]
+    },
+    {
+	hostname: "www.yeshiva.org.il",  hrefmatch:/\/midrash\/shiur\.asp\?id=\d+/i,
+     params:[
+      {str : 'אתרישיבה1'},
+      {telem: ".trav", remove:["הרב"]},
+      {telem: "h1"},
+      {str: location.href, match:/\?id=(\d+)/}
+     ]
+    },
+    {
+	hostname: "www.yeshiva.org.il",
+     params:[
+      {str : 'אתרישיבה'},
+      {telem: ".trav", remove:["הרב"], prefix:"הרב="},
+      {telem: "h1", prefix:"נושא="},
+      {str: location.href, prefix:"קישור="}
      ]
     }
   ];
