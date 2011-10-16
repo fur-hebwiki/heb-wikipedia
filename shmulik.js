@@ -37,12 +37,12 @@ function wikiit() {
   var data = 
   [
     {
-     hostname: 'www.ynet.co.il', minimum:6,
+     hostname: /www\.m?ynet\.co\.il/, minimum:6,
      params:[
-		{str : 'ynet'},
+		{str : (location.hostname.indexOf('mynet')>=0)?'mynet':'ynet'},
 		[
 			{elements : ['.authorHtmlCss',' ו'] },
-			{elem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
+			{telem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
 			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/},
 			{telem : ".text16w" , match:/\/(.*?)$/},
 			{telem : ".text16w"},
