@@ -1,7 +1,7 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
 if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
-
+mw.loader.using('jquery.textSelection', function() {
 
 
 
@@ -338,18 +338,6 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		updatePreview();
 	}
 
-	function findSelected() {
-		if (document.selection && document.selection.createRange)
-			return document.selection.createRange().text;
-		else if (currentFocused.selectionStart) {
-			var start = currentFocused.selectionStart;
-			var end   = currentFocused.selectionEnd;
-			return $(currentFocused).val().substring(start, end);
-		}
-		return '';
-	}
-
-
 	function fireDialog() {
 
 		var killold = $('#ltw_dialog').remove(), // kill existing popup when button is pressed again.
@@ -379,7 +367,7 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 		for (var i in fullList)
 			allTemplates.push(fullList[i].t);
 
-		if (fromTemplate(findSelected()))
+		if (fromTemplate($("#wpTextbox1").textSelection('getSelection')))
 			return;
 
 		var selector = $('<select>', {'class': 'ltw_disposable'}).change(function() { // class in quotes - reserved word.
@@ -417,4 +405,6 @@ if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 				}
 			});
 	}, 1000);
+
+});
 });
