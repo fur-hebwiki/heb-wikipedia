@@ -54,7 +54,10 @@ function wikiit() {
 			{elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/}
 		],
 		{str : location.href, match: /L-(.*?),/},
-		{elem : 'td:has(h1:first) .text12g:last', match: /(\d+\.\d+\.\d+)/, split:'.', func:dateFormat},
+		[
+			{elem : 'td:has(h1:first) .text12g:last', match: /(\d+\.\d+\.\d+)/, split:'.', func:dateFormat},
+			{elem : ".text12g + .text12g", match: /(\d+\.\d+\.\d+)/, split:'.', func:dateFormat}
+		],
 		{str: ''},
 		{str:  location.href, match: /ynet.co.il\/[^[\/]*\/(\d+)/, defvalue: '0'},
 		{str : location.href, match: /ynet.co.il\/([^[\/]*)/, defvalue: 'articles'}
