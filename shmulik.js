@@ -49,12 +49,15 @@ function wikiit() {
 			
 		],
 		[
-			{str : $("meta[property='og:title']").attr("content")},
 			{elem : 'h1'},
+			{str : $("meta[property='og:title']").attr("content")}, //seems wrong on http://www.ynet.co.il/articles/0,7340,L-3676702,00.html
 			{elem : 'head>title', match:/(?:ynet\s*-?)?([^\-]*)/}
 		],
 		{str : location.href, match: /L-(.*?),/},
-		{elem : 'td:has(h1:first) .text12g:last', match: /(\d+\.\d+\.\d+)/, split:'.', func:dateFormat},
+		[
+			{elem : 'td:has(h1:first) .text12g:last', match: /(\d+\.\d+\.\d+)/, split:'.', func:dateFormat},
+			{elem : ".text12g + .text12g", match: /(\d+\.\d+\.\d+)/, split:'.', func:dateFormat}
+		],
 		{str: ''},
 		{str:  location.href, match: /ynet.co.il\/[^[\/]*\/(\d+)/, defvalue: '0'},
 		{str : location.href, match: /ynet.co.il\/([^[\/]*)/, defvalue: 'articles'}
@@ -130,9 +133,9 @@ function wikiit() {
       {str : 'העין השביעית'},
       {elem: '#ctl00_PlaceHolderMain_ArticleAuthor_m_EditModePanel_Disp span', remove:["מאת:"].concat(ATags)},
       {elem: "a[name='1']"},
-      {str : location.href, match: /^.*\/(.*)\./},
+      {str : location.href, match: /^.*?Pages\/(.*?)\.aspx/},
       {elem: "#ctl00_PlaceHolderMain_PublishDate_m_EditModePanel_Disp span", remove:["תאריך פרסום: "], func:dateFormat, split:'/'},
-      {str : location.href, match:/il\/(.*)\/P/}
+      {str : location.href, match:/il\/(.*?)\/Pages/}
      ]
     },
     {
@@ -171,7 +174,7 @@ function wikiit() {
     hostname: "www.mouse.co.il", //only "CM.articles" have a template!
      params:[
       {str : 'עכבר העיר'},
-      {elem: "p.katava-info:first", match: /מאת: (.*?),/, remove:[", עכבר העיר אונליין"]},
+      {elem: "p.katava-info:first", match: /מאת:(.*?)(?:$|,)/, remove:[", עכבר העיר אונליין"]},
       {telem: ".katava-box.box h1"},
       {str : location.href, match: /item,(.*?),\.aspx$/},
       {elem: "p.katava-info:first", match: /^\W+ (\d+ \W+ \d+)/}
@@ -216,7 +219,7 @@ function wikiit() {
       {str : 'one'},
       {elem: ".f11.rtl.right", remove:["מאת מערכת ONE","מאת "]},
       {elem: "#_ctl0_Main_ucFullArticle_lblCaption"},
-      {str: location.href, match:[/Article\/(\d+)/,/id=(\d+)/]},
+      {str: location.href, match:[/Article\/\d\d\-\d\d\/\d,\d+,\d,\d\/(\d+)/ ,/Article\/(\d+)/,/id=(\d+)/]},
       {elem: ".f10.left" ,match: /(\d+\/\d+\/\d+)/, split:'/',  func:dateFormat}
      ]
     },
