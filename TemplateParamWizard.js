@@ -21,6 +21,33 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 	}
 	
 	function buildParams(data, status) {
+		var lines = data.split("\n");
+		while (lines) {
+			var line = lines.shift();
+				if (!(/^\|-/.test(line))) // look for |- this is wikitext for table row.
+					continue;
+			var required = /required/g.test(line);
+			
+			line = lines.shift();
+			if (! line || ! (/^\|/.test(line))) //wikitext for column
+				continue;
+			line = line.substr(1); // get rid of the leading |
+			var fields = line.split('||');
+			if (fields.length < 2)
+				continue;
+			var name = $.trim(fields[0]);
+			if (! name)
+				continue;
+			var desc = $.trim(fields[1]);
+			var pAttribs = {desc: desc};
+			if (required)
+				pAttribs.required = true;
+			if (fileds.length > 2)
+				pAttribs.defVal = $.trim(fields[2]);
+			if (fields.length > 3)
+				pAttribs.options = fileds[3].split(",");
+			templateParams[name] = pAttribs;
+		}
 	}
 	
 	function createWikiCode() {
@@ -39,7 +66,7 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 	}
 	
 	function i18n(key) {
-		switch (mw.config.get('wgContentLanguage') {
+		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
 					case 'explainOptional': return 'השדות המסומנים באדום הם חובה, השאר אופציונליים';
@@ -62,8 +89,7 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 	
 	function templateDialog(dialog, template, values) {
 		var brainDamage = $.browser.msie && $.browser.version < 8;
-		var	
-			table = $('<table>'),
+		var	table = $('<table>');
 
 
 		function updateRawPreview(){
@@ -82,12 +108,14 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 				$('.ui-dialog-buttonpane').width(width);
 			}
 		}
-
+		
+		function toggleDesc() {$(this).next('span').toggleClass('hiddenDesc');}
+		
 		function addRow(paramName) {
 			var templateParam = templateParams[paramName];
 			var options = templateParam.options;
 			var inputField = options 
-				? $('<select>').append($('<option>', {text: i18n('options select')});
+				? $('<select>').append($('<option>', {text: i18n('options select')}))
 				: $('<input>', {type: 'text', width: 600});
 			inputField.attr({id: 'tpw_inputfield_' + paramName})
 				.css({width: '28em'})
@@ -96,14 +124,23 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 				
 			if (options) 
 				for (var i in options)
-					inputField.append($('<option>', {text: options[i], value: optiosn[i]});
+					inputField.append($('<option>', {text: options[i], value: optiosn[i]}));
 
-			if (templateParam.value)
-				inputField.val(templateParam.value);
-			if (! (templateParam.optional || 0))
+			if (templateParam.defVal)
+				inputField.val(templateParam.defVal);
+			if (templateParam.required)
 				inputField.addClass('tpw_required').css({border: '1px red solid'});
 			var tr = $('<tr>')
-				.append($('<td>').text(paramName).css({maxWidth: '20em'}))
+				.append($('<td>')
+					.append($('<span>')
+						.text(paramName)
+						.click(toggleDesc)
+						.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
+					)
+					.append($('<span>', {'class': 'hiddenDesc')
+						.text('<br />' + templateParam.desc)
+					)
+				)
 				.append($('<td>').css({width: '30em'}).append(inputField));
 			dialogFields.push([paramName, inputField]);
 			table.append(tr);
@@ -122,17 +159,12 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 
 		for (var paramName in templateParams)
 			addRow(paramName);
-
-		dialog.dialog('option', 'buttons', {
-			i18n('ok') :
-				function() {
-					insertTags('', createWikiCode(), '');
-					dialog.dialog('close');
-				},
-			i18n('cancel'):
-				function() {dialog.dialog('close');}
-			i18n('preview'): showPreview;
-		});
+		
+		var buttons = {}; // we need to do it this way, because with literal object, the keys must be literal.
+		buttons[i18n('ok')] = function() {insertTags('', createWikiCode(), ''); dialog.dialog('close'); };
+		buttons[i18n('cancel')] = function() {dialog.dialog('close');}
+		buttons[i18n('preview')] = showPreview;
+		dialog.dialog('option', 'buttons', buttons);
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
 		dialog.dialog('option', {
 			height: 'auto',
@@ -156,11 +188,15 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 		$.ajax({
 			url: mw.util.wikiScript('index'),
 			contents: {title: param_page(), action: 'raw', type: 'text/x-wiki'},
-			success: buildDialog;
+			success: buildDialog
 		});
 	}
 
 	setTimeout(function() {
+		$("<style type='text/css'> \n" +
+			".hiddenDesc{display:none;} \n" +
+			"</style> "
+		).appendTo("head");
 		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
 		$('div #toolbar').append( // "old style"
 			$('<img>', {src: buttonImage, title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
