@@ -137,7 +137,7 @@ mw.loader.using(['jquery.textSelection', 'jquery.ui.dialog'], function() {
 						.click(toggleDesc)
 						.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
 					)
-					.append($('<span>', {'class': 'hiddenDesc')
+					.append($('<span>', {'class': 'hiddenDesc'})
 						.text('<br />' + templateParam.desc)
 					)
 				)
