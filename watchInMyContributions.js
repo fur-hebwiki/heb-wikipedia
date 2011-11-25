@@ -1,7 +1,8 @@
 // the usual prayer
-if (wgCanonicalNamespace == "Special" && wgCanonicalSpecialPageName == "Contributions")
+if ((mw.config.get('wgNamespaceNumber') == -1 && mw.config.get('wgCanonicalSpecialPageName') == "Contributions")
+	|| (mw.config.get('wgNamespaceNumber') == 14))
 	$(document).ready(function() {
-
+var isCat = mw.config.get('wgNamespaceNumber') == 14;
 var watchList = {};
 
 function readWatchList(continuation) {
@@ -18,12 +19,13 @@ function readWatchList(continuation) {
 	});
 }	
 
-function watchText(watch) { return watch ? '[עקוב]' : '[הסר]';}
+function watchText(watch) { return (isCat ? ' ':'') + (watch ? '[עקוב]' : '[הסר]');}
 function watchTitle(watch){ return watch? 'הוסף לרשימת המעקב שלי' : 'הסר מרשימת המעקב שלי';}
 
 function colorWatched() {
+	var pagesList = isCat ? $('#mw-pages').find('li') : $('#bodyContent > ul > li');
 	var all = [];
-	var all = $('#bodyContent > ul > li').each(function() {
+	var all = pagesList.each(function() {
 		var li = $(this);
 		var line = li.children().filter('a:last');
 		var page = line.attr('title');
@@ -53,8 +55,8 @@ function watchIt(span, page, line) {
 }
 		
 $("<style type='text/css'> \n" +
-	".unwatchit-link{color:#a00; cursor: pointer;}  \n" +
-	".watchit-link{color:#008; cursor: pointer;}  \n" +
+	".unwatchit-link{color:#a00; cursor: pointer; font-size: 70%;}  \n" +
+	".watchit-link{color:#008; cursor: pointer; font-size: 70%;}  \n" +
 	".iswatched{font-weight: bolder;}  \n" +
 	"</style> "
 ).appendTo("head");
