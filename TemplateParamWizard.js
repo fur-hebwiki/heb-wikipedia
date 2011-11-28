@@ -21,6 +21,14 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		dialogFields;
 	
 	function paramsFromSelection() {
+		var selection = $("#wpTextbox1").textSelection('getSelection');
+		var params = selection.split('|');
+		for (var i in params) {
+			var param = params[i].split(/\s*=\s*/);
+			var name = param.shift();
+			if (param.length)
+				templateParams[name] = $.extend(templateParams[name] || {}, {defVal: param.join('=').replace(/\}\}$/, '')});
+		}
 	}
 	
 	function buildParams(data) {
@@ -187,6 +195,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	
 	function buildDialog(data) {
 		buildParams(data);
+		paramsFromSelection();
 		var	table = $('<table>');
 		var dialog = $('<div>', {'class': 'tpw_disposable'}).dialog()
 			.append($('<p>').text(i18n('explainOptional')))
