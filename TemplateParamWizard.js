@@ -53,7 +53,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				else pAttribs.defVal = val;
 			}
 			if (fields.length > 3) 
-				pAtribs.options = analyzeOptions($.trim(fields[3]));
+				pAttribs.options = analyzeOptions($.trim(fields[3]));
 				
 			templateParams[name] = pAttribs;
 		}
@@ -61,10 +61,10 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	
 	function analyzeOptions(str) {
 		var options = {};
-		var opts = ['multiline']; // maybe we'll have more in the future
+		var opts = ['multiline', 'required']; // maybe we'll have more in the future
 		for (var i in opts) 
-			if (str.indexOf($.trim(opts[i])) + 1)
-				options[$.trim(opts[i])] = true;
+			if (str.indexOf(i18n(opts[i])) + 1)
+				options[opts[i]] = true;
 		return options;
 	}
 	
@@ -84,14 +84,17 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	function showPreview() {
 		var temp = createWikiCode();
 		$.post(mw.util.wikiScript('api'), {action: 'parse', text: temp, prop: 'text', format: 'json'}, function(data) {
-			var buttons = {};
-			buttons[i18n('close')] = function() {$(this).dialog('close');};
-			if (data && data.parse && data.parse.text)
-				$('<div>').dialog({title: i18n('preview'), width: $('body').width() / 2, height: $('body').height() / 2})
-					.append($('<div>')
+			if (data && data.parse && data.parse.text) {
+				var buttons = {},
+					div = $('<div>')
 						.css({width: '100%', height: '100%', overflow: 'auto'})
-						.html(data.parse.text['*'])
-					).dialog('option', 'buttons', buttons);
+						.html(data.parse.text['*']);
+				buttons[i18n('close')] = function() {$(this).dialog('close');};
+				div.find('a').attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
+				$('<div>')
+					.dialog({title: i18n('preview'), width: $('body').width() / 2, height: $('body').height() / 2, buttons: buttons})
+					.append(div);
+			}
 		});			
 	}
 	
@@ -109,7 +112,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'options select': return 'בחרו ערך מהרשימה';
 					case 'multiline': return 'מספר שורות';
 					case 'close': return 'סגור';
-					case 'required': return '';
+					case 'required': return 'שדה חובה';
 				}
 		}
 	}
@@ -122,7 +125,12 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 
 
 	function updateRawPreview(){
-		$('#tpw_preview').text(createWikiCode());
+		$('#tpw_preview').html(createWikiCode());
+		var canOK = 'enable';
+		for (var i in dialogFields)
+			if (dialogFields[i][1].hasClass('tpw_required') && $.trim(dialogFields[i][1].val()).length == 0)
+				canOK = 'disable';
+		$(".ui-dialog-buttonpane button:contains('אישור')").button(canOK);
 	}
 	
 	
@@ -134,9 +142,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			inputField;
 			
 		if (select) {
-			inputField = $('<select>').append($('<option>', {text: i18n('options select')}));
+			inputField = $('<select>').append($('<option>', {text: i18n('options select'), value: ''}));
 			for (var i in select)
-				inputField.append($('<option>', {text: select[i], value: optiosn[i]}));
+				inputField.append($('<option>', {text: select[i], value: select[i]}));
 		}
 		else if (templateParam.options && templateParam.options.multiline)
 			inputField = $('<textarea>').css({height: '3em', width: '400px', overflow: 'auto'});
