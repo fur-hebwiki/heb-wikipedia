@@ -46,12 +46,26 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			var pAttribs = {desc: desc};
 			if (required)
 				pAttribs.required = true;
-			if (fields.length > 2)
-				pAttribs.defVal = $.trim(fields[2]);
-			if (fields.length > 3)
-				pAttribs.options = fileds[3].split(",");
+			if (fields.length > 2) {
+				var val = $.trim(fields[2]);
+				if (/,/.test(val)) 
+					pAttribs.select = val.split(",");
+				else pAttribs.defVal = val;
+			}
+			if (fields.length > 3) 
+				pAtribs.options = analyzeOptions($.trim(fields[3]));
+				
 			templateParams[name] = pAttribs;
 		}
+	}
+	
+	function analyzeOptions(str) {
+		var options = {};
+		var opts = ['multiline']; // maybe we'll have more in the future
+		for (var i in opts) 
+			if (str.indexOf($.trim(opts[i])) + 1)
+				options[$.trim(opts[i])] = true;
+		return options;
 	}
 	
 	function createWikiCode() {
@@ -68,6 +82,17 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 
 	function showPreview() {
+		var temp = createWikiCode();
+		$.post(mw.util.wikiScript('api'), {action: 'parse', text: temp, prop: 'text', format: 'json'}, function(data) {
+			var buttons = {};
+			buttons[i18n('close')] = function() {$(this).dialog('close');};
+			if (data && data.parse && data.parse.text)
+				$('<div>').dialog({title: i18n('preview'), width: $('body').width() / 2, height: $('body').height() / 2})
+					.append($('<div>')
+						.css({width: '100%', height: '100%', overflow: 'auto'})
+						.html(data.parse.text['*'])
+					).dialog('option', 'buttons', buttons);
+		});			
 	}
 	
 	function i18n(key) {
@@ -82,9 +107,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'params subpage': return 'פרמטרים';
 					case 'preview': return 'תצוגה מקדימה';
 					case 'options select': return 'בחרו ערך מהרשימה';
-					case '': return '';
-					case '': return '';
-					case '': return '';
+					case 'multiline': return 'מספר שורות';
+					case 'close': return 'סגור';
+					case 'required': return '';
 				}
 		}
 	}
@@ -97,29 +122,40 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 
 
 	function updateRawPreview(){
+		$('#tpw_preview').text(createWikiCode());
 	}
+	
 	
 	function toggleDesc() {$(this).next('span').toggleClass('hiddenDesc');}
 	
-	function addRow(paramName, table) {
-		var templateParam = templateParams[paramName];
-		var options = templateParam.options;
-		var inputField = options 
-			? $('<select>').append($('<option>', {text: i18n('options select')}))
-			: $('<input>', {type: 'text', width: 600});
+	function createInputField(paramName) {
+		var templateParam = templateParams[paramName],
+			select = templateParam.select,
+			inputField;
+			
+		if (select) {
+			inputField = $('<select>').append($('<option>', {text: i18n('options select')}));
+			for (var i in select)
+				inputField.append($('<option>', {text: select[i], value: optiosn[i]}));
+		}
+		else if (templateParam.options && templateParam.options.multiline)
+			inputField = $('<textarea>').css({height: '3em', width: '400px', overflow: 'auto'});
+		else
+			inputField = $('<input>', {type: 'text', width: 600});
 		inputField.attr({id: 'tpw_inputfield_' + paramName})
 			.css({width: '28em'})
 			.data('paramName', paramName)
 			.bind('paste cut drop input change', updateRawPreview);
 			
-		if (options) 
-			for (var i in options)
-				inputField.append($('<option>', {text: options[i], value: optiosn[i]}));
-
 		if (templateParam.defVal)
 			inputField.val(templateParam.defVal);
-		if (templateParam.required)
+		if (templateParam.options && templateParam.options.required)
 			inputField.addClass('tpw_required').css({border: '1px red solid'});
+		return inputField;
+	}
+	
+	function addRow(paramName, table) {
+		var inputField = createInputField(paramName);
 		var tr = $('<tr>')
 			.append($('<td>')
 				.append($('<span>')
@@ -128,7 +164,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
 				)
 				.append($('<span>', {'class': 'hiddenDesc'})
-					.text('<br />' + templateParam.desc)
+					.css({backgroundColor: 'yellow', border: 'solid black 1px'})
+					.html('<br />' + (templateParams[paramName].desc || ''))
 				)
 			)
 			.append($('<td>').css({width: '30em'}).append(inputField));
@@ -147,7 +184,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			.append($('<p>').text(i18n('explainOptional')))
 			.append(table)
 			.append($('<p>').css({height: '2em'}))
-			.append($('<div>', {id: 'tpw_preview'})
+			.append($('<pre>', {id: 'tpw_preview'})
 				.css({backgroundColor: "lightGreen", maxWidth: '40em', maxHeight: '8em', overflow: 'auto'}));
 
 		dialogFields = [];
