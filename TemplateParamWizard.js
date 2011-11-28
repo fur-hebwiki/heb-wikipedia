@@ -91,7 +91,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 
 	function showPreview() {
 		var temp = createWikiCode();
-		$.post(mw.util.wikiScript('api'), {action: 'parse', text: temp, prop: 'text', format: 'json'}, function(data) {
+		$.post(mw.util.wikiScript('api'), {action: 'parse', title: mw.config.get('wgPageName'), text: temp, format: 'json'}, function(data) {
 			if (data && data.parse && data.parse.text) {
 				var buttons = {},
 					div = $('<div>')
