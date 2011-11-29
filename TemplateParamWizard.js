@@ -91,16 +91,15 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 
 	function showPreview() {
 		var temp = createWikiCode();
-		$.post(mw.util.wikiScript('api'), {action: 'parse', title: mw.config.get('wgPageName'), text: temp, format: 'json'}, function(data) {
+		$.post(mw.util.wikiScript('api'), {action: 'parse', title: mw.config.get('wgPageName'), prop: 'text', text: temp, format: 'json'}, function(data) {
 			if (data && data.parse && data.parse.text) {
 				var buttons = {},
 					div = $('<div>')
-						.css({width: '100%', height: '100%', overflow: 'auto'})
 						.html(data.parse.text['*']);
 				buttons[i18n('close')] = function() {$(this).dialog('close');};
 				div.find('a').attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
 				$('<div>')
-					.dialog({title: i18n('preview'), width: $('body').width() / 2, height: $('body').height() / 2, buttons: buttons})
+					.dialog({title: i18n('preview'), width: 'auto', height: 'auto', overflow: 'auto', buttons: buttons})
 					.append(div);
 			}
 		});			
@@ -173,14 +172,14 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	function addRow(paramName, table) {
 		var inputField = createInputField(paramName);
 		var tr = $('<tr>')
-			.append($('<td>')
+			.append($('<td>', {width: '160'})
 				.append($('<span>')
 					.text(paramName)
 					.click(toggleDesc)
 					.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
 				)
 				.append($('<span>', {'class': 'hiddenDesc'})
-					.css({backgroundColor: 'yellow', border: 'solid black 1px'})
+					.css({backgroundColor: 'yellow'})
 					.html('<br />' + (templateParams[paramName].desc || ''))
 				)
 			)
@@ -194,14 +193,21 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 	
 	function buildDialog(data) {
+		$('.tpw_disposable').remove();
 		buildParams(data);
 		paramsFromSelection();
 		var	table = $('<table>');
-		var dialog = $('<div>', {'class': 'tpw_disposable'}).dialog()
+		var dialog = $('<div>', {'class': 'tpw_disposable'})
+			.dialog({height: 'auto',
+					width: 'auto',
+					overflow: 'auto',
+					position: [$('body').width() * 0.2, $('body').height() * 0.1],
+					open: function() {$(this).css({'max-height': Math.round($('body').height() * 0.7)});},
+			})
 			.append($('<p>').text(i18n('explainOptional')))
 			.append(table)
 			.append($('<p>').css({height: '2em'}))
-			.append($('<pre>', {id: 'tpw_preview'})
+			.append($('<pre>', {id: 'tpw_preview', 'class': 'tpw_disposable'})
 				.css({backgroundColor: "lightGreen", maxWidth: '40em', maxHeight: '8em', overflow: 'auto'}));
 
 		dialogFields = [];
@@ -214,22 +220,14 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		buttons[i18n('preview')] = showPreview;
 		dialog.dialog('option', 'buttons', buttons);
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
-		dialog.dialog('option', {
-			height: 'auto',
-			width: 'auto',
-			position: [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]
-		});
 		$('.ui-dialog-buttonpane').css({direction: 'ltr'});
 		$('.ui-dialog-buttonpane > button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
 		updateRawPreview();
 	}
 
 	function fireDialog() {
-		if (!template) {
-			var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
-			if (match)
-				template = $.trim(match[1]);
-		}
+		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
+		template = match ? $.trim(match[1]) : null;
 		if (! template)
 			return;
 		
