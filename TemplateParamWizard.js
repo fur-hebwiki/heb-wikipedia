@@ -22,6 +22,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	
 	function paramsFromSelection() {
 		var selection = $("#wpTextbox1").textSelection('getSelection');
+		selection = selection.replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, '[[$1{{!}}$2]]');
 		var params = selection.split('|');
 		for (var i in params) {
 			var param = params[i].split(/\s*=\s*/);
