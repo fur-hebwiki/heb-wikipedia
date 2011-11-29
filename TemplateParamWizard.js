@@ -18,7 +18,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	// which template are we working on
 		template,
 	// the input fileds. each field has some data also, e.g., the param name.
-		dialogFields;
+		dialogFields,
+		rowsBypName,
+		fieldsBypName;
 	
 	function paramsFromSelection() {
 		var selection = $("#wpTextbox1").textSelection('getSelection');
@@ -33,7 +35,6 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 	
 	function buildParams(data) {
-		templateParams = {};
 		var lines = data.split("\n");
 		while (lines && lines.length) {
 			var line = lines.shift();
@@ -69,12 +70,17 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 	
 	function analyzeOptions(str) {
-		var options = {};
-		var opts = ['multiline', 'required']; // maybe we'll have more in the future
-		for (var i in opts) 
-			if (str.indexOf(i18n(opts[i])) + 1)
-				options[opts[i]] = true;
-		return options;
+		var res = {},
+			avail = ['multiline', 'required', 'depends'], // maybe we'll have more in the future
+			tavail = $.map(avail, i18n),
+			options = str.split(',');
+		for (var i in options) {
+			var option = options[i].split('=');
+			var ind = $.inArray(option[0], tavail);
+			if (ind + 1)
+				res[avail[ind]] = option.length > 1 ? option[1] : true;
+		}
+		return res;
 	}
 	
 	function createWikiCode() {
@@ -121,6 +127,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'multiline': return 'מספר שורות';
 					case 'close': return 'סגור';
 					case 'required': return 'שדה חובה';
+					case 'depends': return 'תלוי';
 				}
 		}
 	}
@@ -135,14 +142,24 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	function updateRawPreview(){
 		$('#tpw_preview').html(createWikiCode());
 		var canOK = 'enable';
-		for (var i in dialogFields)
-			if (dialogFields[i][1].hasClass('tpw_required') && $.trim(dialogFields[i][1].val()).length == 0)
+		for (var i in dialogFields) {
+			var df = dialogFields[i][1];
+			var opts = df.data('options');
+			if (opts && opts.required && $.trim(df.val()).length == 0)
 				canOK = 'disable';
+			if (opts && opts.depends) {
+				var dep = fieldsBypName[opts.depends];
+				var depEmpty = (dep && dep.val() && $.trim(dep.val())) ? false : true; 
+				var row = rowsBypName[df.data('paramName')];
+				if (row)
+					row.toggleClass('tpw_hidden', depEmpty);
+			}
+		}
 		$(".ui-dialog-buttonpane button:contains('אישור')").button(canOK);
 	}
 	
 	
-	function toggleDesc() {$(this).next('span').toggleClass('hiddenDesc');}
+	function toggleDesc() {$(this).next('span').toggleClass('tpw_hidden');}
 	
 	function createInputField(paramName) {
 		var templateParam = templateParams[paramName],
@@ -154,13 +171,14 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			for (var i in select)
 				inputField.append($('<option>', {text: select[i], value: select[i]}));
 		}
-		else if (templateParam.options && templateParam.options.multiline)
-			inputField = $('<textarea>').css({height: '3em', width: '400px', overflow: 'auto'});
+		else if (templateParam.options && templateParam.options.multiline) {
+			var rows = templateParam.options.multiline;
+			inputField = $('<textarea>', {rows: isNaN(parseInt(rows)) ? 3 : rows});
+		}
 		else
-			inputField = $('<input>', {type: 'text', width: 600});
-		inputField.attr({id: 'tpw_inputfield_' + paramName})
-			.css({width: '28em'})
-			.data('paramName', paramName)
+			inputField = $('<input>', {type: 'text'});
+		inputField.css({width: '28em'})
+			.data({paramName: paramName, options: templateParam.options})
 			.bind('paste cut drop input change', updateRawPreview);
 			
 		if (templateParam.defVal)
@@ -179,7 +197,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					.click(toggleDesc)
 					.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
 				)
-				.append($('<span>', {'class': 'hiddenDesc'})
+				.append($('<span>', {'class': 'tpw_hidden'})
 					.css({backgroundColor: 'yellow'})
 					.html('<br />' + (templateParams[paramName].desc || ''))
 				)
@@ -187,6 +205,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			.append($('<td>').css({width: '30em'}).append(inputField));
 		dialogFields.push([paramName, inputField]);
 		table.append(tr);
+		rowsBypName[paramName] = tr;
+		fieldsBypName[paramName] = inputField;
 	}
 	
 	function injectResults() {
@@ -211,7 +231,6 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			.append($('<pre>', {id: 'tpw_preview', 'class': 'tpw_disposable'})
 				.css({backgroundColor: "lightGreen", maxWidth: '40em', maxHeight: '8em', overflow: 'auto'}));
 
-		dialogFields = [];
 		for (var paramName in templateParams)
 			addRow(paramName, table);
 		
@@ -226,7 +245,15 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		updateRawPreview();
 	}
 
+	function init() {
+		templateParams = {};
+		dialogFields = [];
+		rowsBypName = {};
+		fieldsBypName = {};		
+	}
+	
 	function fireDialog() {
+		init();
 		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
 		template = match ? $.trim(match[1]) : null;
 		if (! template)
@@ -240,7 +267,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 
 	$("<style type='text/css'> \n" +
-		".hiddenDesc{display:none;} \n" +
+		".tpw_hidden{display:none;} \n" +
 		"</style> "
 	).appendTo("head");
 
