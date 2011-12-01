@@ -144,7 +144,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
-					case 'explainOptional': return 'השדות המסומנים באדום הם חובה, השאר אופציונליים';
+					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.' +
+						 '<br />' + 'הקישו על שם הפרמטר לקבלת הסבר עליו, הקישו שוב להסתיר את ההסבר.';
 					case 'ok': return 'אישור';
 					case 'cancel': return 'ביטול'
 					case 'params subpage': return 'פרמטרים';
@@ -154,6 +155,19 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'close': return 'סגור';
 					case 'required': return 'שדה חובה';
 					case 'depends': return 'תלוי';
+				}
+			default:
+				switch (key) {
+					case 'explain': return 'fields with red border are required, the rest are optional';
+					case 'ok': return 'OK';
+					case 'cancel': return 'Cancel'
+					case 'params subpage': return 'Parameters';
+					case 'preview': return 'Preview';
+					case 'options select': return 'Select one:';
+					case 'multiline': return 'multiline';
+					case 'close': return 'Close';
+					case 'required': return 'Required';
+					case 'depends': return 'Depends on';
 				}
 		}
 	}
@@ -251,7 +265,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					position: [$('body').width() * 0.2, $('body').height() * 0.1],
 					open: function() {$(this).css({'max-height': Math.round($('body').height() * 0.7)});},
 			})
-			.append($('<p>').text(i18n('explainOptional')))
+			.append($('<p>').html(i18n('explain')))
 			.append(table)
 			.append($('<p>').css({height: '2em'}))
 			.append($('<pre>', {id: 'tpw_preview', 'class': 'tpw_disposable'})
