@@ -9,17 +9,22 @@ $(document).ready(function() {
 mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelection', 'jquery.ui.dialog'], function() {
 
 	// template parameter is an object with the following fields:
-	// value
-	// description
-	// attribs: bool optional, 
-	// options: array of possible values - undefined if it's a free text param
-	// templateParams is keyed by param name.
+	// desc: desciption string
+	// select: array of possible values (optional)
+	// defVal: default value (optional)
+	// options: object with 3 possible fields:
+	//// multiline (boolean)
+	//// depends (string - another field's name)
+	//// required (boolean)
+	// templateParams is keyed by paramName.
 	var templateParams,
 	// which template are we working on
 		template,
-	// the input fileds. each field has some data also, e.g., the param name.
+	// array of pairs - [paramName, inputField]
 		dialogFields,
+	// table rows keyed by paramName
 		rowsBypName,
+	// the fields, keyed by paramName
 		fieldsBypName;
 	
 	function paramsFromSelection() {
@@ -89,8 +94,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			var 
 				field = dialogFields[i],
 				name = $.trim(field[0]),
+				hidden = field[1].parents().find('.tpw_hidden').length,
 				val = $.trim(field[1].val()).replace(/\|/g, '{{!}}');
-			if (val.length)
+			if (! hidden && val.length)
 				par.push(name + '=' + val);
 		}
 		return "{{" + par.join("\n|") + "\n}}";
@@ -252,6 +258,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 
 	function init() {
+		template = null;
 		templateParams = {};
 		dialogFields = [];
 		rowsBypName = {};
