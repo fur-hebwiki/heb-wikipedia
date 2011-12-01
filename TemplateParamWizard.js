@@ -94,7 +94,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			var 
 				field = dialogFields[i],
 				name = $.trim(field[0]),
-				hidden = field[1].parents().find('.tpw_hidden').length,
+				hidden = field[1].parents('.tpw_hidden').length,
 				val = $.trim(field[1].val()).replace(/\|/g, '{{!}}');
 			if (! hidden && val.length)
 				par.push(name + '=' + val);
