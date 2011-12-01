@@ -285,7 +285,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	).appendTo("head");
 
 	setTimeout(function() {
-		var buttonImage = '//upload.wikimedia.org/wikipedia/he/math/b/e/f/bef83e1ceb68569ed581318e6108e8a2.png';
+		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/e/eb/Button_plantilla.png';
 		if (typeof $.wikiEditor != 'undefined')
 			$('#wpTextbox1').wikiEditor('addToToolbar', {
 				section: 'advanced',
