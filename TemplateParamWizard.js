@@ -152,7 +152,6 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 
 
 	function updateRawPreview(){
-		$('#tpw_preview').html(createWikiCode());
 		var canOK = 'enable';
 		for (var i in dialogFields) {
 			var df = dialogFields[i][1];
@@ -168,6 +167,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			}
 		}
 		$(".ui-dialog-buttonpane button:contains('אישור')").button(canOK);
+		$('#tpw_preview').html(createWikiCode());
 	}
 	
 	
