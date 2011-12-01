@@ -28,14 +28,28 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		fieldsBypName;
 	
 	function paramsFromSelection() {
-		var selection = $("#wpTextbox1").textSelection('getSelection');
-		selection = selection.replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, '[[$1{{!}}$2]]');
-		var params = selection.split('|');
+		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ nad last }}
+		var specials = []; 
+		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
+			var match = selection.match(/(\{\{[^{}]*\}\}|\{\{\{[^{}]\}\}\}|\[\[[^\[\]]*\]\])/);
+			if (! match || ! match.length)
+				break;
+			specials.push(match[0]);
+			selection = selection.replace(match[0], "\0" + specials.length + "\0"); // textarea can't contain a backspace character, i hope.
+		}
+		var params = selection.split(/\s*\|\s*/);
 		for (var i in params) {
-			var param = params[i].split(/\s*=\s*/);
-			var name = param.shift();
-			if (param.length)
-				templateParams[name] = $.extend(templateParams[name] || {}, {defVal: param.join('=').replace(/\}\}$/, '')});
+			var param = params[i];
+			while (true) {
+				var match = param.match(/\0(\d+)\0/);
+				if (! match || ! match.length)
+					break;
+				param = param.replace(match[0], specials[parseInt(match[1], 10)-1]);
+			}
+			var paramPair = param.split("=");
+			var name = $.trim(paramPair.shift());
+			if (name && paramPair.length)
+				templateParams[name] = $.extend(templateParams[name] || {}, {defVal: paramPair.join('=')});
 		}
 	}
 	
