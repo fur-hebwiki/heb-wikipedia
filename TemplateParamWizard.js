@@ -11,7 +11,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	// template parameter is an object with the following fields:
 	// desc: desciption string
 	// select: array of possible values (optional)
-	// defVal: default value (optional)
+	// default: default value (optional)
 	// options: object with 3 possible fields:
 	//// multiline (boolean)
 	//// depends (string - another field's name)
@@ -25,7 +25,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	// table rows keyed by paramName
 		rowsBypName,
 	// the fields, keyed by paramName
-		fieldsBypName;
+		fieldsBypName,
+		rtl = $('body').css('direction') == 'rtl';
 	
 	function paramsFromSelection() {
 		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ nad last }}
@@ -48,8 +49,10 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			}
 			var paramPair = param.split("=");
 			var name = $.trim(paramPair.shift());
-			if (name && paramPair.length)
-				templateParams[name] = $.extend(templateParams[name] || {}, {defVal: paramPair.join('=')});
+			if (name && paramPair.length) {
+				templateParams[name] = templateParams[name] || {};
+				templateParams[name].options = $.extend(templateParams[name].options || {}, {default: paramPair.join('=')});
+			}
 		}
 	}
 	
@@ -59,8 +62,6 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			var line = lines.shift();
 				if (!(/^\|-/.test(line))) // look for |- this is wikitext for table row.
 					continue;
-			var required = /required/g.test(line);
-			
 			line = lines.shift();
 			if (! line || ! (/^\|/.test(line))) //wikitext for column
 				continue;
@@ -73,16 +74,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				continue;
 			var desc = $.trim(fields[1]);
 			var pAttribs = {desc: desc};
-			if (required)
-				pAttribs.required = true;
-			if (fields.length > 2) {
-				var val = $.trim(fields[2]);
-				if (/,/.test(val)) 
-					pAttribs.select = val.split(",");
-				else pAttribs.defVal = val;
-			}
-			if (fields.length > 3) 
-				pAttribs.options = analyzeOptions($.trim(fields[3]));
+			if (fields.length > 2) 
+				pAttribs.options = analyzeOptions($.trim(fields[2]));
 				
 			templateParams[name] = pAttribs;
 		}
@@ -90,11 +83,11 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	
 	function analyzeOptions(str) {
 		var res = {},
-			avail = ['multiline', 'required', 'depends'], // maybe we'll have more in the future
+			avail = ['multiline', 'required', 'depends', 'default', 'choices'], // maybe we'll have more in the future
 			tavail = $.map(avail, i18n),
-			options = str.split(',');
+			options = str.split(/\s*;\s*/);
 		for (var i in options) {
-			var option = options[i].split('=');
+			var option = options[i].split(/\s*=\s*/);
 			var ind = $.inArray(option[0], tavail);
 			if (ind + 1)
 				res[avail[ind]] = option.length > 1 ? option[1] : true;
@@ -108,8 +101,11 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			var 
 				field = dialogFields[i],
 				name = $.trim(field[0]),
-				hidden = field[1].parents('.tpw_hidden').length,
-				val = $.trim(field[1].val()).replace(/\|/g, '{{!}}');
+				f = field[1],
+				hidden = f.parents('.tpw_hidden').length,
+				val = $.trim(f.val());
+			if (f.attr('type') == 'checkbox' && ! f.prop('checked'))
+				val = "";
 			if (! hidden && val.length)
 				par.push(name + '=' + val);
 		}
@@ -155,6 +151,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'close': return 'סגור';
 					case 'required': return 'שדה חובה';
 					case 'depends': return 'תלוי';
+					case 'default': return 'ברירת מחדל';
+					case 'choices': return 'אפשרויות';
+					
 				}
 			default:
 				switch (key) {
@@ -164,10 +163,12 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'params subpage': return 'Parameters';
 					case 'preview': return 'Preview';
 					case 'options select': return 'Select one:';
-					case 'multiline': return 'multiline';
+					case 'multiline': return 'Multiline';
 					case 'close': return 'Close';
 					case 'required': return 'Required';
 					case 'depends': return 'Depends on';
+					case 'default': return 'Default';
+					case 'choices': return 'Choices';
 				}
 		}
 	}
@@ -202,30 +203,41 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	function toggleDesc() {$(this).next('span').toggleClass('tpw_hidden');}
 	
 	function createInputField(paramName) {
-		var templateParam = templateParams[paramName],
-			select = templateParam.select,
-			inputField;
+		var options = templateParams[paramName].options || {},
+			f,
+			checkbox = false;
 			
-		if (select) {
-			inputField = $('<select>').append($('<option>', {text: i18n('options select'), value: ''}));
-			for (var i in select)
-				inputField.append($('<option>', {text: select[i], value: select[i]}));
+		if (options.choices) {
+			var choices = options.choices.split(/\s*,\s*/);
+			if (choices.length > 1) {
+				f = $('<select>').append($('<option>', {text: i18n('options select'), value: ''}));
+				for (var i in choices)
+					f.append($('<option>', {text: choices[i], value: choices[i]}));
+			}
+			else {
+				checkbox = true;
+				f = $('<input>', {type: 'checkbox', value: choices[0]})
+					.css({float: rtl ? 'right' : 'left'})
+				f.prop('checked', options.default && options.default == choices[0]);
+			}
 		}
-		else if (templateParam.options && templateParam.options.multiline) {
-			var rows = templateParam.options.multiline;
-			inputField = $('<textarea>', {rows: isNaN(parseInt(rows)) ? 3 : rows});
+		else if (options.multiline) {
+			var rows = options.multiline;
+			f = $('<textarea>', {rows: isNaN(parseInt(rows)) ? 3 : rows});
 		}
 		else
-			inputField = $('<input>', {type: 'text'});
-		inputField.css({width: '28em'})
-			.data({paramName: paramName, options: templateParam.options})
+			f = $('<input>', {type: 'text'});
+		
+		f.css({width: checkbox ? '1em' : '28em'})
+			.data({paramName: paramName, options: options})
 			.bind('paste cut drop input change', updateRawPreview);
 			
-		if (templateParam.defVal)
-			inputField.val(templateParam.defVal);
-		if (templateParam.options && templateParam.options.required)
-			inputField.addClass('tpw_required').css({border: '1px red solid'});
-		return inputField;
+		if (options.default) 
+			f.val(options.default);
+		
+		if (options.required)
+			f.addClass('tpw_required').css({border: '1px red solid'});
+		return f;
 	}
 	
 	function addRow(paramName, table) {
