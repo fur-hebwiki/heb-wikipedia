@@ -20,13 +20,15 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 	}
 	
 	function makeSlider(ol) {
+		var value = $.cookie("ref-col-font-size") || 80;
+		ol.css({fontSize: value + '%'});
 		var slider = $('<div>', {id: 'slider_' + sliderNum++})
 		.css({fontSize: '130%', width: '100px'})
 		.slider({
 			width: '100px',
 			max: 150,
 			min: 40,
-			value: $.cookie("ref-col-font-size") || 80,
+			value: value,
 			stop: function() {
 				var value = parseInt($(this).slider('value'), 10);
 				if (isNaN(value))
