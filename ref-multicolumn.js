@@ -1,6 +1,5 @@
 $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 	var current = $.cookie("ref-col-setting") || '',
-		sliderNum = 0,
 		pairs = [
 			{className: 'refDisplayRows', label: 'הצגה בטורים', nomsie: true},
 			{className: 'refDisplayScroll', label: 'תיבת גלילה'},
@@ -22,17 +21,14 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 	function makeSlider(ol) {
 		var value = $.cookie("ref-col-font-size") || 80;
 		ol.css({fontSize: value + '%'});
-		var slider = $('<div>', {id: 'slider_' + sliderNum++})
-		.css({fontSize: '130%', width: '100px'})
+		var slider = $('<div>')
+		.css({fontSize: '130%', width: '140px'})
 		.slider({
-			width: '100px',
 			max: 150,
-			min: 40,
+			min: 50,
 			value: value,
 			stop: function() {
 				var value = parseInt($(this).slider('value'), 10);
-				if (isNaN(value))
-					value = 80;
 				if (value < 40)
 					value = 40;
 				if (value > 150)
@@ -41,7 +37,7 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 				$.cookie("ref-col-font-size", value, {'expires':30,'path':'/'});
 			}
 		});
-		return $('<div>').text(' גודל הטקסט ').css({float: 'left'}).append(slider);
+		return $('<div>').css({textAlign:'center'}).text('גודל הטקסט').css({float: 'left'}).append(slider);
 	}
 	
 	function makeCheckBoxes(ol) {
@@ -65,11 +61,12 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 		 .appendTo('head');
 	// create the controls
 	$('ol.references').each(function() {
-		var ol = $(this).addClass(current);
+		var ol = $(this);
+		if (ol.find('li').length < 10)
+			return;
+		ol.addClass(current);
 		// be very strict: only if we find a "h2" element whose text includes "הערות שוליים"
 		var h2 = ol.parent().prev('h2').filter(function() {return $(this).text().indexOf('הערות שוליים') >= 0;});
-		if (h2.length == 0) // can't find header?
-			return;
 		h2.append(makeCheckBoxes(ol));
 	});
 
