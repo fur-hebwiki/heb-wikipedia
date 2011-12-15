@@ -1,14 +1,18 @@
+// gadget to control the display of reference section. rows, scroll, hide, and text-size
+// depends on 3 classes from common.css: ol.refDisplayRows, ol.refDisplayScroll, ol.refDisplayHide.
+// if classes are removed from common.js, need to add them in gadget.
 $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 	var current = $.cookie("ref-col-setting") || '',
 		pairs = [
-			{className: 'refDisplayRows', label: 'הצגה בטורים', nomsie: true},
+			{className: 'refDisplayRows', label: 'הצגה בטורים', skip: $.browser.msie},
 			{className: 'refDisplayScroll', label: 'תיבת גלילה'},
 			{className: 'refDisplayHide', label: 'הסתר'}
 		];
 
 	function makeCheckbox(ol, className, label) {
+		var already = ol.closest('.' + className).length;
 		var checkBox = $('<input>', {type: 'checkbox'})
-			.prop('checked', current.indexOf(className) >= 0)
+			.prop({'checked': already || (current.indexOf(className) >= 0), disabled: already})
 			.click(function() {
 				ol.toggleClass(className, $(this).prop('checked'));
 				$.cookie("ref-col-setting", ol.attr('class'), {'expires':30,'path':'/'});
@@ -19,7 +23,7 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 	}
 	
 	function makeSlider(ol) {
-		var value = $.cookie("ref-col-font-size") || 80;
+		var value = $.cookie("ref-font-size") || 80;
 		ol.css({fontSize: value + '%'});
 		var slider = $('<div>')
 		.css({fontSize: '130%', width: '140px'})
@@ -29,12 +33,9 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 			value: value,
 			stop: function() {
 				var value = parseInt($(this).slider('value'), 10);
-				if (value < 40)
-					value = 40;
-				if (value > 150)
-					value = 150;
+				value = value < 40 ? 40 : (value > 150 ? 150 : value);
 				ol.css({fontSize: value + '%'});
-				$.cookie("ref-col-font-size", value, {'expires':30,'path':'/'});
+				$.cookie("ref-font-size", value, {'expires':30,'path':'/'});
 			}
 		});
 		return $('<div>').css({textAlign:'center'}).text('גודל הטקסט').css({float: 'left'}).append(slider);
@@ -43,22 +44,12 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 	function makeCheckBoxes(ol) {
 		var span = $('<span>').css({fontSize: '50%'});
 		for (var i in pairs)
-			if ($.browser.msie && pairs[i].nomsie)
-				continue;
-			else
+			if (! pairs[i].skip)
 				span.append(makeCheckbox(ol, pairs[i].className, pairs[i].label));
 		span.append(makeSlider(ol));
 		return span;
 	}
 	
-	// create the classes to be used
-	$('<style>', {type: 'text/css'})
-		.html(
-			 'ol.refDisplayRows{-webkit-column-width:32em;-moz-column-width:32em;column-width:32em;}\n' + 
-			 'ol.refDisplayScroll{max-height: 20em; overflow: auto; margin:0;}\n' + 
-			 'ol.refDisplayScroll li, ol.refDisplayRows li {margin-right: 3em;margin-left:2em}\n' +
-			 'ol.refDisplayHide{display: none}\n')
-		 .appendTo('head');
 	// create the controls
 	$('ol.references').each(function() {
 		var ol = $(this);
@@ -69,6 +60,5 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 		var h2 = ol.parent().prev('h2').filter(function() {return $(this).text().indexOf('הערות שוליים') >= 0;});
 		h2.append(makeCheckBoxes(ol));
 	});
-
 	
 });});
