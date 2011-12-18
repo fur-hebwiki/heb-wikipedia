@@ -2,7 +2,7 @@
 // depends on 3 classes from common.css: ol.refDisplayRows, ol.refDisplayScroll, ol.refDisplayHide.
 // if classes are removed from common.js, need to add them in gadget.
 $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
-    var current = $.cookie("ref-col-setting") || '',
+	var current = $.cookie("ref-col-setting") || '',
 		checkboxes = [
 			{className: 'refDisplayRows', label: 'הצגה בטורים', skip: $.browser.msie},
 			{className: 'refDisplayScroll', label: 'תיבת גלילה'},
