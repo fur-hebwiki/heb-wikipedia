@@ -42,7 +42,7 @@ function wikiit() {
 		{str : (location.hostname.indexOf('mynet')>=0)?'mynet':'ynet'},
 		[
 			{elements : ['.authorHtmlCss',' ו'] },
-			{telem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}], remove:ATags },
+			{telem : 'td:has(h1:first) .text14:first', func: [function(str){return (str.length<100)?str:'';}]},
 			{elem : 'font.text14 span p:last', match: /^\((.*?)\)$/},
 			{telem : ".text16w" , match:/\/(.*?)$/},
 			{telem : ".text16w"},
@@ -79,8 +79,8 @@ function wikiit() {
     hostname: /^\w+\.nana10\.co\.il$/i, minimum:6,
      params:[
       {str : 'נענע10'},
-      {elem: '.Author:first', remove:ATags},
-      {elem: '#ArtTitle'},
+      {telem: '.Author:first', remove:['תרבות ובידור נענע 10','נענע 10']},
+      {telem: '#ArtTitle'},
       {str : location.href, match:/ArticleID=(\d+)/i},
       {elem: '.ArticleDate:first', match:/ (.*)$/, split:'/', func:dateFormat},
       {str :''},
@@ -91,7 +91,7 @@ function wikiit() {
     hostname: "www.haaretz.co.il", 
      params:[
       {str : 'הארץ'},
-      {telem: "#content  .author-bar li:eq(0)",  remove:['מאת '] },
+      {telem: "#content  .author-bar li:eq(0)",  remove:['מאת ',/צילום: .*?(?:(?:[,])|(?:$))/m] },
       {telem:'h1.mainTitle'},
       {str : location.href, match:/(\d\.\d+)$/},
 	  {telem: '.prsnlArticleEnvelope .author-bar li:eq(1)', match:/(\d+\.\d+\.\d+)/, split:'.' , func:dateFormat}
@@ -271,7 +271,7 @@ function wikiit() {
     hostname: "www.news1.co.il",
      params:[
       {str : 'NFC'},
-      {telem: "#ctl00_ContentMain_UcArticle1_lnkWriterName, #ctl00_ContentMain_UcArticle1_lblTopWriterName"},
+      {telem: "#ctl00_ContentMain_UcArticle1_lnkWriterName, #ctl00_ContentMain_UcArticle1_lblTopWriterName", remove:["מחלקה ראשונה"]},
       {telem: "#ctl00_ContentMain_UcArticle1_lblHead1, #ctl00_ContentMain_UcArticle1_lblSpecialTitle"},
       {str: location.href, match:/ve\/(.*?)\.html/},
       {telem:"#ctl00_ContentMain_UcArticle1_lblCreateDate", match:/(\d+\/\d+\/\d+)/m, split:'/',  func:dateFormat}
@@ -317,7 +317,34 @@ function wikiit() {
       {telem: "h1", prefix:"נושא="},
       {str: location.href, prefix:"קישור="}
      ]
-    }
+    },
+    {
+	hostname: "www.sport5.co.il",
+     params:[
+      {str : 'ספורט 5'},
+      {telem: "span#lblWriter2, #tdAuthorDateTime font", remove:["מערכת אתר ערוץ הספורט"]},
+      {telem: "h1#divTopTitle"},
+      [
+		{str: location.href, match: /Article\.\d+\.(\d+)\.html/},
+		{str: location.href, match: /docID=(\d+)/}
+	  ],
+      [
+		{str: location.href, match: /Article\.(\d+)\.\d+\.html/},
+		{str: location.href, match: /FolderID=(\d+)/}
+	  ],
+      {telem: "#lblDate2", split:'/',  func:dateFormat}
+     ]
+    },
+	{
+		hostname: "britishpathe.com",
+		hrefmatch: /britishpathe\.com/i,
+		params:[
+			{str : 'British Pathe'},
+			{telem: "#record-container>h1", remove:["video newsreel film"]},
+			{str: location.href, match: /id=(\d+)/},
+			{telem: "#researcher-stats td:eq(0)"}
+		]
+	}
   ];
  
   var isFound = false;
