@@ -2,8 +2,8 @@
 // depends on 3 classes from common.css: ol.refDisplayRows, ol.refDisplayScroll, ol.refDisplayHide.
 // if classes are removed from common.js, need to add them in gadget.
 $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
-	var current = $.cookie("ref-col-setting") || '',
-		pairs = [
+    var current = $.cookie("ref-col-setting") || '',
+		checkboxes = [
 			{className: 'refDisplayRows', label: 'הצגה בטורים', skip: $.browser.msie},
 			{className: 'refDisplayScroll', label: 'תיבת גלילה'},
 			{className: 'refDisplayHide', label: 'הסתר'}
@@ -21,9 +21,9 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 			.append('&nbsp;&nbsp;' + label)
 			.append(checkBox);
 	}
-	
+
 	function makeSlider(ol) {
-		var value = $.cookie("ref-font-size") || 80;
+		var value = $.cookie("ref-font-size") || 90;
 		ol.css({fontSize: value + '%'});
 		var slider = $('<div>')
 		.css({fontSize: '130%', width: '140px'})
@@ -38,27 +38,25 @@ $(document).ready(function() {mw.loader.using('jquery.ui.slider', function() {
 				$.cookie("ref-font-size", value, {'expires':30,'path':'/'});
 			}
 		});
-		return $('<div>').css({textAlign:'center'}).text('גודל הטקסט').css({float: 'left'}).append(slider);
+		return $('<div>').css({textAlign:'center', float: 'left'}).text('גודל הטקסט').append(slider);
 	}
-	
+
 	function makeCheckBoxes(ol) {
 		var span = $('<span>').css({fontSize: '50%'});
-		for (var i in pairs)
-			if (! pairs[i].skip)
-				span.append(makeCheckbox(ol, pairs[i].className, pairs[i].label));
+		for (var i in checkboxes)
+			if (! checkboxes[i].skip)
+				span.append(makeCheckbox(ol, checkboxes[i].className, checkboxes[i].label));
 		span.append(makeSlider(ol));
 		return span;
 	}
-	
-	// create the controls
+
 	$('ol.references').each(function() {
 		var ol = $(this);
-		if (ol.find('li').length < 10)
+		var h2 = ol.parent().prev('h2').filter(function() {return /הערות שוליים/.test($(this).text());});
+		if (ol.find('li').length < 10 || h2.length == 0)
 			return;
-		ol.addClass(current);
-		// be very strict: only if we find a "h2" element whose text includes "הערות שוליים"
-		var h2 = ol.parent().prev('h2').filter(function() {return $(this).text().indexOf('הערות שוליים') >= 0;});
 		h2.append(makeCheckBoxes(ol));
+		ol.addClass(current);
 	});
-	
-});});
+
+});}); //ready..using
