@@ -1,9 +1,5 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
-/*
-Autocomplete for links and templates
-Written by [[משתמש:ערן]]
-*/
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
 $(document).ready(function() {	
 mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelection', 'jquery.ui.dialog'], function() {
