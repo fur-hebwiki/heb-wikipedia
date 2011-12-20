@@ -32,7 +32,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			if (! match || ! match.length)
 				break;
 			specials.push(match[0]);
-			selection = selection.replace(match[0], "\0" + specials.length + "\0"); // textarea can't contain a backspace character, i hope.
+			selection = selection.replace(match[0], "\0" + specials.length + "\0");
 		}
 		var params = selection.split(/\s*\|\s*/);
 		for (var i in params) {
@@ -47,7 +47,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			var name = $.trim(paramPair.shift());
 			if (name && paramPair.length) {
 				templateParams[name] = templateParams[name] || {};
-				templateParams[name].options = $.extend(templateParams[name].options || {}, {default: paramPair.join('=')});
+				templateParams[name].options = $.extend(templateParams[name].options || {}, {'default': paramPair.join('=')});
 			}
 		}
 	}
@@ -167,6 +167,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'choices': return 'Choices';
 				}
 		}
+		return key;
 	}
 	
 	function paramPage() {
