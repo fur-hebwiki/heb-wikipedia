@@ -342,7 +342,7 @@ function wikiit() {
 			{str : 'British Pathe'},
 			{telem: "#record-container>h1", remove:["video newsreel film"]},
 			{str: location.href, match: /id=(\d+)/},
-			{telem: "#researcher-stats td:eq(0)"}
+			{telem: "#researcher-stats td:eq(0)", split: '/', func:dateFormat}
 		]
 	}
   ];
