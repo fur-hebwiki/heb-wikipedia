@@ -1,11 +1,15 @@
-﻿if (wgAction == 'history') 
+﻿if ($.inArray(wgAction, ['history', 'historysubmit', 'view']) + 1) 
 $(document).ready(function() {
-	$('.mw-history-undo').click(function() {
-		var href=$(this).find('a:eq(0)').attr('href');
-		if (!href)
-			return;
-		var user = $(this).siblings('.history-user').find('a:eq(0)').text();
-		if (!user)
+	$('.mw-history-undo, #mw-diff-ntitle1 a:[text=ביטול]').click(function() {
+		var user, href;
+		if ($('#mw-diff-ntitle1').length) {
+			href = this.href;
+			user = $('#mw-diff-ntitle2>a').text();
+		} else {
+			href = $(this).find('a:eq(0)').attr('href');
+			user = $(this).siblings('.history-user').find('a:eq(0)').text();
+		}
+		if (!href || !user)
 			return;
 		var match = href.match(/&undo=(\d*)/);
 		if (!match.length)
