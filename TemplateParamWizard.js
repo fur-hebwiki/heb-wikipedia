@@ -7,7 +7,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	// template parameter is an object with the following fields:
 	// desc: desciption string
 	// select: array of possible values (optional)
-	// default: default value (optional)
+	// defval: default value (optional)
 	// options: object with 3 possible fields:
 	//// multiline (boolean)
 	//// depends (string - another field's name)
@@ -47,7 +47,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			var name = $.trim(paramPair.shift());
 			if (name && paramPair.length) {
 				templateParams[name] = templateParams[name] || {};
-				templateParams[name].options = $.extend(templateParams[name].options || {}, {'default': paramPair.join('=')});
+				templateParams[name].options = $.extend(templateParams[name].options || {}, {'defval': paramPair.join('=')});
 			}
 		}
 	}
@@ -79,7 +79,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	
 	function analyzeOptions(str) {
 		var res = {},
-			avail = ['multiline', 'required', 'depends', 'default', 'choices'], // maybe we'll have more in the future
+			avail = ['multiline', 'required', 'depends', 'defval', 'choices'], // maybe we'll have more in the future
 			tavail = $.map(avail, i18n),
 			options = str.split(/\s*;\s*/);
 		for (var i in options) {
@@ -147,7 +147,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'close': return 'סגור';
 					case 'required': return 'שדה חובה';
 					case 'depends': return 'תלוי';
-					case 'default': return 'ברירת מחדל';
+					case 'defval': return 'ברירת מחדל';
 					case 'choices': return 'אפשרויות';
 					
 				}
@@ -163,7 +163,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'close': return 'Close';
 					case 'required': return 'Required';
 					case 'depends': return 'Depends on';
-					case 'default': return 'Default';
+					case 'defval': return 'Default';
 					case 'choices': return 'Choices';
 				}
 		}
@@ -215,7 +215,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				checkbox = true;
 				f = $('<input>', {type: 'checkbox', value: choices[0]})
 					.css({float: rtl ? 'right' : 'left'})
-				f.prop('checked', options.default && options.default == choices[0]);
+				f.prop('checked', options.defval && options.defval == choices[0]);
 			}
 		}
 		else if (options.multiline) {
@@ -229,8 +229,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			.data({paramName: paramName, options: options})
 			.bind('paste cut drop input change', updateRawPreview);
 			
-		if (options.default) 
-			f.val(options.default);
+		if (options.defval) 
+			f.val(options.defval);
 		
 		if (options.required)
 			f.addClass('tpw_required').css({border: '1px red solid'});
