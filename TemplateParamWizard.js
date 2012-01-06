@@ -174,9 +174,6 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		return i18n('templates namespace') + ':' + $.trim(template) + '/' + i18n('params subpage');
 	}
 	
-	var brainDamage = $.browser.msie && $.browser.version < 8;
-
-
 	function updateRawPreview(){
 		var canOK = 'enable';
 		for (var i in dialogFields) {
@@ -195,7 +192,6 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		$(".ui-dialog-buttonpane button:contains('אישור')").button(canOK);
 		$('#tpw_preview').html(createWikiCode());
 	}
-	
 	
 	function toggleDesc() {$(this).next('span').toggleClass('tpw_hidden');}
 	
