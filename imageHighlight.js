@@ -5,7 +5,7 @@ $(document).ready(function() {
 //window resize, and use the class to remove all the "artefacts" we created in the previous run.
 		myClassName = 'imageMapHighlighterArtefacts',
 // "2d context" attributes used for highlighting.
-		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.3)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 2},
+		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.3)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 1.5},
 // css for a li element
 		liElementCss = {whiteSpace: 'nowrap'},
 //css for highlighting a "li" element
@@ -54,9 +54,9 @@ $(document).ready(function() {
 	function mah_init() {
 		//making the li element "float" makes the list not 'columninzed'.
 		if ($('body').is('.rtl'))
-			$.extend(liElementCss, {float: 'right', marginLeft: '3em', marginRight: '1em'});
+			$.extend(liElementCss, {float: 'right', marginLeft: '3em'});
 		else
-			$.extend(liElementCss, {float: 'left', marginRight: '3em', marginLeft: '1em'});
+			$.extend(liElementCss, {float: 'left', marginRight: '3em'});
 		$('.' + myClassName).remove(); //remove artefacts (if any) from previous run.
 		$(hilightDivMarker).find('img').each(function() {
 			var img = $(this);
@@ -70,7 +70,7 @@ $(document).ready(function() {
 			var context = $.extend(jcanvas[0].getContext("2d"), areaHighLighting);
 			
 			img.before(bgimg).before(jcanvas);	//both canvas and bgimage are behind the transparent image/imagemap
-			var ol = $('<ol>', {'class': myClassName}).css({clear: 'both', marginTop: '1.5em', width: img.width()});
+			var ol = $('<ol>', {'class': myClassName}).css({clear: 'both', marginTop: '1.5em'});
 			img.after($('<hr>', {'class': myClassName}).css('clear', 'both')).after(ol); //ol below image, hr below ol. for thumbs, the caption appears below the hr.
 			var lis = {};	//collapse areas with same caption to one list item
 			img.parent().find('area').each(function() {
