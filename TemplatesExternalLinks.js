@@ -317,15 +317,15 @@ mw.loader.using('jquery.textSelection', function() {
 		}
 
 		dialog.dialog('option', 'buttons', {
+			'ביטול':
+				function() {
+					dialog.dialog('close');
+				},
 			'אישור':
 				function() {
 					insertTags('', createWikiCode(), '');
 					dialog.dialog('close');
-				},
-			'ביטול':
-			function() {
-				dialog.dialog('close');
-			}
+				}
 		});
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
 		dialog.dialog('option', {
@@ -333,8 +333,7 @@ mw.loader.using('jquery.textSelection', function() {
 			width: 'auto',
 			position: [(window.width - dialog.width()) / 2, (window.height - dialog.height()) / 2]
 		});
-		$('.ui-dialog-buttonpane').css({direction: 'ltr'});
-		$('.ui-dialog-buttonpane > button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
+		$('.ui-dialog-buttonpane').children().css({float: 'right'});
 		updatePreview();
 	}
 
