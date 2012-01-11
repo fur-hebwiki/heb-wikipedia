@@ -33,10 +33,12 @@ $(document).ready(function() {mw.loader.using(['jquery.textSelection'], function
 					label: 'שיכול מקלדת',
 					type: 'button',
 					icon: buttonImage,
+					
 					action: {type: 'callback', execute: doit}
 				}
 			}
 		});
 	}, 100);
+	$(document).keydown(function(e) {if (e.altKey && e.shiftKey && e.keyCode == 85) doit();});
 });	
 });	
