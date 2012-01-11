@@ -4,16 +4,12 @@ $(document).ready(function() {
 //add this class to all elements created by the script. the reason is that we call the script again on
 //window resize, and use the class to remove all the "artefacts" we created in the previous run.
 		myClassName = 'imageMapHighlighterArtefacts',
+		liHighlightClass = 'liHighlighting',
 // "2d context" attributes used for highlighting.
-		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.3)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 1.5},
-// css for a li element
-		liElementCss = {whiteSpace: 'nowrap'},
-//css for highlighting a "li" element
-		liHighlighting = {background: 'yellow'},
-//css for un-highlighting li element:
-		liBackToNormal = {background: ''},
+		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.35)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 2},
 //every imagemap that wants highlighting, should reside in a div of this 'class':
-		hilightDivMarker = '.imageMapHighlighter';
+		hilightDivMarker = '.imageMapHighlighter',
+		brainDamage = $.browser.msie;
 
 	function drawMarker(context, areas) { // this is where the magic is done.
 	
@@ -40,23 +36,22 @@ $(document).ready(function() {
 	function backtonormal() {
 		var $this = $(this),
 			context = $this.data('context');
-		$this.css(liBackToNormal);
-		if (context)
-			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+		$this.removeClass('liHighlighting');
+		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 	}
 
 	function highlight() {
-		var $this = $(this);
-		$this.css(liHighlighting);
-		drawMarker($this.data('context'), $this.data('areas'));
+		var $this = $(this),
+			context = $this.data('context');
+		$this.addClass('liHighlighting');
+		drawMarker(context, $this.data('areas'));
+		if (brainDamage) { //don't ask why.
+			context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+			drawMarker(context, $this.data('areas'));
+		}
 	}
 
 	function mah_init() {
-		//making the li element "float" makes the list not 'columninzed'.
-		if ($('body').is('.rtl'))
-			$.extend(liElementCss, {float: 'right', marginLeft: '3em'});
-		else
-			$.extend(liElementCss, {float: 'left', marginRight: '3em'});
 		$('.' + myClassName).remove(); //remove artefacts (if any) from previous run.
 		$(hilightDivMarker).find('img').each(function() {
 			var img = $(this);
@@ -77,7 +72,6 @@ $(document).ready(function() {
 				var li = lis[this.title];	//saw it previously? use the same li
 				if (!li) {	//no? create a new one.
 					lis[this.title] = li = $('<li>', {'class': myClassName})
-						.css(liElementCss)
 						.append($('<a>', {href: this.href, text: this.title})) //put <a> with link and caption inside it
 						.mouseover(highlight)
 						.mouseout(backtonormal)
@@ -93,9 +87,14 @@ $(document).ready(function() {
 		});
 	}
 
-	if ($(hilightDivMarker).length && $('<canvas>')[0].getContext) { //canvas-capable browser.
+	if ($(hilightDivMarker).length && $('<canvas>')[0].getContext) { //has at least one "imagehighlight" div, and canvas-capable browser.
+		appendCSS('li.' + myClassName + '{white-space:nowrap;}\n' + //css for li element
+					'li.' + liHighlightClass + '{background-color:yellow;}\n' + //css for highlighted li element.
+					'.rtl li.' + myClassName + '{float: right; margin-left: 3em;}\n' +
+					'.ltr li.' + myClassName + '{float: right; margin-right: 3em;}'
+					); 
 		mah_init();
-		$('.a_toggle').live('click', mah_init);
+		$('.a_toggle').live('click', mah_init); // specific for hewiki.
 		$(window).resize(mah_init);
 	}	
 });
