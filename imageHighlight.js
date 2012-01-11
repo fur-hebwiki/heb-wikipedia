@@ -9,7 +9,7 @@ $(document).ready(function() {
 		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.35)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 2},
 //every imagemap that wants highlighting, should reside in a div of this 'class':
 		hilightDivMarker = '.imageMapHighlighter',
-		brainDamage = $.browser.msie;
+		brainDamage = $.client.profile().name === 'msie';
 
 	function drawMarker(context, areas) { // this is where the magic is done.
 	
@@ -72,7 +72,7 @@ $(document).ready(function() {
 				var li = lis[this.title];	//saw it previously? use the same li
 				if (!li) {	//no? create a new one.
 					lis[this.title] = li = $('<li>', {'class': myClassName})
-						.append($('<a>', {href: this.href, text: this.title})) //put <a> with link and caption inside it
+						.append($('<a>', {href: this.href, text: this.title, 'class': this['class']})) //put <a> with link and caption inside it
 						.mouseover(highlight)
 						.mouseout(backtonormal)
 						.data({areas: [], context: context});
