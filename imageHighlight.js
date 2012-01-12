@@ -93,12 +93,19 @@ $(document).ready(function() {
 		});
 	}
 
-	if ($(hilightDivMarker).length && $('<canvas>')[0].getContext) { //has at least one "imagehighlight" div, and canvas-capable browser.
+	if ($(hilightDivMarker).length) { //has at least one "imagehighlight" div
+		if (! $('<canvas>')[0].getContext) { // not a canvas-capable browser.
+			if ($.client.profile().name === 'msie' && parseInt($.client.profile().version, 10) < 9) {
+				importScript('Mediawiki:Excanvas.compiled.js');
+				if (! $('<canvas>')[0].getContext)
+					return;
+			}
+		}
 		appendCSS('li.' + myClassName + '{white-space:nowrap;}\n' + //css for li element
 					'li.' + liHighlightClass + '{background-color:yellow;}\n' + //css for highlighted li element.
 					'.rtl li.' + myClassName + '{float: right; margin-left: 3em;}\n' +
 					'.ltr li.' + myClassName + '{float: right; margin-right: 3em;}'
 					); 
 		mah_init();
-	}	
+	}
 });
