@@ -1,6 +1,6 @@
 $(document).ready(function() {
 
-	var 
+    var 
 //add this class to all elements created by the script. the reason is that we call the script again on
 //window resize, and use the class to remove all the "artefacts" we created in the previous run.
 		myClassName = 'imageMapHighlighterArtefacts',
@@ -93,19 +93,12 @@ $(document).ready(function() {
 		});
 	}
 
-	if ($(hilightDivMarker).length) { //has at least one "imagehighlight" div
-		if (! $('<canvas>')[0].getContext) { // not a canvas-capable browser.
-			if ($.client.profile().name === 'msie' && parseInt($.client.profile().version, 10) < 9) {
-				importScript('Mediawiki:Excanvas.compiled.js');
-				if (! $('<canvas>')[0].getContext)
-					return;
-			}
-		}
+	if ($(hilightDivMarker).length && $('<canvas>')[0].getContext) { //has at least one "imagehighlight" div, and canvas-capable browser.
 		appendCSS('li.' + myClassName + '{white-space:nowrap;}\n' + //css for li element
 					'li.' + liHighlightClass + '{background-color:yellow;}\n' + //css for highlighted li element.
 					'.rtl li.' + myClassName + '{float: right; margin-left: 3em;}\n' +
 					'.ltr li.' + myClassName + '{float: right; margin-right: 3em;}'
 					); 
 		mah_init();
-	}
+	}	
 });
