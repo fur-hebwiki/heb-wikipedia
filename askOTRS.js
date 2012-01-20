@@ -2,7 +2,7 @@
 // <source lang="javascript">
 if (wgNamespaceNumber == 6)
 $(document).ready(function() {
-	$('span.mw-usertoollinks').find('a:first').each(function() {
+	$('span.mw-usertoollinks a:first').each(function() {
 		var talkPage = $.trim(this.title.replace('(הדף אינו קיים)', ''));
 		$(this)
 		.after(

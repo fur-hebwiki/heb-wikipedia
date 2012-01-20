@@ -116,7 +116,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					div = $('<div>')
 						.html(data.parse.text['*']);
 				buttons[i18n('close')] = function() {$(this).dialog('close');};
-				div.find('a').attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
+				$('a', div).attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
 				$('<div>')
 					.dialog(
 						{title: i18n('preview'), 

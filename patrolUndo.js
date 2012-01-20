@@ -6,7 +6,7 @@ $(document).ready(function() {
 			href = this.href;
 			user = $('#mw-diff-ntitle2>a').text();
 		} else {
-			href = $(this).find('a:eq(0)').attr('href');
+			href = $('a:eq(0)', this).attr('href');
 			user = $(this).siblings('.history-user').find('a:eq(0)').text();
 		}
 		if (!href || !user)

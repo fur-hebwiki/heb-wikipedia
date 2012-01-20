@@ -57,9 +57,9 @@
 			? ' (הדף אינו קיים)'
 			: ' (page does not exist)';
 		$('.' + myClassName).remove(); //remove artefacts (if any) from previous run.
-		$(hilightDivMarker).find('img').each(function() {
+		$(hilightDivMarker + ' img').each(function() {
 			var img = $(this), map = img.siblings('map:first');
-			if (!map.find('area').length)
+			if (!('area', map).length)
 				return;	//not an imagemap. inside "each" anonymous function, 'return' means "continue".
 			img.fadeTo(1, 0);	//make the image transparent - it is still imagemap, but we see bgimg through it.
 			var w = img.width(), h = img.height();
@@ -78,7 +78,7 @@
 			var ol = $('<ol>', {'class': myClassName}).css({clear: 'both', marginTop: '1.5em'});
 			div.after($('<hr>', {'class': myClassName}).css('clear', 'both')).after(ol); //ol below image, hr below ol. for thumbs, the caption appears below the hr.
 			var lis = {};	//collapse areas with same caption to one list item
-			map.find('area').each(function() {
+			$('area', map).each(function() {
 				var li = lis[this.title];	//saw it previously? use the same li
 				if (!li) {	//no? create a new one.
 					// remove anything up to and including "/wiki/" if it's an internal link, and "http(s):// if external"
