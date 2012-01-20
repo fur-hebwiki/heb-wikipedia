@@ -325,7 +325,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				group: 'more',
 				tools: {
 					'linkTemplatewizard': {
-						label: 'ית קישורררר',
+						label: 'תבנית קישור',
 						type: 'button',
 						icon: buttonImage,
 						action: {type: 'callback', execute: fireDialog}
