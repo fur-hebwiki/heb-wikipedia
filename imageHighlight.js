@@ -1,4 +1,4 @@
-$(document).ready(function() {
+﻿$(document).ready(function() {
 
     var 
 //add this class to all elements created by the script. the reason is that we call the script again on
@@ -52,6 +52,10 @@ $(document).ready(function() {
 	}
 
 	function mah_init() {
+		var pageDoesntExistMessage = 
+			(mw && mw.config && mw.config.get('wgUserLanguage') == 'he') 
+			? ' (הדף אינו קיים)'
+			: ' (page does not exist)';
 		$('.' + myClassName).remove(); //remove artefacts (if any) from previous run.
 		$(hilightDivMarker).find('img').each(function() {
 			var img = $(this), map = img.siblings('map:first');
@@ -77,8 +81,16 @@ $(document).ready(function() {
 			map.find('area').each(function() {
 				var li = lis[this.title];	//saw it previously? use the same li
 				if (!li) {	//no? create a new one.
+					// remove anything up to and including "/wiki/" if it's an internal link, and "http(s):// if external"
+					var page = this.href.replace(document.location.protocol + wgServer + "/wiki/", '').replace(/.*\/\//, '').replace(/_/g, ' ');
+					// change anchors: wiki anchors use . instead of %
+					page = page.replace(/#(.*)/, function(toReplace){return toReplace.replace(/\.([\dA-F]{2})/g, '%$1');});
+					// back to human's tongue
+					page = decodeURIComponent(page); // used for "title" of legends - just like "normal" wiki links.
+					if ($(this).hasClass('new'))
+						page += pageDoesntExistMessage;
 					lis[this.title] = li = $('<li>', {'class': myClassName})
-						.append($('<a>', {href: this.href, text: this.title, 'class': this['class']})) //put <a> with link and caption inside it
+						.append($('<a>', {href: this.href, title: page, text: this.title, 'class': this['class']})) //put <a> with link and caption inside it
 						.mouseover(highlight)
 						.mouseout(backtonormal)
 						.data({areas: [], context: context});
