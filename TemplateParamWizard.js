@@ -28,7 +28,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ nad last }}
 		var specials = []; 
 		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
-			var match = selection.match(/(\{\{[^{}]*\}\}|\{\{\{[^{}]\}\}\}|\[\[[^\[\]]*\]\])/);
+			var match = selection.match(/(\{\{[^{}]*\}\}|\[\[[^\[\]]*\]\]|\[[^\[\]]*\](?:[^\]]))/);
 			if (! match || ! match.length)
 				break;
 			specials.push(match[0]);
@@ -325,7 +325,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				group: 'more',
 				tools: {
 					'linkTemplatewizard': {
-						label: 'תבנית קישור',
+						label: 'תבנית קישורררר',
 						type: 'button',
 						icon: buttonImage,
 						action: {type: 'callback', execute: fireDialog}
