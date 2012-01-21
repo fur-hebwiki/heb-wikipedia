@@ -1,4 +1,4 @@
-$(document).ready(function() {
+﻿$(document).ready(function() {
 
 	var
 //add this class to all elements created by the script. the reason is that we call the script again on
@@ -69,7 +69,7 @@ $(document).ready(function() {
 					'.ltr li.' + myClassName + '{float: right; margin-right: 3em;}');
 		$(hilightDivMarker).find('img').each(function() {
 			var img = $(this), map = img.siblings('map:first');
-			if (!map.find('area').length)
+			if (!('area', map).length)
 				return;	//not an imagemap. inside "each" anonymous function, 'return' means "continue".
 			var w = img.width(), h = img.height();
 			var dims = {position: 'absolute', width: w + 'px', height: h + 'px', border: 0, top:0, left:0};
@@ -100,7 +100,7 @@ $(document).ready(function() {
 				if (!li) {			//no? create a new one.
 					var href = this.href, cssClass = this['class'] || '';
 					lis[text] = li = $('<li>', {'class': myClassName})
-						.append($('<a>', {href: href, title: pageOfHref(href, cssClass), text: text, 'class': cssClass})) //put <a> with link and caption inside 	it
+						.append($('<a>', {href: href, title: pageOfHref(href, cssClass), text: text, 'class': cssClass})) 
 						.bind('mouseover mouseout', mouseAction)
 						.data({areas: [], context: context});
 					ol.append(li);

@@ -47,8 +47,8 @@ var catALot = {
 		this.localCatName = mw.config.get('wgFormattedNamespaces')[14];
 	},
 	findAllLabels: function () {
-		this.labels = $('#mw-pages').find('li');
-		var subCats =  $('#mw-subcategories').find('.CategoryTreeItem');
+		this.labels = $('#mw-pages li');
+		var subCats =  $('#mw-subcategories .CategoryTreeItem');
 		for (var sub = 0; sub < subCats.length; sub++) {
 			var a = $(subCats[sub]).find('a');
 			if (a.length) {
@@ -56,14 +56,14 @@ var catALot = {
 				this.labels.push(subCats[sub]);
 			}
 		}
-		$('#bodyContent').find('li>a, .CategoryTreeLabel').each(function(){this.href = null;});
+		$('li>a, .CategoryTreeLabel', mw.util.$content).attr({href: null});
 	},
 
 	getMarkedLabels: function () {
 		var marked = [];
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
 		this.selectedLabels.each(function () {
-			var file = $(this).find('a[title]');
+			var file = $('a[title]', this);
 			marked.push([file.attr('title'), $(this)]);
 		});
 		return marked;
