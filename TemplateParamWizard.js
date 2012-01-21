@@ -1,4 +1,4 @@
-﻿//Adds wizard for using templates for external links
+﻿ א יידעל מיט א פידל//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
 $(document).ready(function() {	
@@ -28,7 +28,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ nad last }}
 		var specials = []; 
 		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
-			var match = selection.match(/(\{\{[^{}]*\}\}|\[\[[^\[\]]*\]\]|\[[^\[\]]*\](?:[^\]]))/);
+			var match = selection.match(/(\{\{[^{}\]\[]*\}\}|\[\[[^{}\]\[]*\]\]|\[[^{}\]\[]*\](?:[^\]]))/);
 			if (! match || ! match.length)
 				break;
 			specials.push(match[0]);
@@ -149,6 +149,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'depends': return 'תלוי';
 					case 'defval': return 'ברירת מחדל';
 					case 'choices': return 'אפשרויות';
+					case 'button hint': return 'אשף פרמטרים לתבניות';
 					
 				}
 			default:
@@ -165,6 +166,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'depends': return 'Depends on';
 					case 'defval': return 'Default';
 					case 'choices': return 'Choices';
+					case 'button hint': return 'Template parameters wizard';
+
+					
 				}
 		}
 		return key;
@@ -325,7 +329,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				group: 'more',
 				tools: {
 					'linkTemplatewizard': {
-						label: 'תבנית קישור',
+						label: i18n('button hint'),
 						type: 'button',
 						icon: buttonImage,
 						action: {type: 'callback', execute: fireDialog}
@@ -334,7 +338,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			});
 		else
 			$('div #toolbar').append( // "old style"
-				$('<img>', {src: buttonImage, title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
+				$('<img>', {src: buttonImage, title: i18n('button hint'), 'class': 'mw-toolbar-editbutton'})
 				.css({cursor: 'pointer'})
 				.click(fireDialog)
 			);
