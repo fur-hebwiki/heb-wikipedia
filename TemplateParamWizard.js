@@ -149,7 +149,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'depends': return 'תלוי';
 					case 'defval': return 'ברירת מחדל';
 					case 'choices': return 'אפשרויות';
-					case 'button hint': return 'אשף פרמטרים לתבניות';
+					case 'button hint': return 'אשף מילוי תבניות';
 					
 				}
 			default:
