@@ -1,4 +1,4 @@
-﻿ א יידעל מיט א פידל//Adds wizard for using templates for external links
+﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
 $(document).ready(function() {	
