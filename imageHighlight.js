@@ -67,7 +67,7 @@
 					'li.' + liHighlightClass + '{background-color:yellow;}\n' + //css for highlighted li element.
 					'.rtl li.' + myClassName + '{float: right; margin-left: 3em;}\n' +
 					'.ltr li.' + myClassName + '{float: right; margin-right: 3em;}');
-		$(hilightDivMarker).find('img').each(function() {
+		$(hilightDivMarker+ ' img').each(function() {
 			var img = $(this), map = img.siblings('map:first');
 			if (!('area', map).length)
 				return;	//not an imagemap. inside "each" anonymous function, 'return' means "continue".
@@ -94,7 +94,7 @@
 			// ol below image, hr below ol. original caption pushed below hr.
 			div.after($('<hr>', {'class': myClassName}).css('clear', 'both')).after(ol);
 			var lis = {};	//collapse areas with same caption to one list item
-			map.find('area').each(function() {
+			$('area', map).each(function() {
 				var $this = $(this), text = this.title;
 				var li = lis[text];	// title already met? use the same li
 				if (!li) {			//no? create a new one.
