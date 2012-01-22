@@ -1,4 +1,5 @@
-// script 38: add linkette to place OTRS request in talkpage of the user who added or modified the file.
+// סקריפט 38: הוספת קישורית "אישור OTRS" לקישורי המשתמש בדף הקובץ של תמונות מסוימות{{ש}}
+// נכתב על ידי {{משתמש| Mikimik}}, שוכתב על ידי {{משתמש|קיפודנחש}}
 // <source lang="javascript">
 if (wgNamespaceNumber == 6)
 $(document).ready(function() {
