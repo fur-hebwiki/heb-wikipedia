@@ -74,17 +74,20 @@ $(function() {
 		var dialog, template, selector, needParam, paramfield, paramrow;
 
 		function doIt() {
-			var summary = 'תבנית ' + template,
-				message = '\n==[[' + mw.config.get('wgPageName') + ']]==\n' +
+			var title = $('#mw-diff-ntitle2 a:first').length 
+					? '[[' + mw.config.get('wgPageName') + ']]'
+					: template,
+				summary = 'תבנית ' + template,
+				message = '\n== ' + title + ' ==\n' +
 						'{{ס:' + template + (needParam ? '|' + paramfield.val() : '') + "}} ~~" + "~~";
-				dialog.css({cursor: 'wait'})
+			dialog.css({cursor: 'wait'});
 			$.ajax({
 				url: mw.util.wikiScript('api'),
 				aync: false,
 				type: 'post',
 				data: {action: 'edit', title: 'שיחת משתמש:' + user, summary: summary, token: mw.user.tokens.get('editToken'), appendtext: message, format:'json'},
 				success: function(data){
-					dialog.css({pointer: ''});
+					dialog.css({cursor: ''});
 					dialog.dialog('close');
 				},
 				error: function(data) {
