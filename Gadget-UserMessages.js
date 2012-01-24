@@ -57,25 +57,17 @@ $(function() {
 		},
 	templates_requiring_params = ['כבר קיים', 'בוטל', 'לא כאן', 'הסבר', 'מקור תמונה', 'זכות הצבעה', 'הנחיות תמונה'];
 
-	function between(s, before, after) {
-		if (before && s.indexOf(before) + 1)
-			s = s.substr(s.indexOf(before) + before.length);
-		if (after && s.indexOf(after) + 1)
-			s = s.substr(0, s.indexOf(after));
-		return s;
-	}
-	
 	function findUser() {
-		return $('#mw-diff-ntitle2 a:first').text() ||
-			(mw.config.get('wgNamespaceNumber') == 3 ? between(mw.config.get('wgPageName'), ':', '/') : null);
+		return $('#mw-diff-ntitle2 a:first').text() || mw.config.get('wgNamespaceNumber') == 3 && mw.config.get('wgPageName').replace(/.*:|\/.*/g, '');
 	}
 	
 	function openDialog() {
 		var dialog, template, selector, needParam, paramfield, paramrow;
 
 		function doIt() {
-			var title = $('#mw-diff-ntitle2 a:first').length 
-					? '[[' + mw.config.get('wgPageName') + ']]'
+			var fromDiff = $('#mw-diff-ntitle2 a:first').length,
+				title = fromDiff 
+					? '[[' + mw.config.get('wgPageName').replace(/_/g, ' ') + ']]'
 					: template,
 				summary = 'תבנית ' + template,
 				message = '\n== ' + title + ' ==\n' +
@@ -87,8 +79,15 @@ $(function() {
 				type: 'post',
 				data: {action: 'edit', title: 'שיחת משתמש:' + user, summary: summary, token: mw.user.tokens.get('editToken'), appendtext: message, format:'json'},
 				success: function(data){
-					dialog.css({cursor: ''});
-					dialog.dialog('close');
+					if (data && data.edit && data.edit.result === "Success") {
+						dialog.css({cursor: ''});
+						dialog.dialog('close');
+						if (fromDiff) 
+							mw.util.jsMessage('נוספה תבנית {{' + template + '}} לדף [[שיחת משתמש:' + user + ']]');
+						else 
+							location.reload(true);
+					} else 
+						dialog.append($('<p>').css({color: 'red'}).text('כנראה אירעה תקלה. אנא בידקו ב"תרומות המשתמש" שלכם מה בדיוק קרה'));
 				},
 				error: function(data) {
 					dialog.append($('<p>').css({color: 'red'}).text('תקלה. התבנית לא נשמרה בדף השיחה של המשתמש'));
@@ -106,6 +105,7 @@ $(function() {
 				width: 'auto',
 				height: 'auto',
 				overflow: 'auto',
+				closeTest: '',
 				position: [$('body').width() * 0.4, $('body').height() * 0.4],
 				buttons: buttons});
 
@@ -113,12 +113,12 @@ $(function() {
 				template = selector.val();
 				needParam = $.inArray(template, templates_requiring_params) + 1;
 				paramrow.toggle(!!needParam);
-				var canOK = (! needParam || $.trim(paramfield.val()).length) ? 'enable' : 'disable';
+				var canOK = (template.length && (! needParam || $.trim(paramfield.val()).length)) ? 'enable' : 'disable';
 				$(".ui-dialog-buttonpane button:contains('בצע')").button(canOK);
 			}
 
 			selector = $('<select>')
-				.append($('<option>', {text: 'אנא בחרו תבנית מהרשימה', value: '', disabled: 1}))
+				.append($('<option>', {text: 'אנא בחרו תבנית מהרשימה', value: ''}))
 				.change(setValues);
 
 			for (var i in tlist) {
