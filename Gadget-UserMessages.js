@@ -75,7 +75,7 @@ $(function() {
 
 		function doIt() {
 			var title = $('#mw-diff-ntitle2 a:first').length 
-					? '[[' + mw.config.get('wgPageName') + ']]'
+					? '[[' + mw.config.get('wgPageName').replace(/_/g, '') + ']]'
 					: template,
 				summary = 'תבנית ' + template,
 				message = '\n== ' + title + ' ==\n' +
