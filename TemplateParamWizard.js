@@ -25,7 +25,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		rtl = $('body').css('direction') == 'rtl';
 	
 	function paramsFromSelection() {
-		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ nad last }}
+		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ and last }}
 		var specials = []; 
 		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
 			var match = selection.match(/(\{\{[^{}\]\[]*\}\}|\[\[[^{}\]\[]*\]\]|\[[^{}\]\[]*\](?:[^\]]))/);
