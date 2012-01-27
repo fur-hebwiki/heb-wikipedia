@@ -197,7 +197,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		$('#tpw_preview').html(createWikiCode());
 	}
 	
-	function toggleDesc() {$(this).next('span').toggleClass('tpw_hidden');}
+	function toggleDesc() {$(this).next('p').toggleClass('tpw_hidden');}
 	
 	function createInputField(paramName) {
 		var options = templateParams[paramName].options || {},
@@ -246,9 +246,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					.click(toggleDesc)
 					.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
 				)
-				.append($('<span>', {'class': 'tpw_hidden'})
-					.css({backgroundColor: 'yellow'})
-					.html('<br />' + (templateParams[paramName].desc || ''))
+				.append($('<p>', {'class': 'tpw_hidden'})
+					.css({backgroundColor: 'yellow', width: '160px', overflow:'hidden'})
+					.text((templateParams[paramName].desc || ''))
 				)
 			)
 			.append($('<td>').css({width: '30em'}).append(inputField));
