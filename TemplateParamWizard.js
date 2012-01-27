@@ -272,7 +272,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					width: 'auto',
 					overflow: 'auto',
 					position: [$('body').width() * 0.2, $('body').height() * 0.1],
-					open: function() {$(this).css({'max-height': Math.round($('body').height() * 0.7)});},
+					open: function() {$(this).css({'max-height': Math.round($('body').height() * 0.7)});}
 			})
 			.append($('<p>').html(i18n('explain')))
 			.append(table)
