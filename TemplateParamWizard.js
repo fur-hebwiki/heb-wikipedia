@@ -1,7 +1,7 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
-$(document).ready(function() {	
+$(document).ready(function() {    
 mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelection', 'jquery.ui.dialog'], function() {
 
 	// template parameter is an object with the following fields:
@@ -25,7 +25,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		rtl = $('body').css('direction') == 'rtl';
 	
 	function paramsFromSelection() {
-		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ nad last }}
+		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ and last }}
 		var specials = []; 
 		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
 			var match = selection.match(/(\{\{[^{}\]\[]*\}\}|\[\[[^{}\]\[]*\]\]|\[[^{}\]\[]*\](?:[^\]]))/);
@@ -197,7 +197,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		$('#tpw_preview').html(createWikiCode());
 	}
 	
-	function toggleDesc() {$(this).next('span').toggleClass('tpw_hidden');}
+	function toggleDesc() {$(this).next('p').toggleClass('tpw_hidden');}
 	
 	function createInputField(paramName) {
 		var options = templateParams[paramName].options || {},
@@ -246,9 +246,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					.click(toggleDesc)
 					.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
 				)
-				.append($('<span>', {'class': 'tpw_hidden'})
-					.css({backgroundColor: 'yellow'})
-					.html('<br />' + (templateParams[paramName].desc || ''))
+				.append($('<p>', {'class': 'tpw_hidden'})
+					.css({backgroundColor: 'yellow', width: '160px', overflow:'hidden'})
+					.text((templateParams[paramName].desc || ''))
 				)
 			)
 			.append($('<td>').css({width: '30em'}).append(inputField));
@@ -272,7 +272,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					width: 'auto',
 					overflow: 'auto',
 					position: [$('body').width() * 0.2, $('body').height() * 0.1],
-					open: function() {$(this).css({'max-height': Math.round($('body').height() * 0.7)});},
+					open: function() {$(this).css({'max-height': Math.round($('body').height() * 0.7)});}
 			})
 			.append($('<p>').html(i18n('explain')))
 			.append(table)
@@ -302,17 +302,32 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		fieldsBypName = {};		
 	}
 	
+	function reportError(a,b,error) {
+		if (error == "Not Found")
+			error = 'לתבנית "' + template + '" אין דף דף פרמטרים - האשף לא יכול לפעול ללא דף כזה';
+		if (console) {
+			for (key in a)
+				if (typeof a[key] != 'function')
+					console.log(key + '=>' + a[key]);
+			console.log(b);
+			console.log(error);
+		}
+		alert('טעות בהפעלת האשף.' + '\n' + error);
+	}
+	
 	function fireDialog() {
 		init();
 		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
 		template = match ? $.trim(match[1]) : null;
-		if (! template)
+		if (! template) {
+			reportError(null, null, 'כדי להשתמש באשף התבניות יש לסמן בתיבת העריכה את התבנית.');
 			return;
-		
+		}
 		$.ajax({
 			url: mw.util.wikiScript('index'),
 			data: {title: paramPage(), action: 'raw', ctype: 'text/x-wiki'},
-			success: buildDialog
+			success: buildDialog,
+			error: reportError
 		});
 	}
 
