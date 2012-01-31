@@ -1,10 +1,10 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
-$(document).ready(function() {	
+$(document).ready(function() {    
 mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelection', 'jquery.ui.dialog'], function() {
 
-	// template parameter is an object with the following fields:
+    // template parameter is an object with the following fields:
 	// desc: desciption string
 	// select: array of possible values (optional)
 	// defval: default value (optional)
@@ -122,7 +122,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 						{title: i18n('preview'), 
 						width: 'auto', 
 						height: 'auto', 
-						overflow: 'auto', 
+						overflow: 'auto',
+                        modal: true,
 						position: [60, 60],
 						buttons: buttons})
 					.append(div);
@@ -224,7 +225,10 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		}
 		else
 			f = $('<input>', {type: 'text'});
-		
+			
+		if (!checkbox && f.autoCompleteWikiText) // teach the controls to autocomplete.
+			f.autoCompleteWikiText();
+			
 		f.css({width: checkbox ? '1em' : '28em'})
 			.data({paramName: paramName, options: options})
 			.bind('paste cut drop input change', updateRawPreview);
@@ -302,17 +306,31 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		fieldsBypName = {};		
 	}
 	
+	function reportError(a,b,error) {
+		if (error == "Not Found")
+			error = 'לתבנית "' + template + '" אין דף דף פרמטרים - האשף לא יכול לפעול ללא דף כזה';
+		if (typeof console != 'undefined') {
+			for (key in a)
+				if (typeof a[key] != 'function')
+					console.log(key + '=>' + a[key]);
+			console.log(b);
+			console.log(error);
+		}
+		alert('טעות בהפעלת האשף.' + '\n' + error);
+	}
+	
 	function fireDialog() {
 		init();
 		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
 		template = match ? $.trim(match[1]) : null;
-		if (! template)
+		if (! template) {
+			reportError(null, null, 'כדי להשתמש באשף התבניות יש לסמן בתיבת העריכה את התבנית.');
 			return;
-		
+		}
 		$.ajax({
-			url: mw.util.wikiScript('index'),
-			data: {title: paramPage(), action: 'raw', ctype: 'text/x-wiki'},
-			success: buildDialog
+			url: mw.util.wikiScript() + '?title=' + mw.util.wikiUrlencode(paramPage()) + '&action=raw&ctype=text/x-wiki',
+			success: buildDialog,
+			error: reportError
 		});
 	}
 
