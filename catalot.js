@@ -9,26 +9,22 @@
 //
 // Modified to work on regular pages instead of files, + Hebrew translation: קיפודנחש
 //
-// READ THIS PAGE IF YOU WANT TO TRANSLATE OR USE THIS ON ANOTHER SITE: 
+// READ THIS PAGE IF YOU WANT TO TRANSLATE OR USE THIS ON ANOTHER SITE:
 // http://commons.wikimedia.org/wiki/MediaWiki_talk:Gadget-Cat-a-lot.js/translating
 //
 var catALot = {
-    apiUrl: wgScriptPath + "/api.php",
+	apiUrl: wgScriptPath + "/api.php",
 	searchmode: false,
 	version: 2.18,
 	setHeight: 450,
 	init: function () {
 		$("body")
-		.append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="' + this.i18n.enterName + '"/>' 
-		+ '</div><div id="cat_a_lot_category_list"style="white-space:nowrap;"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">' + this.i18n.select 
-		+ ' <a id="cat_a_lot_select_all">' + this.i18n.all + '</a> / ' + '<a id="cat_a_lot_select_none">' + this.i18n.none + '</a>' 
+		.append('<div id="cat_a_lot">' + '<div id="cat_a_lot_data"><div>' + '<input type="text" id="cat_a_lot_searchcatname" placeholder="' + this.i18n.enterName + '"/>'
+		+ '</div><div id="cat_a_lot_category_list"style="white-space:nowrap;"></div>' + '<div id="cat_a_lot_mark_counter"> </div>' + '<div id="cat_a_lot_selections">' + this.i18n.select
+		+ ' <a id="cat_a_lot_select_all">' + this.i18n.all + '</a> / ' + '<a id="cat_a_lot_select_none">' + this.i18n.none + '</a>'
 		+ '</div></div><div id="cat_a_lot_head">' + '<a id="cat_a_lot_toggle">Cat-a-lot</a></div></div>');
 
 		if (!this.searchmode) $('#cat_a_lot_selections').append('<br><a id="cat_a_lot_remove"><b>' + this.i18n.removeFromCat + '</b></a>');
-
-		$('#cat_a_lot_searchcatname').keypress(function (e) {
-			if (e.which == 13) catALot.updateCats($(this).val());
-		});
 		$('#cat_a_lot_remove').click(function () {
 			catALot.remove();
 		});
@@ -42,13 +38,35 @@ var catALot = {
 			$(this).toggleClass('cat_a_lot_enabled');
 			catALot.run();
 		});
-
+		$('#cat_a_lot_searchcatname')
+			.keypress(function (e) {
+				if (e.which == 13)
+					catALot.updateCats($(this).val());
+			})
+			.autocomplete({
+				source: function(request, response) {
+					catALot.doAPICall({action:'opensearch', search: request.term, namespace: 14},
+						function(data){
+							if(data[1])
+								response($(data[1]).map(function(index,item){return item.replace(/.*:/, '');}));
+						}
+					);
+				},
+				open:function(){
+					$(".ui-autocomplete")
+						.position({
+							my: "left bottom",
+							at: "left top",
+							of: $('#cat_a_lot_searchcatname')
+						});
+				}
+		});
 		importStylesheet('MediaWiki:Gadget-Cat-a-lot.css');
 		this.localCatName = mw.config.get('wgFormattedNamespaces')[14];
 	},
 	findAllLabels: function () {
-		this.labels = $('#mw-pages li');
-		var subCats =  $('#mw-subcategories .CategoryTreeItem');
+		this.labels = $('#mw-pages').find('li');
+		var subCats =  $('#mw-subcategories').find('.CategoryTreeItem');
 		for (var sub = 0; sub < subCats.length; sub++) {
 			var a = $(subCats[sub]).find('a');
 			if (a.length) {
@@ -56,14 +74,14 @@ var catALot = {
 				this.labels.push(subCats[sub]);
 			}
 		}
-		$('li>a, .CategoryTreeLabel', mw.util.$content).attr({href: null});
+		$('#bodyContent').find('li>a, .CategoryTreeLabel').each(function(){this.href = null;});
 	},
 
 	getMarkedLabels: function () {
 		var marked = [];
 		this.selectedLabels = this.labels.filter('.cat_a_lot_selected');
 		this.selectedLabels.each(function () {
-			var file = $('a[title]', this);
+			var file = $(this).find('a[title]');
 			marked.push([file.attr('title'), $(this)]);
 		});
 		return marked;
@@ -95,11 +113,11 @@ var catALot = {
 			cmlimit: 50,
 			cmtitle: this.localCatName + ':' + this.currentCategory
 		};
-		if (cmcontinue) 
+		if (cmcontinue)
 			data.cmcontinue = cmcontinue;
 		else
 			this.subCats = [];
-			
+
 		this.doAPICall(data, function (result) {
 
 			var cats = result.query.categorymembers;
@@ -130,7 +148,7 @@ var catALot = {
 			if (pages[-1] && pages[-1].missing == '') {
 				catALot.catlist.html('<span id="cat_a_lot_no_found">' + catALot.i18n.catNotFound + '</span>');
 				document.body.style.cursor = 'auto';
-				
+
 				catALot.catlist.append('<ul></ul>');
 				catALot.createCatLinks("→", [catALot.currentCategory]);
 				return;
@@ -148,17 +166,17 @@ var catALot = {
 		});
 	},
 	regexBuilder: function (category) {
-		var catname = ( this.localCatName == 'Category' ) ? this.localCatName : this.localCatName + '|Category';
+		var catname = ( this.localCatName == 'Category' ) ? this.localCatName: this.localCatName + '|Category';
 		catname = '(' + catname + ')';
-		
+
 		// Build a regexp string for matching the given category:
 		// trim leading/trailing whitespace and underscores
 		category = category.replace(/^[\s_]+/, "").replace(/[\s_]+$/, "");
 
-		// escape regexp metacharacters (= any ASCII punctuation except _) 
+		// escape regexp metacharacters (= any ASCII punctuation except _)
 		category = category.replace(/([!-\/:-@\[-^`{-~])/g, '\\$1');
 
-		// any sequence of spaces and underscores should match any other         
+		// any sequence of spaces and underscores should match any other
 		category = category.replace(/[\s_]+/g, '[\\s_]+');
 
 		// Make the first character case-insensitive:
@@ -221,7 +239,7 @@ var catALot = {
 
 		var text = otext;
 		var comment;
-		
+
 		// Fix text
 		switch (mode) {
 		case 'add':
@@ -247,7 +265,7 @@ var catALot = {
 			this.updateCounter();
 			return;
 		}
-                
+
 		var data = {
 			action: 'edit',
 			summary: comment,
@@ -258,17 +276,17 @@ var catALot = {
 			text: text
 		};
 
-                var isBot=$.inArray('bot', wgUserGroups)>-1;
-                if(isBot){
-		   data.bot = '1';
-		}
+		var isBot=$.inArray('bot', wgUserGroups)>-1;
+		if(isBot)
+			data.bot = '1';
+
 		this.doAPICall(data, function (ret) {
 			catALot.updateCounter();
 		});
 		this.markAsDone(file[1], mode, targetcat);
 	},
 	markAsDone: function (label, mode, targetcat) {
-		
+
 		label.addClass('cat_a_lot_markAsDone');
 		switch (mode) {
 		case 'add':
@@ -293,7 +311,7 @@ var catALot = {
 	},
 
 	displayResult: function () {
-		
+
 		document.body.style.cursor = 'auto';
 		$('.cat_a_lot_feedback').addClass('cat_a_lot_done');
 		$('.ui-dialog-content').height('auto');
@@ -424,7 +442,7 @@ var catALot = {
 		this.createCatLinks("↓", this.subCats);
 
 		document.body.style.cursor = 'auto';
-        //Reset width
+		//Reset width
 		var cat = $('#cat_a_lot');
 		cat.width('');
 		cat.height('');
@@ -465,7 +483,7 @@ var catALot = {
 		if ($('.cat_a_lot_enabled').length) {
 			this.makeClickable();
 			$("#cat_a_lot_data").show();
-			$('#cat_a_lot').resizable({ handles: 'n', alsoResize: '#cat_a_lot_category_list',
+						$('#cat_a_lot').resizable({ handles: 'n', alsoResize: '#cat_a_lot_category_list',
 						resize: function(event, ui) {
 						$(this).css({left:"", top:""});
 						catALot.setHeight = $(this).height();
@@ -484,97 +502,90 @@ var catALot = {
 	},
 	i18n: (wgUserLanguage == "he") ? {
 		//Progress
-		loading        : 'טוען...',
-		editing        : 'עורך דף',
-		of             : 'מתוך ',
-		skippedAlready : '<h5>הדפים להלן לא שונו, משום שכבר הכילו את הקטגוריה:</h5>',
+		loading: 'טוען...',
+		editing: 'עורך דף',
+		of: 'מתוך ',
+		skippedAlready: '<h5>הדפים להלן לא שונו, משום שכבר הכילו את הקטגוריה:</h5>',
 		skippedNotFound: '<h5>הדפים להלן לא שונו, משום שהקטגוריה לא נמצאה:</h5>',
-		skippedServer  : '<h5>Tהדפים להלן לא שונו, בגלל בעית תקשורת/h5>',
-		allDone        : 'כל הדפים שונו.',
-		done           : 'בוצע!',
-		addedCat       : 'קטגוריה התווספה',
-		copiedCat      : 'קטגוריה התווספה',
-		movedCat       : 'הועברו לקטגוריה',
-		removedCat     : 'הוסרו מקטגוריה',
-		returnToPage   : 'חזור לדף',
-		catNotFound    : 'קטגוריה לא נמצאה.',
+		skippedServer: '<h5>Tהדפים להלן לא שונו, בגלל בעית תקשורת/h5>',
+		allDone: 'כל הדפים שונו.',
+		done: 'בוצע!',
+		addedCat: 'קטגוריה התווספה',
+		copiedCat: 'קטגוריה התווספה',
+		movedCat: 'הועברו לקטגוריה',
+		removedCat: 'הוסרו מקטגוריה',
+		returnToPage: 'חזור לדף',
+		catNotFound: 'קטגוריה לא נמצאה.',
 
 
 		//as in 17 files selected
-		filesSelected   : ' דפים מסומנים.',
-		
+		filesSelected: ' דפים מסומנים.',
+
 		//Actions
-		copy            : 'הוסף',
-		move            : 'העבר',
-		add             : 'הוסף', 
-		removeFromCat   : 'הסר מקטגוריה זו',
-		enterName       : 'הקישו שם קטגוריה',
-		select          : 'בחירה',
-		all             : 'כולם',
-		none            : 'נקה',
-		
-		noneSelected    : 'אין דפים מסומנים!',
-		
+		copy: 'הוסף',
+		move: 'העבר',
+		add: 'הוסף',
+		removeFromCat: 'הסרה מקטגוריה זו',
+		enterName: 'שם קטגוריה להוספה לרשימה',
+		select: 'בחירה',
+		all: 'כולם',
+		none: 'נקה',
+
+		noneSelected: 'אין דפים מסומנים!',
+
 		//Summaries:
-		summaryAdd      : 'Cat-a-lot: הוסיף ל[[קטגוריה:',
-		summaryCopy     : 'Cat-a-lot: העתיק מ[[קטגוריה:',
-		to              : 'ל[[קטגוריה:',
-		summaryMove     : 'Cat-a-lot: העביר מ[[קטגוריה:',
-		summaryRemove   : 'Cat-a-lot: הסיר מ[[קטגוריה:'
-	} :	{
+		summaryAdd: 'Cat-a-lot: הוסיף ל[[קטגוריה:',
+		summaryCopy: 'Cat-a-lot: העתיק מ[[קטגוריה:',
+		to: 'ל[[קטגוריה:',
+		summaryMove: 'Cat-a-lot: העביר מ[[קטגוריה:',
+		summaryRemove: 'Cat-a-lot: הסיר מ[[קטגוריה:'
+	}:	{
 		//Progress
-		loading        : 'Loading...',
-		editing        : 'Editing page',
-		of             : 'of ',
-		skippedAlready : '<h5>The following pages were skipped, because the page was already in the category:</h5>',
+		loading: 'Loading...',
+		editing: 'Editing page',
+		of: 'of ',
+		skippedAlready: '<h5>The following pages were skipped, because the page was already in the category:</h5>',
 		skippedNotFound: '<h5>The following pages were skipped, because the old category could not be found:</h5>',
-		skippedServer  : '<h5>The following pages couldn\'t be changed, since there were problems connecting to the server:</h5>',
-		allDone        : 'All pages are processed.',
-		done           : 'Done!',
-		addedCat       : 'Added category',
-		copiedCat      : 'Copied to category',
-		movedCat       : 'Moved to category',
-		removedCat     : 'Removed from category',
-		returnToPage   : 'Return to page',
-		catNotFound    : 'Category not found.',
+		skippedServer: '<h5>The following pages couldn\'t be changed, since there were problems connecting to the server:</h5>',
+		allDone: 'All pages are processed.',
+		done: 'Done!',
+		addedCat: 'Added category',
+		copiedCat: 'Copied to category',
+		movedCat: 'Moved to category',
+		removedCat: 'Removed from category',
+		returnToPage: 'Return to page',
+		catNotFound: 'Category not found.',
 
 
 		//as in 17 files selected
-		filesSelected   : ' files selected.',
-		
+		filesSelected: ' files selected.',
+
 		//Actions
-		copy            : 'Copy',
-		move            : 'Move',
-		add             : 'Add', 
-		removeFromCat   : 'Remove from this category',
-		enterName       : 'Enter category name',
-		select          : 'Select',
-		all             : 'all',
-		none            : 'none',
-		
-		noneSelected    : 'No files selected!',
-		
+		copy: 'Copy',
+		move: 'Move',
+		add: 'Add',
+		removeFromCat: 'Remove from this category',
+		enterName: 'Enter category name',
+		select: 'Select',
+		all: 'all',
+		none: 'none',
+
+		noneSelected: 'No files selected!',
+
 		//Summaries:
-		summaryAdd      : 'Cat-a-lot: Adding [[Category:',
-		summaryCopy     : 'Cat-a-lot: Copying from [[Category:',
-		to              : 'to [[Category:',
-		summaryMove     : 'Cat-a-lot: Moving from [[Category:',
-		summaryRemove   : 'Cat-a-lot: Removing from [[Category:'
+		summaryAdd: 'Cat-a-lot: Adding [[Category:',
+		summaryCopy: 'Cat-a-lot: Copying from [[Category:',
+		to: 'to [[Category:',
+		summaryMove: 'Cat-a-lot: Moving from [[Category:',
+		summaryRemove: 'Cat-a-lot: Removing from [[Category:'
 	}
 };
 
 
 if ((wgNamespaceNumber == -1 && wgCanonicalSpecialPageName == "Search") || wgNamespaceNumber == 14) {
 	if ( wgNamespaceNumber == -1 ) catALot.searchmode = true;
-	//This is not optimal, since we can't be sure that we have the strings before the DOM is built
-	if ( mw.config.get('wgUserLanguage') != 'en' ) {
-		importScript('MediaWiki:Gadget-Cat-a-lot.js/' + mw.config.get('wgUserLanguage') );
-	}
-	if ( mw.config.get('wgContentLanguage') != 'en' ) {
-		importScript('MediaWiki:Gadget-Cat-a-lot.js/' + mw.config.get('wgContentLanguage') );
-	}
-	mediaWiki.loader.using('jquery.ui.dialog', function () {
-		$(document).ready(function () {
+	mediaWiki.loader.using(['jquery.ui.dialog', 'jquery.ui.autocomplete'], function () {
+		$(function () {
 			catALot.init();
 		});
 	});
