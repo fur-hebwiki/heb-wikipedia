@@ -1,10 +1,10 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
-$(document).ready(function() {    
+$(document).ready(function() {
 mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelection', 'jquery.ui.dialog'], function() {
 
-    // template parameter is an object with the following fields:
+	// template parameter is an object with the following fields:
 	// desc: desciption string
 	// select: array of possible values (optional)
 	// defval: default value (optional)
@@ -23,10 +23,10 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	// the fields, keyed by paramName
 		fieldsBypName,
 		rtl = $('body').css('direction') == 'rtl';
-	
+
 	function paramsFromSelection() {
 		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ and last }}
-		var specials = []; 
+		var specials = [];
 		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
 			var match = selection.match(/(\{\{[^{}\]\[]*\}\}|\[\[[^{}\]\[]*\]\]|\[[^{}\]\[]*\](?:[^\]]))/);
 			if (! match || ! match.length)
@@ -51,7 +51,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			}
 		}
 	}
-	
+
 	function buildParams(data) {
 		var lines = data.split("\n");
 		while (lines && lines.length) {
@@ -70,13 +70,13 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				continue;
 			var desc = $.trim(fields[1]);
 			var pAttribs = {desc: desc};
-			if (fields.length > 2) 
+			if (fields.length > 2)
 				pAttribs.options = analyzeOptions($.trim(fields[2]));
-				
+
 			templateParams[name] = pAttribs;
 		}
 	}
-	
+
 	function analyzeOptions(str) {
 		var res = {},
 			avail = ['multiline', 'required', 'depends', 'defval', 'choices'], // maybe we'll have more in the future
@@ -90,11 +90,11 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		}
 		return res;
 	}
-	
+
 	function createWikiCode() {
 		var par = [template];
 		for (var i in dialogFields) {
-			var 
+			var
 				field = dialogFields[i],
 				name = $.trim(field[0]),
 				f = field[1],
@@ -119,26 +119,27 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				$('a', div).attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
 				$('<div>')
 					.dialog(
-						{title: i18n('preview'), 
-						width: 'auto', 
-						height: 'auto', 
+						{title: i18n('preview'),
+						width: 'auto',
+						height: 'auto',
 						overflow: 'auto',
-                        modal: true,
+						modal: true,
 						position: [60, 60],
 						buttons: buttons})
 					.append(div);
 			}
-		});			
+		});
 	}
-	
-	function i18n(key) {
+
+	function i18n(key, param) {
 		if (key == 'templates namespace')
 			return mw.config.get('wgFormattedNamespaces')[10];
 		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
 					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.' +
-						 '<br />' + 'הקישו על שם הפרמטר לקבלת הסבר עליו, הקישו שוב להסתיר את ההסבר.';
+						'<br />' + 'הקישו על שם הפרמטר לקבלת הסבר עליו, הקישו שוב להסתיר את ההסבר.';
+					case 'wizard dialog title': return 'מילוי הפרמטרים עבור תבנית ' + template;
 					case 'ok': return 'אישור';
 					case 'cancel': return 'ביטול'
 					case 'params subpage': return 'פרמטרים';
@@ -151,7 +152,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'defval': return 'ברירת מחדל';
 					case 'choices': return 'אפשרויות';
 					case 'button hint': return 'אשף מילוי תבניות';
-					
+					case 'able templates category name': return 'תבניות הנתמכות על ידי אשף התבניות';
+					case 'template selector title': return 'אנא בחרו תבנית מהרשימה:';
+
 				}
 			default:
 				switch (key) {
@@ -168,17 +171,18 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'defval': return 'Default';
 					case 'choices': return 'Choices';
 					case 'button hint': return 'Template parameters wizard';
+					case 'albe templates category name': throw('Must define category name for wizard-capable templates');
+					case 'template selector title': return 'Please select a template from this list';
 
-					
 				}
 		}
 		return key;
 	}
-	
+
 	function paramPage() {
 		return i18n('templates namespace') + ':' + $.trim(template) + '/' + i18n('params subpage');
 	}
-	
+
 	function updateRawPreview(){
 		var canOK = 'enable';
 		for (var i in dialogFields) {
@@ -188,7 +192,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				canOK = 'disable';
 			if (opts && opts.depends) {
 				var dep = fieldsBypName[opts.depends];
-				var depEmpty = (dep && dep.val() && $.trim(dep.val())) ? false : true; 
+				var depEmpty = (dep && dep.val() && $.trim(dep.val())) ? false : true;
 				var row = rowsBypName[df.data('paramName')];
 				if (row)
 					row.toggleClass('tpw_hidden', depEmpty);
@@ -197,14 +201,18 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		$(".ui-dialog-buttonpane button:contains('אישור')").button(canOK);
 		$('#tpw_preview').html(createWikiCode());
 	}
-	
-	function toggleDesc() {$(this).next('p').toggleClass('tpw_hidden');}
-	
+
+	function toggleDesc() {
+		var div = $(this).next('div'), state = div.hasClass('tpw_hidden');
+		$('.tpw_hiddenDiv').addClass('tpw_hidden'); // hide them all
+		div.toggleClass('tpw_hidden', !state);
+	}
+
 	function createInputField(paramName) {
 		var options = templateParams[paramName].options || {},
 			f,
 			checkbox = false;
-			
+
 		if (options.choices) {
 			var choices = options.choices.split(/\s*,\s*/);
 			if (choices.length > 1) {
@@ -225,34 +233,40 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		}
 		else
 			f = $('<input>', {type: 'text'});
-			
+
 		if (!checkbox && f.autoCompleteWikiText) // teach the controls to autocomplete.
-			f.autoCompleteWikiText();
-			
+			f.autoCompleteWikiText({positionMy: $('body').is('.rtl')? "left top" : "right top"});
+
 		f.css({width: checkbox ? '1em' : '28em'})
 			.data({paramName: paramName, options: options})
 			.bind('paste cut drop input change', updateRawPreview);
-			
-		if (options.defval) 
+
+		if (options.defval)
 			f.val(options.defval);
-		
+
 		if (options.required)
 			f.addClass('tpw_required').css({border: '1px red solid'});
 		return f;
 	}
-	
+
 	function addRow(paramName, table) {
-		var inputField = createInputField(paramName);
-		var tr = $('<tr>')
-			.append($('<td>', {width: '160'})
+		var inputField = createInputField(paramName),
+			desc = templateParams[paramName].desc,
+			tr = $('<tr>')
+			.append($('<td>', {width: '160'}).css({position: 'relative'})
 				.append($('<span>')
 					.text(paramName)
 					.click(toggleDesc)
-					.css({maxWidth: '20em', cursor: 'pointer', color: 'blue', title: paramName})
+					.css({maxWidth: '20em', cursor: desc ? 'pointer' : '', color: desc ? 'blue' : 'black', title: paramName})
+					.disableSelection(true)
 				)
-				.append($('<p>', {'class': 'tpw_hidden'})
-					.css({backgroundColor: 'yellow', width: '160px', overflow:'hidden'})
-					.text((templateParams[paramName].desc || ''))
+				
+				.append(
+					desc
+					? $('<div>', {'class': 'tpw_hiddenDiv tpw_hidden'})
+						.css({position: 'absolute', zIndex: 2, top:20, backgroundColor: 'yellow'})
+						.text(desc)
+					: ''
 				)
 			)
 			.append($('<td>').css({width: '30em'}).append(inputField));
@@ -261,11 +275,11 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		rowsBypName[paramName] = tr;
 		fieldsBypName[paramName] = inputField;
 	}
-	
+
 	function injectResults() {
 		$("#wpTextbox1").textSelection('encapsulateSelection', {replace: true, peri: createWikiCode()});
 	}
-	
+
 	function buildDialog(data) {
 		$('.tpw_disposable').remove();
 		buildParams(data);
@@ -273,6 +287,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		var	table = $('<table>');
 		var dialog = $('<div>', {'class': 'tpw_disposable'})
 			.dialog({height: 'auto',
+					title: i18n('wizard dialog title', template),
 					width: 'auto',
 					overflow: 'auto',
 					position: [$('body').width() * 0.2, $('body').height() * 0.1],
@@ -286,7 +301,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 
 		for (var paramName in templateParams)
 			addRow(paramName, table);
-		
+
 		var buttons = {}; // we need to do it this way, because with literal object, the keys must be literal.
 		buttons[i18n('ok')] = function() {injectResults(); dialog.dialog('close'); };
 		buttons[i18n('cancel')] = function() {dialog.dialog('close');}
@@ -294,7 +309,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		dialog.dialog('option', 'buttons', buttons);
 		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
 		$('.ui-dialog-buttonpane').css({direction: 'ltr'});
-		$('.ui-dialog-buttonpane > button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
+		$('.ui-dialog-buttonpane button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
 		updateRawPreview();
 	}
 
@@ -303,9 +318,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		templateParams = {};
 		dialogFields = [];
 		rowsBypName = {};
-		fieldsBypName = {};		
+		fieldsBypName = {};
 	}
-	
+
 	function reportError(a,b,error) {
 		if (error == "Not Found")
 			error = 'לתבנית "' + template + '" אין דף דף פרמטרים - האשף לא יכול לפעול ללא דף כזה';
@@ -318,15 +333,54 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		}
 		alert('טעות בהפעלת האשף.' + '\n' + error);
 	}
-	
-	function fireDialog() {
-		init();
-		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
-		template = match ? $.trim(match[1]) : null;
-		if (! template) {
-			reportError(null, null, 'כדי להשתמש באשף התבניות יש לסמן בתיבת העריכה את התבנית.');
-			return;
+
+	var allTemplates;
+
+	function pickTemplate() {
+		var selector = $('<select>');
+		for (var i in allTemplates)
+			selector.append($('<option>', {value: allTemplates[i], text: allTemplates[i]}));
+		var templateSelector = $('<div>').dialog({
+			title: i18n('template selector title'),
+			height: 'auto',
+			width: 'auto',
+			modal: true,
+			buttons: [
+				{text: i18n('ok'), click: function(){template = selector.val(); fireDialog(); templateSelector.dialog("close")}},
+				{text: i18n('cancel'), click: function(){templateSelector.dialog("close")}}
+			]
+		}).append(selector);
+		$('.ui-dialog-buttonpane button').css({float: 'right'});
+	}
+	function findTemplate(data) {
+		if (data) {
+			$(data.query.categorymembers).each(function(){
+				allTemplates.push(this.title.replace(/.*:/, ''));
+			});
+			if (!data['query-continue'] && allTemplates.length)
+				pickTemplate();
 		}
+		if (!data || data['query-continue']) {
+			var params = {
+				action: 'query',
+				list: 'categorymembers',
+				cmtitle: 'Category:' + i18n('able templates category name'),
+				cmlimit: 500,
+				format: 'json'
+			};
+			if (data && data['query-continue'])
+				params.cmcontinue = data['query-continue'].categorymembers.cmcontinue;
+			$.ajax({
+				url: mw.util.wikiScript('api'),
+				data: params,
+				type: 'post',
+				success: findTemplate,
+				error: reportError
+			});
+		}
+	}
+
+	function fireDialog() {
 		$.ajax({
 			url: mw.util.wikiScript() + '?title=' + mw.util.wikiUrlencode(paramPage()) + '&action=raw&ctype=text/x-wiki',
 			success: buildDialog,
@@ -339,6 +393,19 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		"</style> "
 	).appendTo("head");
 
+	function doIt() {
+		init();
+		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
+		template = match ? $.trim(match[1]) : null;
+		if (template)
+			fireDialor();
+		else {
+			allTemplates = [];
+			findTemplate();
+		}
+
+	}
+
 	setTimeout(function() {
 		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/e/eb/Button_plantilla.png';
 		if (typeof $.wikiEditor != 'undefined')
@@ -350,7 +417,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 						label: i18n('button hint'),
 						type: 'button',
 						icon: buttonImage,
-						action: {type: 'callback', execute: fireDialog}
+						action: {type: 'callback', execute: doIt}
 					}
 				}
 			});
@@ -358,9 +425,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			$('div #toolbar').append( // "old style"
 				$('<img>', {src: buttonImage, title: i18n('button hint'), 'class': 'mw-toolbar-editbutton'})
 				.css({cursor: 'pointer'})
-				.click(fireDialog)
+				.click(doIt)
 			);
-			
+
 	}, 120);
 
 });
