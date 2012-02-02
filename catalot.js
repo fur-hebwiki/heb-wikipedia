@@ -453,7 +453,6 @@ var catALot = {
 
 	updateCats: function (newcat) {
 		document.body.style.cursor = 'wait';
-
 		this.currentCategory = newcat;
 		this.catlist = $('#cat_a_lot_category_list');
 		this.catlist.html('<div class="cat_a_lot_loading">' + this.i18n.loading + '</div>');
@@ -483,12 +482,15 @@ var catALot = {
 		if ($('.cat_a_lot_enabled').length) {
 			this.makeClickable();
 			$("#cat_a_lot_data").show();
-						$('#cat_a_lot').resizable({ handles: 'n', alsoResize: '#cat_a_lot_category_list',
-						resize: function(event, ui) {
-						$(this).css({left:"", top:""});
-						catALot.setHeight = $(this).height();
-						$('#cat_a_lot_category_list').css({maxHeight: '', width: ''});
-				} });
+			$('#cat_a_lot').resizable({
+				handles: 'n', 
+				alsoResize: '#cat_a_lot_category_list',
+				resize: function(event, ui) {
+					$(this).css({left:"", top:""});
+					catALot.setHeight = $(this).height();
+					$('#cat_a_lot_category_list').css({maxHeight: '', width: ''});
+				} 
+			});
 			$('#cat_a_lot_category_list').css({maxHeight: '450px'});
 			if (this.searchmode) this.updateCats("Pictures and images");
 			else this.updateCats(wgTitle);
