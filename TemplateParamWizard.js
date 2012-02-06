@@ -1,17 +1,16 @@
-﻿//Adds wizard for using templates for external links
+﻿//Template parameters wizard
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
-$(document).ready(function() {
-mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelection', 'jquery.ui.dialog'], function() {
-
+mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.dialog'], function() {
+$(function() {
 	// template parameter is an object with the following fields:
 	// desc: desciption string
-	// select: array of possible values (optional)
 	// defval: default value (optional)
-	// options: object with 3 possible fields:
-	//// multiline (boolean)
-	//// depends (string - another field's name)
-	//// required (boolean)
+	// options: object with optional fields:
+	//// multiline: number of lines
+	//// depends: another field's name
+	//// required: boolean
+	////choices: array of legal values for the field
 	// templateParams is keyed by paramName.
 	var templateParams,
 	// which template are we working on
@@ -22,7 +21,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		rowsBypName,
 	// the fields, keyed by paramName
 		fieldsBypName,
-		rtl = $('body').css('direction') == 'rtl';
+	//collected from API using the category
+		allTemplates,
+		rtl = $('body').is('.rtl');
 
 	function paramsFromSelection() {
 		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ and last }}
@@ -112,34 +113,32 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		var temp = createWikiCode();
 		$.post(mw.util.wikiScript('api'), {action: 'parse', title: mw.config.get('wgPageName'), prop: 'text', text: temp, format: 'json'}, function(data) {
 			if (data && data.parse && data.parse.text) {
-				var buttons = {},
-					div = $('<div>')
-						.html(data.parse.text['*']);
-				buttons[i18n('close')] = function() {$(this).dialog('close');};
+				var buttons = [{text: i18n('close'), click: function() {$(this).dialog('close');}}],
+					div = $('<div>').html(data.parse.text['*']);
 				$('a', div).attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
 				$('<div>')
 					.dialog(
 						{title: i18n('preview'),
-						width: 'auto',
-						height: 'auto',
-						overflow: 'auto',
 						modal: true,
 						position: [60, 60],
 						buttons: buttons})
 					.append(div);
+				circumventRtlBug();
 			}
 		});
 	}
 
+	function circumventRtlBug() {
+		if (rtl)
+			$('.ui-dialog-buttonpane button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
+	}
+
 	function i18n(key, param) {
-		if (key == 'templates namespace')
-			return mw.config.get('wgFormattedNamespaces')[10];
 		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
-					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.' +
-						'<br />' + 'הקישו על שם הפרמטר לקבלת הסבר עליו, הקישו שוב להסתיר את ההסבר.';
-					case 'wizard dialog title': return 'מילוי הפרמטרים עבור תבנית ' + template;
+					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.';
+					case 'wizard dialog title': return 'מילוי הפרמטרים עבור תבנית: ' + template;
 					case 'ok': return 'אישור';
 					case 'cancel': return 'ביטול'
 					case 'params subpage': return 'פרמטרים';
@@ -159,6 +158,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			default:
 				switch (key) {
 					case 'explain': return 'fields with red border are required, the rest are optional';
+					case 'wizard dialog title': return 'Set up parameters for template: ' + template;
 					case 'ok': return 'OK';
 					case 'cancel': return 'Cancel'
 					case 'params subpage': return 'Parameters';
@@ -171,7 +171,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					case 'defval': return 'Default';
 					case 'choices': return 'Choices';
 					case 'button hint': return 'Template parameters wizard';
-					case 'albe templates category name': throw('Must define category name for wizard-capable templates');
+					case 'able templates category name': throw('Must define category name for wizard-capable templates');
 					case 'template selector title': return 'Please select a template from this list';
 
 				}
@@ -180,7 +180,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 
 	function paramPage() {
-		return i18n('templates namespace') + ':' + $.trim(template) + '/' + i18n('params subpage');
+		return mw.config.get('wgFormattedNamespaces')[10] + ':' + $.trim(template) + '/' + i18n('params subpage');
 	}
 
 	function updateRawPreview(){
@@ -198,14 +198,8 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 					row.toggleClass('tpw_hidden', depEmpty);
 			}
 		}
-		$(".ui-dialog-buttonpane button:contains('אישור')").button(canOK);
-		$('#tpw_preview').html(createWikiCode());
-	}
-
-	function toggleDesc() {
-		var div = $(this).next('div'), state = div.hasClass('tpw_hidden');
-		$('.tpw_hiddenDiv').addClass('tpw_hidden'); // hide them all
-		div.toggleClass('tpw_hidden', !state);
+		$(".ui-dialog-buttonpane button:contains('" + i18n('ok') + "')").button(canOK);
+		$('#tpw_preview').text(createWikiCode());
 	}
 
 	function createInputField(paramName) {
@@ -229,13 +223,16 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		}
 		else if (options.multiline) {
 			var rows = options.multiline;
-			f = $('<textarea>', {rows: isNaN(parseInt(rows)) ? 3 : rows});
+			f = $('<textarea>', {rows: 1})
+				.data({dispRows: isNaN(parseInt(rows)) ? 5 : rows})
+				.focus(function(){this.rows = $(this).data('dispRows');})
+				.blur(function(){this.rows = 1});
 		}
 		else
 			f = $('<input>', {type: 'text'});
 
 		if (!checkbox && f.autoCompleteWikiText) // teach the controls to autocomplete.
-			f.autoCompleteWikiText({positionMy: $('body').is('.rtl')? "left top" : "right top"});
+			f.autoCompleteWikiText({positionMy: rtl ? "left top" : "right top"});
 
 		f.css({width: checkbox ? '1em' : '28em'})
 			.data({paramName: paramName, options: options})
@@ -250,24 +247,14 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 	}
 
 	function addRow(paramName, table) {
+		function tipsyContent() {return templateParams[$(this).text()].desc || '';};
+
 		var inputField = createInputField(paramName),
-			desc = templateParams[paramName].desc,
 			tr = $('<tr>')
-			.append($('<td>', {width: '160'}).css({position: 'relative'})
-				.append($('<span>')
-					.text(paramName)
-					.click(toggleDesc)
-					.css({maxWidth: '20em', cursor: desc ? 'pointer' : '', color: desc ? 'blue' : 'black', title: paramName})
-					.disableSelection(true)
-				)
-				
-				.append(
-					desc
-					? $('<div>', {'class': 'tpw_hiddenDiv tpw_hidden'})
-						.css({position: 'absolute', zIndex: 2, top:20, backgroundColor: 'yellow'})
-						.text(desc)
-					: ''
-				)
+			.append(
+				$('<td>', {maxWidth: '160'})
+				.text(paramName)
+				.tipsy({title: tipsyContent})
 			)
 			.append($('<td>').css({width: '30em'}).append(inputField));
 		dialogFields.push([paramName, inputField]);
@@ -296,7 +283,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 			.append($('<p>').html(i18n('explain')))
 			.append(table)
 			.append($('<p>').css({height: '2em'}))
-			.append($('<pre>', {id: 'tpw_preview', 'class': 'tpw_disposable'})
+			.append($('<pre>', {id: 'tpw_preview'})
 				.css({backgroundColor: "lightGreen", maxWidth: '40em', maxHeight: '8em', overflow: 'auto'}));
 
 		for (var paramName in templateParams)
@@ -307,9 +294,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		buttons[i18n('cancel')] = function() {dialog.dialog('close');}
 		buttons[i18n('preview')] = showPreview;
 		dialog.dialog('option', 'buttons', buttons);
-		$('.ui-dialog-buttonpane').css({backgroundColor: '#E0E0E0'});
-		$('.ui-dialog-buttonpane').css({direction: 'ltr'});
-		$('.ui-dialog-buttonpane button').css({float: 'right'}); // jQuery has problems with rtl dialogs + ie is braindamaged.
+		circumventRtlBug();
 		updateRawPreview();
 	}
 
@@ -319,6 +304,7 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		dialogFields = [];
 		rowsBypName = {};
 		fieldsBypName = {};
+		mw.util.addCSS(".tpw_hidden{display:none;}");
 	}
 
 	function reportError(a,b,error) {
@@ -334,8 +320,6 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		alert('טעות בהפעלת האשף.' + '\n' + error);
 	}
 
-	var allTemplates;
-
 	function pickTemplate() {
 		var selector = $('<select>');
 		for (var i in allTemplates)
@@ -350,8 +334,9 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 				{text: i18n('cancel'), click: function(){templateSelector.dialog("close")}}
 			]
 		}).append(selector);
-		$('.ui-dialog-buttonpane button').css({float: 'right'});
+		circumventRtlBug();
 	}
+
 	function findTemplate(data) {
 		if (data) {
 			$(data.query.categorymembers).each(function(){
@@ -388,17 +373,13 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 		});
 	}
 
-	$("<style type='text/css'> \n" +
-		".tpw_hidden{display:none;} \n" +
-		"</style> "
-	).appendTo("head");
 
 	function doIt() {
 		init();
 		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
 		template = match ? $.trim(match[1]) : null;
 		if (template)
-			fireDialor();
+			fireDialog();
 		else {
 			allTemplates = [];
 			findTemplate();
