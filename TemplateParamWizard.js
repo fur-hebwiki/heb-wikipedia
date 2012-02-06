@@ -103,8 +103,7 @@ $(function() {
 				val = $.trim(f.val());
 			if (f.attr('type') == 'checkbox' && ! f.prop('checked'))
 				val = "";
-			if (! hidden && val.length)
-				par.push(name + '=' + val);
+			par.push(name + '=' + val);
 		}
 		return "{{" + par.join("\n|") + "\n}}";
 	}
