@@ -74,7 +74,7 @@ var catALot = {
 				this.labels.push(subCats[sub]);
 			}
 		}
-		$('#bodyContent').find('li>a, .CategoryTreeLabel').each(function(){this.href = null;});
+		$('li a, .CategoryTreeLabel', mw.util.$content).attr({href: '#noSuchAnchor'});
 	},
 
 	getMarkedLabels: function () {
@@ -453,6 +453,7 @@ var catALot = {
 
 	updateCats: function (newcat) {
 		document.body.style.cursor = 'wait';
+
 		this.currentCategory = newcat;
 		this.catlist = $('#cat_a_lot_category_list');
 		this.catlist.html('<div class="cat_a_lot_loading">' + this.i18n.loading + '</div>');
