@@ -10,7 +10,7 @@ $(function() {
 	//// multiline: number of lines
 	//// depends: another field's name
 	//// required: boolean
-	////choices: array of legal values for the field
+	//// choices: array of legal values for the field
 	// templateParams is keyed by paramName.
 	var templateParams,
 	// which template are we working on
@@ -388,7 +388,7 @@ $(function() {
 
 	setTimeout(function() {
 		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/e/eb/Button_plantilla.png';
-		if (typeof $.wikiEditor != 'undefined')
+		if (typeof $.wikiEditor == 'object' && $.wikiEditor.supported)
 			$('#wpTextbox1').wikiEditor('addToToolbar', {
 				section: 'advanced',
 				group: 'more',
