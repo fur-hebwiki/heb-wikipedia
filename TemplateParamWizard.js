@@ -245,17 +245,58 @@ $(function() {
 		return f;
 	}
 
+	var 
+		timer = null, 
+		lastVisited = $('<a>');
+	
+	function enterTipsy() {
+		clearTimeout(timer);
+		$(this).attr('inside', 1);
+	}
+	
+	function leaveTipsy() {
+		var $this = $(this);
+		if ($this.attr('master') || $this.attr('inside')) {
+			$this.attr('inside', '');
+			timer = setTimeout(function(){lastVisited.tipsy('hide');}, 500);
+		}
+	}
+	
 	function addRow(paramName, table) {
-		function tipsyContent() {return templateParams[$(this).text()].desc || '';};
-
+		function tipsyContent() {
+			var desc = templateParams[$(this).text()].desc || '';
+			if (/[\[\]\{\}\<\>]/.test(desc)) // does it need parsing?
+				$.ajax({
+					url: mw.util.wikiScript('api'),
+					async: false,
+					type: 'post',
+					data: {action: 'parse', text: desc, disablepp: 1, format: 'json'}, // parse it.
+					success: function(data) {
+						var div = $('<div>').html(data.parse.text['*']);
+						$('a', div).attr({target: '_blank'});
+						desc = div.html();
+					}
+				})
+			return desc;
+		};
+		
 		var inputField = createInputField(paramName),
 			tr = $('<tr>')
-			.append(
-				$('<td>', {maxWidth: '160'})
-				.text(paramName)
-				.tipsy({title: tipsyContent})
-			)
-			.append($('<td>').css({width: '30em'}).append(inputField));
+				.append(
+					$('<td>', {width: 120})
+					.css({fontWeight: 'bold', color: templateParams[paramName].desc ? 'blue' : 'black'})
+					.text(paramName)
+					.tipsy({html: true, trigger: 'manual', title: tipsyContent})
+					.mouseenter(function() {
+						clearTimeout(timer);
+						$('.tipsy').remove();
+						lastVisited = $(this);
+						lastVisited.tipsy('show');
+					})
+					.mouseleave(leaveTipsy)
+					.attr('master', 'true')
+				)
+				.append($('<td>').css({width: '30em'}).append(inputField));
 		dialogFields.push([paramName, inputField]);
 		table.append(tr);
 		rowsBypName[paramName] = tr;
@@ -295,6 +336,9 @@ $(function() {
 		dialog.dialog('option', 'buttons', buttons);
 		circumventRtlBug();
 		updateRawPreview();
+		$('.tipsy')
+			.live('mouseenter', enterTipsy)
+			.live('mouseleave', leaveTipsy);
 	}
 
 	function init() {
