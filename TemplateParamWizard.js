@@ -170,10 +170,8 @@ $(function() {
 		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
-					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.' + '<br />' +
-						'מידע נוסף עשוי להימצא ב' +
-						'<a href="' + mw.util.wikiGetlink('תבנית:' + template) + '" target="_blank">' + 'דף התבנית.' + '</a>';
-					case 'wizard dialog title': return 'מילוי הפרמטרים עבור תבנית: ' + template;
+					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.';
+					case 'wizard dialog title': return 'מילוי הפרמטרים עבור ' + '<a href="' + mw.util.wikiGetlink('תבנית:' + template) + '" target="_blank">' + 'תבנית:' + template  + '</a>';
 					case 'ok': return 'אישור';
 					case 'cancel': return 'ביטול'
 					case 'params subpage': return 'פרמטרים';
