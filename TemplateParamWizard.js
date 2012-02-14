@@ -1,4 +1,4 @@
-﻿//Template parameters wizard
+//Template parameters wizard
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
 mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.dialog'], function() {
@@ -26,10 +26,10 @@ $(function() {
 		rtl = $('body').is('.rtl');
 
 	function paramsFromSelection() {
-		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/(^\{\{|\}\}$)/g, ''); //scrap the first {{ and last }}
+		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/^\s*\{\{|\}\}\s*$/g, ''); //scrap the first {{ and last }}
 		var specials = [];
 		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
-			var match = selection.match(/(\{\{[^{}\]\[]*\}\}|\[\[[^{}\]\[]*\]\]|\[[^{}\]\[]*\](?:[^\]]))/);
+			var match = selection.match(/(\{\{[^\{\}\]\[]*\}\}|\[\[[^\{\}\]\[]*\]\]|\[[^\{\}\]\[]*\])/);
 			if (! match || ! match.length)
 				break;
 			specials.push(match[0]);
@@ -47,8 +47,8 @@ $(function() {
 			var paramPair = param.split("=");
 			var name = $.trim(paramPair.shift());
 			if (name && paramPair.length) {
-				templateParams[name] = templateParams[name] || {};
-				templateParams[name].options = $.extend(templateParams[name].options || {}, {'defval': paramPair.join('=')});
+				templateParams[name] = templateParams[name] || {options: {notInParamPage: 1}};
+				$.extend(templateParams[name].options, {'defval': paramPair.join('=')});
 			}
 		}
 	}
@@ -152,6 +152,7 @@ $(function() {
 					case 'button hint': return 'אשף מילוי תבניות';
 					case 'able templates category name': return 'תבניות הנתמכות על ידי אשף התבניות';
 					case 'template selector title': return 'אנא בחרו תבנית מהרשימה:';
+					case 'notInParamPage': return 'השדה ' + param + ' לא מופיע ברשימת הפרמטרים של התבנית';
 
 				}
 			default:
@@ -172,6 +173,7 @@ $(function() {
 					case 'button hint': return 'Template parameters wizard';
 					case 'able templates category name': throw('Must define category name for wizard-capable templates');
 					case 'template selector title': return 'Please select a template from this list';
+					case 'notInParamPage': return 'field ' + param + ' does not appear in the template\'s parameters list';
 
 				}
 		}
@@ -262,29 +264,41 @@ $(function() {
 		}
 	}
 	
+	function tipsyContent() {
+		var 
+			paramName = $(this).text(),
+			def = templateParams[paramName],
+			desc = def.desc || '';
+		if (def.htmlDesc)
+			return def.htmlDesc;
+		if (def.options.notInParamPage)
+			return i18n('notInParamPage', paramName);
+		if (/[\[\]\{\}\<\>]/.test(desc)) // does it need parsing?
+			$.ajax({
+				url: mw.util.wikiScript('api'),
+				async: false,
+				type: 'post',
+				data: {action: 'parse', text: desc, disablepp: 1, format: 'json'}, // parse it.
+				success: function(data) {
+					var div = $('<div>').html(data.parse.text['*']);
+					$('a', div).attr({target: '_blank'});
+					def.htmlDesc = div.html();
+				}
+			});
+		else
+			def.htmlDesc = desc;
+		return def.htmlDesc;
+	}
+	
 	function addRow(paramName, table) {
-		function tipsyContent() {
-			var desc = templateParams[$(this).text()].desc || '';
-			if (/[\[\]\{\}\<\>]/.test(desc)) // does it need parsing?
-				$.ajax({
-					url: mw.util.wikiScript('api'),
-					async: false,
-					type: 'post',
-					data: {action: 'parse', text: desc, disablepp: 1, format: 'json'}, // parse it.
-					success: function(data) {
-						var div = $('<div>').html(data.parse.text['*']);
-						$('a', div).attr({target: '_blank'});
-						desc = div.html();
-					}
-				})
-			return desc;
-		};
-		
-		var inputField = createInputField(paramName),
+		var 
+			def = templateParams[paramName],
+			inputField = createInputField(paramName),
+			nameColor = def.desc ? 'blue' : (def.options.notInParamPage ? 'red' : 'black'),
 			tr = $('<tr>')
 				.append(
 					$('<td>', {width: 120})
-					.css({fontWeight: 'bold', color: templateParams[paramName].desc ? 'blue' : 'black'})
+					.css({fontWeight: 'bold', color: nameColor})
 					.text(paramName)
 					.tipsy({html: true, trigger: 'manual', title: tipsyContent})
 					.mouseenter(function() {
