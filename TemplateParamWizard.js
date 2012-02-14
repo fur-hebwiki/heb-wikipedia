@@ -23,7 +23,10 @@ $(function() {
 		fieldsBypName,
 	//collected from API using the category
 		allTemplates,
-		rtl = $('body').is('.rtl');
+		rtl = $('body').is('.rtl'),
+	// test to see if a string contains wikiCode and hence needs parsing, or cen be used as is.
+		wikiCodeFinder = /[\[\]\{\}\<\>]/,
+		globalExplanation = '';
 
 	function paramsFromSelection() {
 		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/^\s*\{\{|\}\}\s*$/g, ''); //scrap the first {{ and last }}
@@ -53,13 +56,37 @@ $(function() {
 		}
 	}
 
+
 	function buildParams(data) {
-		var lines = data.split("\n");
+		var
+			lines = data.split("\n"),
+			line;
+
+		function extractGlobalExplanation() {
+			line = line.replace(/[!\|][^\|]*\|/, '');
+			if (wikiCodeFinder.test(line))
+				$.post(
+					mw.util.wikiScript('api'),
+					{action: 'parse', text: line, disablepp: 1, format: 'json'},
+					function(data) {
+						var html = data.parse.text['*'];
+						globalExplanation = html;
+						$('#tpw_globalExplanation').html(html).find('a').attr({target: '_blank'});
+					}
+				);
+			else
+				globalExplanation = line;
+		}
+
 		while (lines && lines.length) {
-			var line = lines.shift();
+			line = lines.shift();
 				if (!(/^\|-/.test(line))) // look for |- this is wikitext for table row.
 					continue;
 			line = lines.shift();
+			if (line.indexOf('globalExplanation') + 1) {
+				extractGlobalExplanation()
+				continue;
+			}
 			if (! line || ! (/^\|/.test(line))) //wikitext for column
 				continue;
 			line = line.substr(1); // get rid of the leading |
@@ -110,13 +137,13 @@ $(function() {
 
 	function showPreview() {
 		var temp = createWikiCode();
-		$.post(mw.util.wikiScript('api'), 
-			{action: 'parse', 
-				title: mw.config.get('wgPageName'), 
-				prop: 'text', 
-				text: temp, 
+		$.post(mw.util.wikiScript('api'),
+			{action: 'parse',
+				title: mw.config.get('wgPageName'),
+				prop: 'text',
+				text: temp,
 				format: 'json'
-			}, 
+			},
 			function(data) {
 				if (data && data.parse && data.parse.text) {
 					var buttons = [{text: i18n('close'), click: function() {$(this).dialog('close');}}],
@@ -143,7 +170,9 @@ $(function() {
 		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
-					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.';
+					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.' + '<br />' +
+						'מידע נוסף עשוי להימצא ב' +
+						'<a href="' + mw.util.wikiGetlink('תבנית:' + template) + '" target="_blank">' + 'דף התבנית.' + '</a>';
 					case 'wizard dialog title': return 'מילוי הפרמטרים עבור תבנית: ' + template;
 					case 'ok': return 'אישור';
 					case 'cancel': return 'ביטול'
@@ -256,15 +285,15 @@ $(function() {
 		return f;
 	}
 
-	var 
-		timer = null, 
+	var
+		timer = null,
 		lastVisited = $('<a>');
-	
+
 	function enterTipsy() {
 		clearTimeout(timer);
 		$(this).attr('inside', 1);
 	}
-	
+
 	function leaveTipsy() {
 		var $this = $(this);
 		if ($this.attr('master') || $this.attr('inside')) {
@@ -272,9 +301,9 @@ $(function() {
 			timer = setTimeout(function(){lastVisited.tipsy('hide');}, 500);
 		}
 	}
-	
+
 	function tipsyContent() {
-		var 
+		var
 			paramName = $(this).text(),
 			def = templateParams[paramName],
 			desc = def.desc || '';
@@ -285,7 +314,7 @@ $(function() {
 				.append(i18n('notInParamPage', paramName) + '<br />')
 				.append($('<a>', {href: mw.util.wikiGetlink(paramPage()) + '?action=edit', target: '_blank', text: i18n('editParamPage')}))
 				.html();
-		if (/[\[\]\{\}\<\>]/.test(desc)) // does it need parsing?
+		if (wikiCodeFinder.test(desc)) // does it need parsing?
 			$.ajax({
 				url: mw.util.wikiScript('api'),
 				async: false,
@@ -301,9 +330,9 @@ $(function() {
 			def.htmlDesc = desc;
 		return def.htmlDesc;
 	}
-	
+
 	function addRow(paramName, table) {
-		var 
+		var
 			def = templateParams[paramName],
 			inputField = createInputField(paramName),
 			nameColor = def.desc ? 'blue' : (def.options.notInParamPage ? 'red' : 'black'),
@@ -346,6 +375,7 @@ $(function() {
 					position: [$('body').width() * 0.2, $('body').height() * 0.1],
 					open: function() {$(this).css({'max-height': Math.round($('body').height() * 0.7)});}
 			})
+			.append($('<div>', {id: 'tpw_globalExplanation'}).html(globalExplanation))
 			.append($('<p>').html(i18n('explain')))
 			.append(table)
 			.append($('<p>').css({height: '2em'}))
