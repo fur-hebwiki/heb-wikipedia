@@ -110,21 +110,28 @@ $(function() {
 
 	function showPreview() {
 		var temp = createWikiCode();
-		$.post(mw.util.wikiScript('api'), {action: 'parse', title: mw.config.get('wgPageName'), prop: 'text', text: temp, format: 'json'}, function(data) {
-			if (data && data.parse && data.parse.text) {
-				var buttons = [{text: i18n('close'), click: function() {$(this).dialog('close');}}],
-					div = $('<div>').html(data.parse.text['*']);
-				$('a', div).attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
-				$('<div>')
-					.dialog(
-						{title: i18n('preview'),
-						modal: true,
-						position: [60, 60],
-						buttons: buttons})
-					.append(div);
-				circumventRtlBug();
-			}
-		});
+		$.post(mw.util.wikiScript('api'), 
+			{action: 'parse', 
+				title: mw.config.get('wgPageName'), 
+				prop: 'text', 
+				text: temp, 
+				format: 'json'
+			}, 
+			function(data) {
+				if (data && data.parse && data.parse.text) {
+					var buttons = [{text: i18n('close'), click: function() {$(this).dialog('close');}}],
+						div = $('<div>').html(data.parse.text['*']);
+					$('a', div).attr('target', '_blank'); // we don't want people to click on links in preview - they'll lose their work.
+					$('<div>')
+						.dialog(
+							{title: i18n('preview'),
+							modal: true,
+							position: [60, 60],
+							buttons: buttons})
+						.append(div);
+					circumventRtlBug();
+				}
+			});
 	}
 
 	function circumventRtlBug() {
@@ -152,7 +159,8 @@ $(function() {
 					case 'button hint': return 'אשף מילוי תבניות';
 					case 'able templates category name': return 'תבניות הנתמכות על ידי אשף התבניות';
 					case 'template selector title': return 'אנא בחרו תבנית מהרשימה:';
-					case 'notInParamPage': return 'השדה ' + param + ' לא מופיע ברשימת הפרמטרים של התבנית';
+					case 'notInParamPage': return 'השדה "' + param + '" לא מופיע ברשימת הפרמטרים של התבנית';
+					case 'editParamPage': return 'לעריכת דף הפרמטרים';
 
 				}
 			default:
@@ -173,7 +181,8 @@ $(function() {
 					case 'button hint': return 'Template parameters wizard';
 					case 'able templates category name': throw('Must define category name for wizard-capable templates');
 					case 'template selector title': return 'Please select a template from this list';
-					case 'notInParamPage': return 'field ' + param + ' does not appear in the template\'s parameters list';
+					case 'notInParamPage': return 'field "' + param + '" does not appear in the template\'s parameters list';
+					case 'editParamPage': return 'Edit paramters page';
 
 				}
 		}
@@ -272,7 +281,10 @@ $(function() {
 		if (def.htmlDesc)
 			return def.htmlDesc;
 		if (def.options.notInParamPage)
-			return i18n('notInParamPage', paramName);
+			return $('<div>')
+				.append(i18n('notInParamPage', paramName) + '<br />')
+				.append($('<a>', {href: mw.util.wikiGetlink(paramPage()) + '?action=edit', target: '_blank', text: i18n('editParamPage')}))
+				.html();
 		if (/[\[\]\{\}\<\>]/.test(desc)) // does it need parsing?
 			$.ajax({
 				url: mw.util.wikiScript('api'),
