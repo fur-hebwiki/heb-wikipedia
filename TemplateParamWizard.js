@@ -1,4 +1,4 @@
-//Template parameters wizard
+﻿//Template parameters wizard
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
 mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.dialog'], function() {
@@ -436,7 +436,8 @@ $(function() {
 
 	function fireDialog() {
 		$.ajax({
-			url: mw.util.wikiScript() + '?title=' + mw.util.wikiUrlencode(paramPage()) + '&action=raw&ctype=text/x-wiki',
+			url: mw.util.wikiScript(),
+			data: {title: paramPage(), action: 'raw', ctype: 'text/x-wiki'},
 			success: buildDialog,
 			error: reportError
 		});
