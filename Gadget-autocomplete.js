@@ -7,12 +7,14 @@ mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelecti
 $.fn.autoCompleteWikiText=function(options){
 	var mode="none";
 	var ctrl=$(this);
-	var settings = $.extend({
+	var settings = $.extend(true, {
 		positionMy: $('body').is('.rtl')? "left top" : "right top", // be default, open below the control
 		positionAt: $('body').is('.rtl')? "left bottom" : "right bottom",
 		positionOf: ctrl, 
 		positionOffset: "0",
 		filterResponse: function(a){return a;}, // function that expects array of string and returns array of strings
+		menuCSS: {width: 'auto', maxHeight: '30em', 'overflow-y': 'auto'},
+		itemCSS: {},
 		onselected: function(item){
 			var pos=ctrl.textSelection('getCaretPosition')-1;
 			var txt=ctrl.val();
@@ -97,17 +99,15 @@ $.fn.autoCompleteWikiText=function(options){
 					},
 					open:function(){
 						$(".ui-autocomplete")
-							.css({
-								width: '400px', 
-								maxHeight: '30em', 
-								overflow: 'auto'})
+							.css(settings.menuCSS)
 							.position({
 								my: settings.positionMy,
 								at: settings.positionAt,
 								of: settings.positionOf,
 								offset: settings.positionOffset,
 								collision: 'none fit'
-								});
+								})
+							.find('li').css(settings.itemCSS);
 					}
 	});
 	var fixed=false;
@@ -185,5 +185,12 @@ if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
 mw.loader.using(['jquery.ui.widget','jquery.ui.autocomplete','jquery.textSelection'],function(){
 
 	//enable autocomplete for editbox, relative to editform in an offset of -80 vertical
-	$( "#wpTextbox1" ).autoCompleteWikiText({positionMy: "left top", positionAt: "left top", positionOf: '#editform', positionOffset: "0 0"});
+	$( "#wpTextbox1" ).autoCompleteWikiText(
+		{positionMy: "left top", 
+		positionAt: "left top", 
+		positionOf: '#editform', 
+		positionOffset: "0 0",
+		menuCSS: { maxHeight:'5em',background:'#E0EEF7'},
+		itemCSS: {padding: 0, margin: 0, clear: 'none',width:'auto'}
+		});
 });
