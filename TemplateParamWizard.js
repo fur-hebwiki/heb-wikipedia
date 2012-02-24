@@ -188,7 +188,9 @@ $(function() {
 					case 'template selector title': return 'אנא בחרו תבנית מהרשימה:';
 					case 'notInParamPage': return 'השדה "' + param + '" לא מופיע ברשימת הפרמטרים של התבנית';
 					case 'editParamPage': return 'לעריכת דף הפרמטרים';
-
+					case 'no param page': return 'לתבנית "' + param + '" אין דף דף פרמטרים - האשף לא יכול לפעול ללא דף כזה';
+					case 'unknown error': return 'טעות בהפעלת האשף.\n' + param;
+					case 'please select template': return 'בחרו תבנית מהרשימה';
 				}
 			default:
 				switch (key) {
@@ -210,6 +212,9 @@ $(function() {
 					case 'template selector title': return 'Please select a template from this list';
 					case 'notInParamPage': return 'field "' + param + '" does not appear in the template\'s parameters list';
 					case 'editParamPage': return 'Edit paramters page';
+					case 'no param page': return 'Template "' + param + '" has no "parameters" page. Wizard can\'t be used.';
+					case 'unknown error': return 'Error occured: \n' + param;
+					case 'please select template': return 'select a template from the list';
 
 				}
 		}
@@ -406,7 +411,7 @@ $(function() {
 
 	function reportError(a,b,error) {
 		if (error == "Not Found")
-			error = 'לתבנית "' + template + '" אין דף דף פרמטרים - האשף לא יכול לפעול ללא דף כזה';
+			error = i18n('no param page', template);
 		if (typeof console != 'undefined') {
 			for (key in a)
 				if (typeof a[key] != 'function')
@@ -414,23 +419,30 @@ $(function() {
 			console.log(b);
 			console.log(error);
 		}
-		alert('טעות בהפעלת האשף.' + '\n' + error);
+		alert(i18n('unknown error', error));
 	}
 
 	function pickTemplate() {
-		var selector = $('<select>');
+		var 
+			templateSelector,
+			selector = $('<select>')
+				.append($('<option>', {value: '', text: i18n('please select template')}))
+				.change(function() {
+					template = selector.val(); 
+					fireDialog(); 
+					templateSelector.dialog("close");
+				});
 		for (var i in allTemplates)
 			selector.append($('<option>', {value: allTemplates[i], text: allTemplates[i]}));
-		var templateSelector = $('<div>').dialog({
-			title: i18n('template selector title'),
-			height: 'auto',
-			width: 'auto',
-			modal: true,
-			buttons: [
-				{text: i18n('ok'), click: function(){template = selector.val(); fireDialog(); templateSelector.dialog("close")}},
-				{text: i18n('cancel'), click: function(){templateSelector.dialog("close")}}
-			]
-		}).append(selector);
+		templateSelector = $('<div>')
+			.dialog({
+				title: i18n('template selector title'),
+				height: 'auto',
+				width: 'auto',
+				modal: true,
+				buttons: [{text: i18n('cancel'), click: function() {templateSelector.dialog("close")}}]
+			})
+			.append(selector);
 		circumventRtlBug();
 	}
 
