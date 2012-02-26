@@ -21,8 +21,7 @@ $(function() {
 		rowsBypName,
 	// the fields, keyed by paramName
 		fieldsBypName,
-	//collected from API using the category
-//		allTemplates,
+	// boolean, indicating we did not find "Parameters" page, so the parameters are extracted from template page itself.
 		rawTemplate,
 		rtl = $('body').is('.rtl'),
 	// test to see if a string contains wikiCode and hence needs parsing, or cen be used as is.
@@ -58,13 +57,13 @@ $(function() {
 	}
 
 	function buildParamsRaw(data) {
-		var 
+		var
 			paramExtractor = /{{3,}(.*?)[\|}]/mg,
 			m;
 		while (m = paramExtractor.exec(data))
-			templateParams[m[1]] = {desc: '', options: {}};
+			templateParams[m[1]] = {desc: '', options: {multiline: 5}};
 	}
-	
+
 	function buildParams(data) {
 		var
 			lines = data.split("\n"),
@@ -178,8 +177,10 @@ $(function() {
 		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
-					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.';
-					case 'wizard dialog title': return 'מילוי הפרמטרים עבור ' + '<a href="' + mw.util.wikiGetlink('תבנית:' + template) + '" target="_blank">' + 'תבנית:' + template  + '</a>';
+					case 'explain': return rawTemplate
+						? 'לתבנית "' + template + '" אין דף פרמטרים, ולכן לשדות אין תיאור.'
+						: 'השדות המסומנים באדום הם חובה, השאר אופציונליים.';
+					case 'wizard dialog title': return 'מילוי הפרמטרים עבור ' + '<a href="' + mw.util.wikiGetlink('תבנית:' + template) + '" target="_blank">' + 'תבנית:' + template + '</a>';
 					case 'ok': return 'אישור';
 					case 'cancel': return 'ביטול'
 					case 'params subpage': return 'פרמטרים';
@@ -196,7 +197,8 @@ $(function() {
 					case 'template selector title': return 'אנא בחרו תבנית מהרשימה:';
 					case 'notInParamPage': return 'השדה "' + param + '" לא מופיע ברשימת הפרמטרים של התבנית';
 					case 'editParamPage': return 'לעריכת דף הפרמטרים';
-
+					case 'unknown error': return 'טעות בהפעלת האשף.\n' + param;
+					case 'please select template': return 'בחרו תבנית מהרשימה';
 				}
 			default:
 				switch (key) {
@@ -218,6 +220,8 @@ $(function() {
 					case 'template selector title': return 'Please select a template from this list';
 					case 'notInParamPage': return 'field "' + param + '" does not appear in the template\'s parameters list';
 					case 'editParamPage': return 'Edit paramters page';
+					case 'unknown error': return 'Error occured: \n' + param;
+					case 'please select template': return 'select a template from the list';
 
 				}
 		}
@@ -423,7 +427,7 @@ $(function() {
 			console.log(b);
 			console.log(error);
 		}
-		alert('טעות בהפעלת האשף.' + '\n' + error);
+		alert(i18n('unknown error', error));
 	}
 
 	function pickTemplate() {
@@ -453,7 +457,7 @@ $(function() {
 		}).append(selector);
 		circumventRtlBug();
 	}
-	
+
 	function fireDialog() {
 		rawTemplate = false;
 		$.ajax({
@@ -479,7 +483,7 @@ $(function() {
 		template = match ? $.trim(match[1]) : null;
 		if (template)
 			fireDialog();
-		else 
+		else
 			pickTemplate();
 	}
 
@@ -491,7 +495,7 @@ $(function() {
 				group: 'more',
 				tools: {
 					'linkTemplatewizard': {
-						label: i18n('button hint') + ' test',
+						label: i18n('button hint'),
 						type: 'button',
 						icon: buttonImage,
 						action: {type: 'callback', execute: doIt}
@@ -500,7 +504,7 @@ $(function() {
 			});
 		else
 			$('div #toolbar').append( // "old style"
-				$('<img>', {src: buttonImage, title: i18n('button hint') + ' test', 'class': 'mw-toolbar-editbutton'})
+				$('<img>', {src: buttonImage, title: i18n('button hint'), 'class': 'mw-toolbar-editbutton'})
 				.css({cursor: 'pointer'})
 				.click(doIt)
 			);
