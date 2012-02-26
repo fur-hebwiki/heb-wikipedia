@@ -1,7 +1,7 @@
 ﻿//Template parameters wizard
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
-mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.dialog'], function() {
+mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.autocomplete', 'jquery.ui.dialog'], function() {
 $(function() {
 	// template parameter is an object with the following fields:
 	// desc: desciption string
@@ -22,7 +22,8 @@ $(function() {
 	// the fields, keyed by paramName
 		fieldsBypName,
 	//collected from API using the category
-		allTemplates,
+//		allTemplates,
+		rawTemplate,
 		rtl = $('body').is('.rtl'),
 	// test to see if a string contains wikiCode and hence needs parsing, or cen be used as is.
 		wikiCodeFinder = /[\[\]\{\}\<\>]/,
@@ -56,7 +57,14 @@ $(function() {
 		}
 	}
 
-
+	function buildParamsRaw(data) {
+		var 
+			paramExtractor = /{{3,}(.*?)[\|}]/mg,
+			m;
+		while (m = paramExtractor.exec(data))
+			templateParams[m[1]] = {desc: '', options: {}};
+	}
+	
 	function buildParams(data) {
 		var
 			lines = data.split("\n"),
@@ -216,9 +224,9 @@ $(function() {
 		return key;
 	}
 
-	function paramPage() {
-		return mw.config.get('wgFormattedNamespaces')[10] + ':' + $.trim(template) + '/' + i18n('params subpage');
-	}
+	function paramPage() {return mw.config.get('wgFormattedNamespaces')[10] + ':' + $.trim(template) + '/' + i18n('params subpage');}
+
+	function templatePage() {return mw.config.get('wgFormattedNamespaces')[10] + ':' + $.trim(template);}
 
 	function updateRawPreview(){
 		var canOK = 'enable';
@@ -362,7 +370,10 @@ $(function() {
 
 	function buildDialog(data) {
 		$('.tpw_disposable').remove();
-		buildParams(data);
+		if (rawTemplate)
+			buildParamsRaw(data)
+		else
+			buildParams(data);
 		paramsFromSelection();
 		var	table = $('<table>');
 		var dialog = $('<div>', {'class': 'tpw_disposable'})
@@ -405,8 +416,6 @@ $(function() {
 	}
 
 	function reportError(a,b,error) {
-		if (error == "Not Found")
-			error = 'לתבנית "' + template + '" אין דף דף פרמטרים - האשף לא יכול לפעול ללא דף כזה';
 		if (typeof console != 'undefined') {
 			for (key in a)
 				if (typeof a[key] != 'function')
@@ -418,9 +427,20 @@ $(function() {
 	}
 
 	function pickTemplate() {
-		var selector = $('<select>');
-		for (var i in allTemplates)
-			selector.append($('<option>', {value: allTemplates[i], text: allTemplates[i]}));
+		var selector = $('<input>')
+			.css({width: '28em'})
+			.autocomplete({
+				source: function(request, response) {
+					$.getJSON(
+						mw.util.wikiScript('api'),
+						{action:'opensearch', search: request.term, namespace: 10},
+						function(data){
+							if(data[1])
+								response($(data[1]).map(function(index,item){return item.replace(/.*:/, '');}));
+						}
+					);
+				},
+			});
 		var templateSelector = $('<div>').dialog({
 			title: i18n('template selector title'),
 			height: 'auto',
@@ -433,41 +453,22 @@ $(function() {
 		}).append(selector);
 		circumventRtlBug();
 	}
-
-	function findTemplate(data) {
-		if (data) {
-			$(data.query.categorymembers).each(function(){
-				allTemplates.push(this.title.replace(/.*:/, ''));
-			});
-			if (!data['query-continue'] && allTemplates.length)
-				pickTemplate();
-		}
-		if (!data || data['query-continue']) {
-			var params = {
-				action: 'query',
-				list: 'categorymembers',
-				cmtitle: 'Category:' + i18n('able templates category name'),
-				cmlimit: 500,
-				format: 'json'
-			};
-			if (data && data['query-continue'])
-				params.cmcontinue = data['query-continue'].categorymembers.cmcontinue;
-			$.ajax({
-				url: mw.util.wikiScript('api'),
-				data: params,
-				type: 'post',
-				success: findTemplate,
-				error: reportError
-			});
-		}
-	}
-
+	
 	function fireDialog() {
+		rawTemplate = false;
 		$.ajax({
 			url: mw.util.wikiScript(),
 			data: {title: paramPage(), action: 'raw', ctype: 'text/x-wiki'},
 			success: buildDialog,
-			error: reportError
+			error: function() {
+				rawTemplate = true;
+				$.ajax({
+					url: mw.util.wikiScript(),
+					data: {title: templatePage(), action: 'raw', ctype: 'text/x-wiki'},
+					success: buildDialog,
+					error: reportError
+				});
+			}
 		});
 	}
 
@@ -478,11 +479,8 @@ $(function() {
 		template = match ? $.trim(match[1]) : null;
 		if (template)
 			fireDialog();
-		else {
-			allTemplates = [];
-			findTemplate();
-		}
-
+		else 
+			pickTemplate();
 	}
 
 	setTimeout(function() {
@@ -493,7 +491,7 @@ $(function() {
 				group: 'more',
 				tools: {
 					'linkTemplatewizard': {
-						label: i18n('button hint'),
+						label: i18n('button hint') + ' test',
 						type: 'button',
 						icon: buttonImage,
 						action: {type: 'callback', execute: doIt}
@@ -502,7 +500,7 @@ $(function() {
 			});
 		else
 			$('div #toolbar').append( // "old style"
-				$('<img>', {src: buttonImage, title: i18n('button hint'), 'class': 'mw-toolbar-editbutton'})
+				$('<img>', {src: buttonImage, title: i18n('button hint') + ' test', 'class': 'mw-toolbar-editbutton'})
 				.css({cursor: 'pointer'})
 				.click(doIt)
 			);
