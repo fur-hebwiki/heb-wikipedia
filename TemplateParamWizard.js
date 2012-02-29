@@ -1,7 +1,7 @@
 ﻿//Template parameters wizard
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
-mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.dialog'], function() {
+mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.autocomplete', 'jquery.ui.dialog'], function() {
 $(function() {
 	// template parameter is an object with the following fields:
 	// desc: desciption string
@@ -21,8 +21,8 @@ $(function() {
 		rowsBypName,
 	// the fields, keyed by paramName
 		fieldsBypName,
-	//collected from API using the category
-		allTemplates,
+	// boolean, indicating we did not find "Parameters" page, so the parameters are extracted from template page itself.
+		rawTemplate,
 		rtl = $('body').is('.rtl'),
 	// test to see if a string contains wikiCode and hence needs parsing, or cen be used as is.
 		wikiCodeFinder = /[\[\]\{\}\<\>]/,
@@ -56,6 +56,13 @@ $(function() {
 		}
 	}
 
+	function buildParamsRaw(data) {
+		var
+			paramExtractor = /{{3,}(.*?)[\|}]/mg,
+			m;
+		while (m = paramExtractor.exec(data))
+			templateParams[m[1]] = {desc: '', options: {multiline: 5}};
+	}
 
 	function buildParams(data) {
 		var
@@ -128,6 +135,7 @@ $(function() {
 				f = field[1],
 				hidden = f.parents('.tpw_hidden').length,
 				val = $.trim(f.val());
+			if(val=="" && f.attr('type') != 'checkbox') continue;//skip parameters with no value
 			if (f.attr('type') == 'checkbox' && ! f.prop('checked'))
 				val = "";
 			par.push(name + '=' + val);
@@ -170,8 +178,10 @@ $(function() {
 		switch (mw.config.get('wgContentLanguage')) {
 			case 'he':
 				switch (key) {
-					case 'explain': return  'השדות המסומנים באדום הם חובה, השאר אופציונליים.';
-					case 'wizard dialog title': return 'מילוי הפרמטרים עבור ' + '<a href="' + mw.util.wikiGetlink('תבנית:' + template) + '" target="_blank">' + 'תבנית:' + template  + '</a>';
+					case 'explain': return rawTemplate
+						? 'לתבנית "' + template + '" אין דף פרמטרים, ולכן לשדות אין תיאור.'
+						: 'השדות המסומנים באדום הם חובה, השאר אופציונליים.';
+					case 'wizard dialog title': return 'מילוי הפרמטרים עבור ' + '<a href="' + mw.util.wikiGetlink('תבנית:' + template) + '" target="_blank">' + 'תבנית:' + template + '</a>';
 					case 'ok': return 'אישור';
 					case 'cancel': return 'ביטול'
 					case 'params subpage': return 'פרמטרים';
@@ -185,12 +195,11 @@ $(function() {
 					case 'choices': return 'אפשרויות';
 					case 'button hint': return 'אשף מילוי תבניות';
 					case 'able templates category name': return 'תבניות הנתמכות על ידי אשף התבניות';
-					case 'template selector title': return 'אנא בחרו תבנית מהרשימה:';
+					case 'template selector title': return 'אנא הזינו את שם התבנית:';
 					case 'notInParamPage': return 'השדה "' + param + '" לא מופיע ברשימת הפרמטרים של התבנית';
 					case 'editParamPage': return 'לעריכת דף הפרמטרים';
-					case 'no param page': return 'לתבנית "' + param + '" אין דף דף פרמטרים - האשף לא יכול לפעול ללא דף כזה';
 					case 'unknown error': return 'טעות בהפעלת האשף.\n' + param;
-					case 'please select template': return 'בחרו תבנית מהרשימה';
+					case 'please select template': return 'שם התבנית';
 				}
 			default:
 				switch (key) {
@@ -209,21 +218,20 @@ $(function() {
 					case 'choices': return 'Choices';
 					case 'button hint': return 'Template parameters wizard';
 					case 'able templates category name': throw('Must define category name for wizard-capable templates');
-					case 'template selector title': return 'Please select a template from this list';
+					case 'template selector title': return 'Please enter the template name';
 					case 'notInParamPage': return 'field "' + param + '" does not appear in the template\'s parameters list';
 					case 'editParamPage': return 'Edit paramters page';
-					case 'no param page': return 'Template "' + param + '" has no "parameters" page. Wizard can\'t be used.';
 					case 'unknown error': return 'Error occured: \n' + param;
-					case 'please select template': return 'select a template from the list';
+					case 'please select template': return 'Please enter template name';
 
 				}
 		}
 		return key;
 	}
 
-	function paramPage() {
-		return mw.config.get('wgFormattedNamespaces')[10] + ':' + $.trim(template) + '/' + i18n('params subpage');
-	}
+	function paramPage() {return mw.config.get('wgFormattedNamespaces')[10] + ':' + $.trim(template) + '/' + i18n('params subpage');}
+
+	function templatePage() {return mw.config.get('wgFormattedNamespaces')[10] + ':' + $.trim(template);}
 
 	function updateRawPreview(){
 		var canOK = 'enable';
@@ -367,7 +375,10 @@ $(function() {
 
 	function buildDialog(data) {
 		$('.tpw_disposable').remove();
-		buildParams(data);
+		if (rawTemplate)
+			buildParamsRaw(data)
+		else
+			buildParams(data);
 		paramsFromSelection();
 		var	table = $('<table>');
 		var dialog = $('<div>', {'class': 'tpw_disposable'})
@@ -410,8 +421,6 @@ $(function() {
 	}
 
 	function reportError(a,b,error) {
-		if (error == "Not Found")
-			error = i18n('no param page', template);
 		if (typeof console != 'undefined') {
 			for (key in a)
 				if (typeof a[key] != 'function')
@@ -423,63 +432,48 @@ $(function() {
 	}
 
 	function pickTemplate() {
-		var 
-			templateSelector,
-			selector = $('<select>')
-				.append($('<option>', {value: '', text: i18n('please select template')}))
-				.change(function() {
-					template = selector.val(); 
-					fireDialog(); 
-					templateSelector.dialog("close");
-				});
-		for (var i in allTemplates)
-			selector.append($('<option>', {value: allTemplates[i], text: allTemplates[i]}));
-		templateSelector = $('<div>')
-			.dialog({
-				title: i18n('template selector title'),
-				height: 'auto',
-				width: 'auto',
-				modal: true,
-				buttons: [{text: i18n('cancel'), click: function() {templateSelector.dialog("close")}}]
-			})
-			.append(selector);
+		var selector = $('<input>')
+			.css({width: '28em'})
+			.autocomplete({
+				source: function(request, response) {
+					$.getJSON(
+						mw.util.wikiScript('api'),
+						{action:'opensearch', search: request.term, namespace: 10},
+						function(data){
+							if(data[1])
+								response($(data[1]).map(function(index,item){return item.replace(/.*:/, '');}));
+						}
+					);
+				}
+			});
+		var templateSelector = $('<div>').dialog({
+			title: i18n('template selector title'),
+			height: 'auto',
+			width: 'auto',
+			modal: true,
+			buttons: [
+				{text: i18n('ok'), click: function(){template = selector.val(); fireDialog(); templateSelector.dialog("close")}},
+				{text: i18n('cancel'), click: function(){templateSelector.dialog("close")}}
+			]
+		}).append(selector);
 		circumventRtlBug();
 	}
 
-	function findTemplate(data) {
-		if (data) {
-			$(data.query.categorymembers).each(function(){
-				allTemplates.push(this.title.replace(/.*:/, ''));
-			});
-			if (!data['query-continue'] && allTemplates.length)
-				pickTemplate();
-		}
-		if (!data || data['query-continue']) {
-			var params = {
-				action: 'query',
-				list: 'categorymembers',
-				cmtitle: 'Category:' + i18n('able templates category name'),
-				cmlimit: 500,
-				format: 'json'
-			};
-			if (data && data['query-continue'])
-				params.cmcontinue = data['query-continue'].categorymembers.cmcontinue;
-			$.ajax({
-				url: mw.util.wikiScript('api'),
-				data: params,
-				type: 'post',
-				success: findTemplate,
-				error: reportError
-			});
-		}
-	}
-
 	function fireDialog() {
+		rawTemplate = false;
 		$.ajax({
 			url: mw.util.wikiScript(),
 			data: {title: paramPage(), action: 'raw', ctype: 'text/x-wiki'},
 			success: buildDialog,
-			error: reportError
+			error: function() {
+				rawTemplate = true;
+				$.ajax({
+					url: mw.util.wikiScript(),
+					data: {title: templatePage(), action: 'raw', ctype: 'text/x-wiki'},
+					success: buildDialog,
+					error: reportError
+				});
+			}
 		});
 	}
 
@@ -490,36 +484,32 @@ $(function() {
 		template = match ? $.trim(match[1]) : null;
 		if (template)
 			fireDialog();
-		else {
-			allTemplates = [];
-			findTemplate();
-		}
-
+		else
+			pickTemplate();
 	}
 
-	setTimeout(function() {
-		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/e/eb/Button_plantilla.png';
+	$(document).ready(function() {
 		if (typeof $.wikiEditor == 'object' && $.wikiEditor.supported)
 			$('#wpTextbox1').wikiEditor('addToToolbar', {
 				section: 'advanced',
-				group: 'more',
+				group: 'wizards',
 				tools: {
 					'linkTemplatewizard': {
 						label: i18n('button hint'),
 						type: 'button',
-						icon: buttonImage,
+						icon: '//upload.wikimedia.org/wikipedia/commons/d/dd/Vector_toolbar_template_button.png',
 						action: {type: 'callback', execute: doIt}
 					}
 				}
 			});
 		else
 			$('div #toolbar').append( // "old style"
-				$('<img>', {src: buttonImage, title: i18n('button hint'), 'class': 'mw-toolbar-editbutton'})
+				$('<img>', {src: '//upload.wikimedia.org/wikipedia/commons/e/eb/Button_plantilla.png', title: i18n('button hint'), 'class': 'mw-toolbar-editbutton'})
 				.css({cursor: 'pointer'})
 				.click(doIt)
 			);
 
-	}, 120);
+	});
 
 });
 });
