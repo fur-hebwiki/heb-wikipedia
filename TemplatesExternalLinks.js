@@ -3,10 +3,7 @@
 if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
 mw.loader.using('jquery.textSelection', function() {
 
-
-
-
-	function templates(templateName) {
+    function templates(templateName) {
 		var constants = ["",
 			"שם המחבר",
 			"כותרת המאמר",
@@ -383,27 +380,26 @@ mw.loader.using('jquery.textSelection', function() {
 		dialog.append($('<input>', {type: 'text', maxLength: 1000, 'class': 'ltw_disposable'}).css({width: '14em'}).bind('paste cut drop input change', function() {fromTemplate(this.value);}));
 	}
 
-	setTimeout(function() {
-		var buttonImage = '//upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png';
+	$(document).ready(function() {
 		$('div #toolbar').append( // "old style"
-			$('<img>', {src: buttonImage, title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
+			$('<img>', {src: '//upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
 			.css({cursor: 'pointer'})
 			.click(function() {mediaWiki.loader.using('jquery.ui.dialog', fireDialog);})
 		);
 		if (typeof $.wikiEditor != 'undefined')
 			$('#wpTextbox1').wikiEditor('addToToolbar', {
 				section: 'advanced',
-				group: 'more',
+				group: 'wizards',
 				tools: {
 					'linkTemplatewizard': {
 						label: 'תבנית קישור',
 						type: 'button',
-						icon: buttonImage,
+						icon: '//upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Gnome-web-browser.svg/22px-Gnome-web-browser.svg.png',
 						action: {type: 'callback', execute: fireDialog}
 					}
 				}
 			});
-	}, 1000);
+	});
 
 });
 });
