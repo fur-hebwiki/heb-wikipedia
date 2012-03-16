@@ -1,6 +1,6 @@
 ﻿//Adds wizard for using templates for external links
 //Written by [[User:קיפודנחש]]
-if ($.inArray(wgAction, ['edit', 'submit']) + 1) $(document).ready(function() {
+if ($.inArray(wgAction, ['edit', 'submit']) + 1) 
 mw.loader.using('jquery.textSelection', function() {
 
 	function templates(templateName) {
@@ -80,6 +80,7 @@ mw.loader.using('jquery.textSelection', function() {
 			{t: 'חבצלת'},
 			{t: 'המליץ'},
 			{t: 'על המשמר'},
+			{t: 'היינט'},
 			{t: 'PalPost'},
 			{t: 'תנ"ך', p: [8,9,10], op:[2]},
 			{t: 'nrg', p: [1,2,3,4,0,19,20], r: /\/online\/([^\/]+)\/ART([^\/]*)\/([^\.]+).html/i, rp: [6,7,3], bm: 1, op:[3,4,5,6]},
@@ -167,7 +168,7 @@ mw.loader.using('jquery.textSelection', function() {
 			if (templatesAr[i].t == templateName)
 				template = templatesAr[i];
 
-		var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS", "על המשמר" : "AHR"};
+		var historic = {"דבר": "DAV", "מעריב": "MAR", "הצבי": "HZV", "הצפירה": "HZF", "המגיד": "MGD", "המליץ": "HMZ", "חבצלת": "HZT", "PalPost": "PLS", "על המשמר" : "AHR", "היינט": "HYT"};
 		if (historic[template.t]) {
 			var r = new RegExp('=HISTNAME/(\\d{4}/\\d{1,2}/\\d{1,2})(?:.*&EntityId=|/\\d+/)([A-Z][a-z])(\\d+)'.replace('HISTNAME', historic[template.t]));
 			$.extend(template, {p: [1,2,22,3,7,0,23], def: {7: "Ar"}, r: r, rp: [3,7,4], replace: [[/%2F/gi, '/']], op: [4,6]});
@@ -381,29 +382,35 @@ mw.loader.using('jquery.textSelection', function() {
 		dialog.append($('<input>', {type: 'text', maxLength: 1000, 'class': 'ltw_disposable'}).css({width: '14em'}).bind('paste cut drop input change', function() {fromTemplate(this.value);}));
 	}
 
-	$(document).ready(function() {
-		if (typeof $.wikiEditor != 'undefined' && $.wikiEditor.isSupported() && mw.user.options.get('usebetatoolbar'))
-			mw.loader.using('ext.wikiEditor.toolbar', function() {
-				$('#wpTextbox1').wikiEditor('addToToolbar', {
-					section: 'advanced',
-					group: 'wizards',
-					tools: {
-						'linkTemplatewizard': {
-							label: 'תבנית קישור',
-							type: 'button',
-							icon: '//upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Gnome-web-browser.svg/22px-Gnome-web-browser.svg.png',
-							action: {type: 'callback', execute: fireDialog}
+	if (mw.user.options.get('usebetatoolbar'))
+		mw.loader.using(['jquery.wikiEditor','jquery.wikiEditor.toolbar.config','ext.wikiEditor.toolbar'], function() {
+			if(typeof $.wikiEditor != 'undefined' && $.wikiEditor.isSupported())
+				$(function() {
+					$('#wpTextbox1').wikiEditor('addToToolbar', {
+						section: 'advanced',
+						groups: {
+							'wizards': {
+								tools: {
+									'linkTemplatewizard': {
+										label: 'תבנית קישור',
+										type: 'button',
+										icon: '//upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Gnome-web-browser.svg/22px-Gnome-web-browser.svg.png',
+										action: {type: 'callback', execute: fireDialog}
+									}
+								}
+							}
 						}
-					}
+					});
 				});
+		});
+	else
+		mw.loader.using('mediawiki.action.edit', function() {
+			$(function() {
+				$('div #toolbar').append( // "old style"
+					$('<img>', {src: '//upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
+					.css({cursor: 'pointer'})
+					.click(function() {mediaWiki.loader.using('jquery.ui.dialog', fireDialog);})
+				);
 			});
-		else
-			$('div #toolbar').append( // "old style"
-				$('<img>', {src: '//upload.wikimedia.org/wikipedia/commons/3/34/Button_LINK_HE1.png', title: 'תבנית קישור', 'class': 'mw-toolbar-editbutton'})
-				.css({cursor: 'pointer'})
-				.click(function() {mediaWiki.loader.using('jquery.ui.dialog', fireDialog);})
-			);
-	});
-
-});
+		});
 });

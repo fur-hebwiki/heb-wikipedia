@@ -1,7 +1,6 @@
 ﻿//Template parameters wizard
 //Written by [[User:קיפודנחש]]
 if($.inArray(mw.config.get('wgAction'), ['edit', 'submit'])+1)
-mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.autocomplete', 'jquery.ui.dialog'], function() {
 $(function() {
 	// template parameter is an object with the following fields:
 	// desc: desciption string
@@ -477,30 +476,36 @@ $(function() {
 		});
 	}
 
-
 	function doIt() {
-		init();
-		var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
-		template = match ? $.trim(match[1]) : null;
-		if (template)
-			fireDialog();
-		else
-			pickTemplate();
+		mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.autocomplete', 'jquery.ui.dialog'], function() {
+			init();
+			var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
+			template = match ? $.trim(match[1]) : null;
+			if (template)
+				fireDialog();
+			else
+				pickTemplate();
+		});
 	}
 
-	$(document).ready(function() {
-		if (typeof $.wikiEditor == 'object' && $.wikiEditor.supported)
-			$('#wpTextbox1').wikiEditor('addToToolbar', {
-				section: 'advanced',
-				group: 'wizards',
-				tools: {
-					'linkTemplatewizard': {
-						label: i18n('button hint'),
-						type: 'button',
-						icon: '//upload.wikimedia.org/wikipedia/commons/d/dd/Vector_toolbar_template_button.png',
-						action: {type: 'callback', execute: doIt}
+	if (mw.user.options.get('usebetatoolbar'))
+		mw.loader.using(['jquery.wikiEditor','jquery.wikiEditor.toolbar.config','ext.wikiEditor.toolbar'], function() {
+			if(typeof $.wikiEditor != 'undefined' && $.wikiEditor.isSupported())
+				$('#wpTextbox1').wikiEditor('addToToolbar', {
+					section: 'advanced',
+					groups: {
+						'wizards': {
+							tools: {
+								'linkTemplatewizard': {
+									label: i18n('button hint'),
+									type: 'button',
+									icon: '//upload.wikimedia.org/wikipedia/commons/d/dd/Vector_toolbar_template_button.png',
+									action: {type: 'callback', execute: doIt}
+								}
+							}
+						}
 					}
-				}
+				});
 			});
 		else
 			$('div #toolbar').append( // "old style"
@@ -508,8 +513,4 @@ $(function() {
 				.css({cursor: 'pointer'})
 				.click(doIt)
 			);
-
-	});
-
-});
 });
