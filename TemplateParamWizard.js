@@ -126,7 +126,8 @@ $(function() {
 	}
 
 	function createWikiCode() {
-		var par = [template];
+		var par = [template],
+			delim = $('#oneLineTemplate').prop('checked') ? '' : '\n';
 		for (var i in dialogFields) {
 			var
 				field = dialogFields[i],
@@ -139,7 +140,7 @@ $(function() {
 				val = "";
 			par.push(name + '=' + val);
 		}
-		return "{{" + par.join("\n|") + "\n}}";
+		return "{{" + par.join(delim + "|") + delim + "}}";
 	}
 
 	function showPreview() {
@@ -199,6 +200,7 @@ $(function() {
 					case 'editParamPage': return 'לעריכת דף הפרמטרים';
 					case 'unknown error': return 'טעות בהפעלת האשף.\n' + param;
 					case 'please select template': return 'שם התבנית';
+					case 'oneliner': return 'תבנית בשורה אחת';
 				}
 			default:
 				switch (key) {
@@ -222,6 +224,7 @@ $(function() {
 					case 'editParamPage': return 'Edit paramters page';
 					case 'unknown error': return 'Error occured: \n' + param;
 					case 'please select template': return 'Please enter template name';
+					case 'oneliner': return 'Single-line template';
 
 				}
 		}
@@ -391,7 +394,10 @@ $(function() {
 			.append($('<div>', {id: 'tpw_globalExplanation'}).html(globalExplanation))
 			.append($('<p>').html(i18n('explain')))
 			.append(table)
-			.append($('<p>').css({height: '2em'}))
+			.append($('<p>')
+				.append(i18n('oneliner'))
+				.append($('<input>', {type:'checkbox', id:'oneLineTemplate'}).change(updateRawPreview))
+				)
 			.append($('<pre>', {id: 'tpw_preview'})
 				.css({backgroundColor: "lightGreen", maxWidth: '40em', maxHeight: '8em', overflow: 'auto'}));
 
