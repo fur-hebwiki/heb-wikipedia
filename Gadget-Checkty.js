@@ -2,33 +2,31 @@
 // נכתב על ידי [[משתמש:ערן]] ו[[משתמש:קיפודנחש]]
 // ניתן להגדיר קיצור מקלדת לכפתור הבדיקה באמצעות הגדרת checkToolKey במונובוק האישי (לדוגמה checkToolKey ='a' כשalt+shift+a  יהיה קיצור המקלדת)
 // את כיתוב הכפתור ניתן לשנות מ"בדיקה" לשם הרצוי באמצעות הגדרת checkToolName במונובוק האישי. למשל checkToolName="בדיקת סגנון"
-if ($.inArray(mw.config.get('wgAction'), ['edit', 'submit']) + 1)
-	$(document).ready(addCheckButton);
-
-function addCheckButton(){
-	if (!window.checkToolName) checkToolName = 'בדיקה';
-	$('#wpPreview').after( $('<input type="button" id="btnCheckTool" tooltip="בדיקה" value="'+checkToolName+'" />').click(chectTyTool.run));
-}
-
 var chectTyTool={
 	textbox: null,
-	formatReplacesConfig:[
+	formatReplacesConfig: [
 		{from: /\[\[(.*?)\|\1([א-ת]*?)\]\]/g, to: '[[$1]]$2'},
-		{from: /([א-ת]\]?\]?) ?([,\.])(\[?\[?[א-ת]{3})/g ,to: "$1$2 $3"},
+		{from: /([א-ת]\]?\]?) ?([,\.]) ?(\[?\[?[א-ת]{3})/g ,to: "$1$2 $3"},
 		{from: /([א-ת])\( ?([א-ת])/g ,to: "$1 ($2"},
 		{from: /\t/g ,to: " "},
 		{from: /(\n\n)\n+/g ,to: "$1"},
 		{from: /== ? ?\n\n==/g ,to:"==\n=="},
 		{from: /^ ? ? \n/gm ,to:"\n"},
-		{from: /[ \t][ \t]+/g ,to: ' '},
-		],
+		{from: /(?!.{2}\|)[ \t]{2,}/g ,to: ' '},
+	],
 	regexes: [],
+	ignoreStrings: [],
 	run: function() {
-				if(this!=chectTyTool) {chectTyTool.run(); return;}
+		if (this != chectTyTool) {
+			chectTyTool.run(); 
+			return;
+		}
 		var t = $('#wpTextbox1');
 		this.textbox = t.length ? t[0] : null;
-		if(!this.textbox || this.textbox.value.length == 0) return;
-				if(!($('#checktyResults').length)) $('.editButtons').after('<div id="checktyResults" style="background:#ffEECC">הערות לבדיקה:</div>');
+		if (!this.textbox || this.textbox.value.length == 0) 
+			return;
+		if(!($('#checktyResults').length)) 
+			$('.editButtons').after('<div id="checktyResults" style="background:#ffEECC">הערות לבדיקה:</div>');
 		//first call to remote functions than to local
 		this.build_regexes();
 		this.checkImages();
@@ -36,17 +34,18 @@ var chectTyTool={
 		this.formatReplace();
 		this.languageCheck();
 		this.writeMsg($('<div>', {id: 'waitForDisambigs'}).text('ממתין לרשימת פירושונים מהשרת....'));
-		},
-		writeMsg:function(msg){
-				if(msg instanceof Array){
-				  if(msg.length==0) return;
-				  msg='<div>'+msg.join('<br/>')+'</div>';
-				}
+	},
+	writeMsg: function(msg) {
+		if (msg instanceof Array) {
+		  if (msg.length==0) 
+			return;
+		  msg='<div>'+msg.join('<br/>')+'</div>';
+		}
 		var x=$(msg).css('display','none').addClass('checktyMsg');
 		$('#checktyResults').append(x);
 		x.show('slow');
-		},
-		build_regexes: function(data) {
+	},
+	build_regexes: function(data) {
 		if (/\{\{\s*ללא_בוט\s*\}\}/.test(this.textbox.value)) {
 			this.writeMsg('<div>הדף מכיל תבנית "ללא בוט" ולכן לא יבוצעו החלפות</div>');
 			return;
@@ -70,6 +69,10 @@ var chectTyTool={
 				if (! (matches = lines.shift().match(clear_nowiki)))
 					continue;
 				this.regexes[num] = [regex, matches[1]];
+				var ignore = lines.shift().replace(/\||<\/?nowiki>/g, '');
+				ignore = $.trim(ignore);
+				if (ignore)
+					this.ignoreStrings.push($.escapeRE(ignore));
 			}
 			this.process_page();
 		}
@@ -94,9 +97,12 @@ var chectTyTool={
 				skip_ar.push(matches[1]);
 			}
 
-		var specials = []; 
+		var specials = [];
+		var ignoreRegex = new RegExp('(' + this.ignoreStrings.join('|') + ')');
 		while (true) { //extract inner links, inner templates and inner params - we don't want to sptit those.
-			var match = t.match(/(\{\{[^{}\]\[]*\}\}|\[\[[^{}\]\[]*\]\]|\[[^{}\]\[]*\](?:[^\]]))/);
+			var match = t.match(/(\{\{[^\{\}\]\[]*\}\}|\[\[[^\{\}\]\[]*\]\]|\[[^\{\}\]\[]*\])/);
+			if (! match || ! match.length)
+				match = t.match(ignoreRegex);
 			if (! match || ! match.length)
 				break;
 			specials.push(match[0]);
@@ -125,7 +131,7 @@ var chectTyTool={
 		this.writeMsg(msg);
 
 		if (actual_replaced.length && $('#wpSummary').val() == '')
-			$('#wpSummary').val('סקריפט החלפות (' + actual_replaced.join(', ') + ') ');
+			$('#wpSummary').val('סקריפט החלפות (' + actual_replaced.join(', ') + ')');
 	},
 	formatReplace:function(){
 		var txt = this.textbox.value;
@@ -173,10 +179,10 @@ var chectTyTool={
 		}
 		else { dabLinksAjaxCheck(disambigResponse); }
 	},
-	resolveDisambig: function(name,data){
+	resolveDisambig: function(name, data){
 		var offset=0;
 		var textbox=this.textbox;
-		var linkRgx=new RegExp('(?:\\.|^)([^\\.\n]*\\[\\['+name.replace(/([\(\)\"\'\?])/g, "\\$1") +'[\\|\\]].*?)[\\.\\n]','m');
+		var linkRgx=new RegExp('(?:\\.|^)([^\\.\n]*\\[\\['+ $.escapeRE(name) +'[\\|\\]].*?)[\\.\\n]','m');
 		var cSentence=$('<div>');
 		var options=$('<div>').append($('li',data).map(function(){
 			var a = $(this).children('a').get(0);
@@ -190,7 +196,10 @@ var chectTyTool={
 			}
 			return a || null;
 		}).click(resolve));
-		var disambigDialog=$('<div>').append('מה הכוונה ב "' + name + '" במשפט: ' + '<hr/>').append(cSentence).append(options.buttonset()).dialog({title: 'תיקון פירושונים'});
+		var orgPos=$(textbox).textSelection('getCaretPosition');
+		var disambigDialog=$('<div>').append('מה הכוונה ב "' + name + '" במשפט: ' + '<hr/>').append(cSentence).append(options.buttonset()).dialog({title: 'תיקון פירושונים',close:function(){
+			$(textbox).textSelection('setSelection', { start: orgPos });
+		}});
 		findSentence();
 		function findSentence(){
 			var text=textbox.value.substr(offset);
@@ -214,24 +223,55 @@ var chectTyTool={
 			text=text.substr(0,startLink+2)+answer+text.substr(startLink+2+name.length);
 			textbox.value=text;
 			findSentence();
+			var editSummary = $('#wpSummary').val();
+			if(editSummary.indexOf('פירושונים')===-1){
+				$('#wpSummary').val(editSummary + (editSummary.length==0? '' : ', ') + 'תיקון קישור לפירושונים');
+			}
 			return false;
 		}
 	},
 	checkImages: function(data){
 		if(!data){
-//in case there are no images in page
-		if(!mw.util.getParamValue('section') && !(/\[\[(תמונה|קובץ|File|Image):/i.test(this.textbox.value)))
-		{
-			var fistURL=this.fistURL({datatype:'articles',data: mw.config.get('wgPageName')});
-			var msg=$('<div>',{text:'בדף זה אין תמונות. ניתן לחפש תמונות חופשיות ממקורות שונים. '}).append($('<a>',{href:fistURL,text:'חיפוש תמונות',target:'_blank'}));
-			this.writeMsg(msg);
-			return;
-		}
-		$.getJSON(mw.util.wikiScript('api'),{action:'query',generator:'images',titles:mw.config.get('wgPageName'),prop:'templates',format:'json'},
-			function(data){
-				if(data && data.query && data.query.pages) chectTyTool.checkImages(data.query.pages);
-			});
+			var mEn=/\[\[en:(.*?)\]\]/.exec(this.textbox.value);
+				//suggest adding commons link according to en interwiki
+				if(mEn && !(/{{מיזמים[\s\S.]*\|ויקישיתוף/m.test(this.textbox.value)) && !(/{{ויקישיתוף בשורה/m.test(this.textbox.value)))
+				{
+					$.getJSON('//en.wikipedia.org'+mw.util.wikiScript('api')+'?callback=?',{action:'query',prop: 'extlinks',titles:mEn[1],elquery:'commons.wikimedia.org',format:'json'},
+						function(data){
+							if(data && data.query && data.query.pages)
+							{
+								for(var pageId in data.query.pages){
+									var enPage=data.query.pages[pageId];
+									if(enPage.extlinks && enPage.extlinks[0] && enPage.extlinks[0]['*'])
+									{
+										var commonLink='{{ויקישיתוף בשורה|'+/wiki\/(.*)/.exec(enPage.extlinks[0]['*'])[1]+'}}';
+										var msg=$('<div>',{text:'בערך זה חסר קישור לוויקישיתוף. ניתן להוסיף קישור באמצעות בחירת המקום הנכון להוספתו בערך ולחיצה על הקישור הבא. '}).append($('<a>',{href:'#',text:'להוספה'}).click(function(){mw.toolbar.insertTags(commonLink)}));
+										chectTyTool.writeMsg(msg);
+									}
+								}
+							}
+						});
+				}
+	//in case there are no images in page
+			if(!mw.util.getParamValue('section') && !(/\[\[(תמונה|קובץ|File|Image):/i.test(this.textbox.value)))
+			{
+				var articleName=mw.config.get('wgPageName');
+				//run fist on english interwiki too if such exist
+				if(mEn) articleName+='%0D%0A'+mEn[1];
+				var fistURL=this.fistURL({datatype:'articles',data: articleName});
+				var msg=$('<div>',{text:'בדף זה אין תמונות. ניתן לחפש תמונות חופשיות ממקורות שונים. '}).append($('<a>',{href:fistURL,text:'חיפוש תמונות',target:'_blank'}));
+				this.writeMsg(msg);
+				return;
 			}
+			$.getJSON(
+				mw.util.wikiScript('api'),
+				{action:'query',generator:'images',titles:mw.config.get('wgPageName'),prop:'templates',format:'json'},
+				function(data){
+					if(data && data.query && data.query.pages) 
+						chectTyTool.checkImages(data.query.pages);
+				}
+			);
+		}
 		else
 		{
 			var fairUsageTemplates=['תבנית:שימוש הוגן'];
@@ -266,51 +306,53 @@ var chectTyTool={
 		var remarkWrongConditionalExpressionEnd = 'במובן של מילת תנאי. אם זהו משפט תנאי, יש לכתוב במקומו את המילה אם.';
 		var remarkObviousEnd = ". אם הפרט אכן ידוע לכול, אין טעם לציין זאת, ואם לא אז מעורר תחושת בורות אצל הקוראים (מידע נוסף ב ויקיפדיה:לשון)";
 		var checks=[
-			{'test':'במידה ש','remark':remarkPossibleUnsuitableExpressionStart + 'במידה ש' + remarkWrongConditionalExpressionEnd},
-			{'test':'במידה ו','remark':remarkPossibleUnsuitableExpressionStart + 'במידה ו' + remarkWrongConditionalExpressionEnd},
-			{'test':'בגלל ש','remark':remarkPossibleUnsuitableExpressionStart + 'בגלל ש. אם הוא אכן מופיע, מומלץ לשקול להחליפו בכיוון ש, משום ש, מאחר ש או מפני ש (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'עובדה מעניינת היא','remark':'אל תעיד אל עיסתך! מומלץ להימנע מהביטוים עובדה מעניינת היא או יש לציין. יש לתת לקורא להחליט אם העובדה ראויה לציון. (מידע נוסף ב ויקיפדיה:לשון'},
-			{'test':'יש לציין','remark':'אל תעיד אל עיסתך! מומלץ להימנע מהביטוים עובדה מעניינת היא או יש לציין. יש לתת לקורא להחליט אם העובדה ראויה לציון. (מידע נוסף ב ויקיפדיה:לשון'},
-			{'test':'כידוע' ,'remark':remarkUnsuitableExpressionStart + 'כידוע' + remarkObviousEnd},
-			{'test':'כמובן' ,'remark':remarkUnsuitableExpressionStart + 'כמובן' + remarkObviousEnd},
-			{'test':'נולד להוריו','remark':'בערך מוזכר הצירוף נולד להוריו. מן הסתם נולד להוריו, ואין צורך לציין זאת (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'נולדה להוריה','remark':'בערך מוזכר הצירוף נולדה להוריה. מן הסתם נולדה להוריה, ואין צורך לציין זאת (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'למרות ש' ,'remark':remarkPossibleUnsuitableExpressionStart + 'למרות ש. אם הוא אכן מופיע, מומלץ לשקול להחליפו באף על פי ש (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'זכה לביקורת','remark':remarkUnsuitableExpressionStart + 'זכה לביקורת. יש להעדיף את הביטוי ספג ביקורת (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'זכתה לביקורת','remark':remarkUnsuitableExpressionStart + 'זכתה לביקורת. יש להעדיף את הביטוי ספגה ביקורת (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'חייו המוקדמים' ,'remark':remarkUnsuitableExpressionStart + 'חייו המוקדמים. יש להעדיף ראשית חייו, ילדותו או נעוריו (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'חייה המוקדמים' ,'remark':remarkUnsuitableExpressionStart + 'חייה המוקדמים. יש להעדיף ראשית חייה, ילדותה או נעוריה (מידע נוסף ב ויקיפדיה:לשון)'},
-			{'test':'כנראה ש' ,'remark':remarkUnsuitableExpressionStart + 'כנראה ש. רצוי להחליפו בנראה ש'},
-			{'test':'להיכן','remark':remarkWhereWordStart + 'היכן' + remarkWhereWordEnd},
-			{'test':'מהיכן','remark':remarkWhereWordStart + 'היכן' + remarkWhereWordEnd},
-			{'test':'לאיפה','remark':remarkWhereWordStart + 'איפה' + remarkWhereWordEnd},
-			{'test':'מאיפה','remark':remarkWhereWordStart + 'איפה' + remarkWhereWordEnd},
-			{'test':'הכי טוב','remark':remarkUnsuitableExpressionStart + 'הכי טוב. כדאי לשקול להחליפו לטוב ביותר (מידע נוסף ב ויקיפדיה:שגיאות תרגום נפוצות)'},
-			{'test':'נפלא','remark':remarkSuperlatives},
-			{'test':'מחריד','remark':remarkSuperlatives},
-			{'test':'נהדר','remark':remarkSuperlatives},
-			{'test':'למרבה הצער','remark':remarkUnsuitableExpressionStart + 'למרבה הצער' + remarkEmoExpressionEnd},
-			{'test':'למרבה המזל','remark':remarkUnsuitableExpressionStart + 'למרבה המזל' + remarkEmoExpressionEnd},
-			{'test':'ראה את עצמו','remark':remarkUnsuitableExpressionStart + 'ראה את עצמו. אי אפשר להיכנס לראש של אדם ואי אפשר לדעת איך הוא ראה את עצמו (ראו ויקיפדיה:לשון)'},
-			{'test':'בתקופת תור','remark':remarkUnsuitableExpressionStart + 'בתקופת תור. אם פירוש המילה תור בהקשר זה הוא תקופה, זו כפילות מיותרת (ראו ויקיפדיה:לשון)'},
-			{'test':'כמו לדוגמה','remark':remarkUnsuitableExpressionStart + 'כמו לדוגמה. זו כפילות מיותרת (ראו ויקיפדיה:לשון)'},
-			{'test':'בשנים האחרונות','remark':remarkUnsuitableExpressionStart + 'בשנים האחרונות. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
-			{'test':'בימים אלה','remark':remarkUnsuitableExpressionStart + 'בימים אלה. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
-			{'test':'לאחרונה','remark':remarkUnsuitableExpressionStart + 'לאחרונה. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
-			{'test':'כיום','remark':remarkUnsuitableExpressionStart + 'כיום. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
-			{'test':' ז\"ל ' ,'remark':'אין להצמיד לאדם את התואר ז\"ל (מידע נוסף ב ויקיפדיה:עקרונות מיוחדים לשפה העברית)'}
+			{'test':/במידה ש/,'remark':remarkPossibleUnsuitableExpressionStart + 'במידה ש' + remarkWrongConditionalExpressionEnd},
+			{'test':/במידה ו/,'remark':remarkPossibleUnsuitableExpressionStart + 'במידה ו' + remarkWrongConditionalExpressionEnd},
+			{'test':/בגלל ש/,'remark':remarkPossibleUnsuitableExpressionStart + 'בגלל ש. אם הוא אכן מופיע, מומלץ לשקול להחליפו בכיוון ש, משום ש, מאחר ש או מפני ש (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/עובדה מעניינת היא/,'remark':'אין הנחתום מעיד על עיסתו. מומלץ להימנע מהביטוים עובדה מעניינת היא או יש לציין. יש לתת לקוראים להחליט אם העובדה ראויה לציון. (מידע נוסף ב ויקיפדיה:לשון'},
+			{'test':/יש לציין/,'remark':'אין הנחתום מעיד על עיסתו. מומלץ להימנע מהביטוים עובדה מעניינת היא או יש לציין. יש לתת לקוראים להחליט אם העובדה ראויה לציון. (מידע נוסף ב ויקיפדיה:לשון'},
+			{'test':/כידוע/ ,'remark':remarkUnsuitableExpressionStart + 'כידוע' + remarkObviousEnd},
+			{'test':/כמובן/ ,'remark':remarkUnsuitableExpressionStart + 'כמובן' + remarkObviousEnd},
+			{'test':/נולד להוריו/,'remark':'בערך מופיע הצירוף "נולד להוריו". מן הסתם נולד להוריו, ואין צורך לציין זאת (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/נולדה להוריה/,'remark':'בערך מופיע הצירוף "נולדה להוריה". מן הסתם נולדה להוריה, ואין צורך לציין זאת (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/למרות ש/ ,'remark':remarkPossibleUnsuitableExpressionStart + 'למרות ש. אם הוא אכן מופיע, מומלץ לשקול להחליפו באף על פי ש (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/זכה לביקורת/,'remark':remarkUnsuitableExpressionStart + 'זכה לביקורת. יש להעדיף את הביטוי ספג ביקורת (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/זכתה לביקורת/,'remark':remarkUnsuitableExpressionStart + 'זכתה לביקורת. יש להעדיף את הביטוי ספגה ביקורת (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/חייו המוקדמים/ ,'remark':remarkUnsuitableExpressionStart + 'חייו המוקדמים. יש להעדיף ראשית חייו, ילדותו או נעוריו (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/חייה המוקדמים/ ,'remark':remarkUnsuitableExpressionStart + 'חייה המוקדמים. יש להעדיף ראשית חייה, ילדותה או נעוריה (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/כנראה ש/ ,'remark':remarkUnsuitableExpressionStart + 'כנראה ש. רצוי להחליפו בנראה ש'},
+			{'test':/להיכן/,'remark':remarkWhereWordStart + 'היכן' + remarkWhereWordEnd},
+			{'test':/מהיכן/,'remark':remarkWhereWordStart + 'היכן' + remarkWhereWordEnd},
+			{'test':/לאיפה/,'remark':remarkWhereWordStart + 'איפה' + remarkWhereWordEnd},
+			{'test':/מאיפה/,'remark':remarkWhereWordStart + 'איפה' + remarkWhereWordEnd},
+			{'test':/הכי טוב/,'remark':remarkUnsuitableExpressionStart + 'הכי טוב. כדאי לשקול להחליפו לטוב ביותר (מידע נוסף ב ויקיפדיה:שגיאות תרגום נפוצות)'},
+			{'test':/נפלא/,'remark':remarkSuperlatives},
+			{'test':/מחריד/,'remark':remarkSuperlatives},
+			{'test':/נהדר/,'remark':remarkSuperlatives},
+			{'test':/למרבה הצער/,'remark':remarkUnsuitableExpressionStart + 'למרבה הצער' + remarkEmoExpressionEnd},
+			{'test':/למרבה המזל/,'remark':remarkUnsuitableExpressionStart + 'למרבה המזל' + remarkEmoExpressionEnd},
+			{'test':/ראה את עצמו/,'remark':remarkUnsuitableExpressionStart + 'ראה את עצמו. אי אפשר להיכנס לראש של אדם ואי אפשר לדעת איך הוא ראה את עצמו (ראו ויקיפדיה:לשון)'},
+			{'test':/בתקופת תור/,'remark':remarkUnsuitableExpressionStart + 'בתקופת תור. אם פירוש המילה תור בהקשר זה הוא תקופה, זו כפילות מיותרת (ראו ויקיפדיה:לשון)'},
+			{'test':/כמו לדוגמה/,'remark':remarkUnsuitableExpressionStart + 'כמו לדוגמה. זו כפילות מיותרת (ראו ויקיפדיה:לשון)'},
+			{'test':/בשנים האחרונות/,'remark':remarkUnsuitableExpressionStart + 'בשנים האחרונות. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
+			{'test':/בימים אלה/,'remark':remarkUnsuitableExpressionStart + 'בימים אלה. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
+			{'test':/לאחרונה/,'remark':remarkUnsuitableExpressionStart + 'לאחרונה. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
+			{'test':/כיום/,'remark':remarkUnsuitableExpressionStart + 'כיום. ביטוי זה תלוי זמן ויש להחליפו בציון מדויק יותר של זמן (ראו ויקיפדיה:לשון)'},
+			{'test':/ ז\"ל / ,'remark':'אין להצמיד לאדם את התואר ז\"ל (מידע נוסף ב ויקיפדיה:עקרונות מיוחדים לשפה העברית)'},
+			{'test':/(ש[יו]?חרר.*?(אלבום|תוכנה|סינגל)|(אלבום|תוכנה|סינגל).*?ש[יו]?חרר)/ ,'remark':remarkPossibleUnsuitableExpressionStart  +'שחרור במשמעות של הוצאה לאור. זו שגיאת תרגום נפוצה ויש להחליפה בהוציא לאור (מידע נוסף ב ויקיפדיה:לשון)'},
+			{'test':/(ש[יו]?חרר.*?סרט|סרט.*?ש[יו]?חרר)/ ,'remark':remarkPossibleUnsuitableExpressionStart  +'שחרור של סרט במשמעות של הוצאה לאור. זו שגיאת תרגום נפוצה ויש לכתוב שהסרט יצא, או שהציג בהקרנת בכורה (מידע נוסף ב ויקיפדיה:לשון)'}
 		];
 
 		var txt = this.textbox.value;
 				var checkWarnings=$('<div></div>');
 				var highlightStr=this.highlightString;
 				var findFunc=function(){
-			var toFind=unescape($(this).attr('href').substr(1));
-			highlightStr(toFind);
+			var toFind=eval(unescape($(this).attr('href').substr(1))).exec($('#wpTextbox1').val());
+			if(toFind) highlightStr(toFind[0]);
 			return false;
 		};
 		for(x in checks){
-			if(txt.indexOf(checks[x]['test'])!=-1) {
+			if(checks[x]['test'].test(txt)) {
 				checkWarnings.append($('(<a href="#'+escape(checks[x]['test'])+'">חיפוש</a>)').click(findFunc));
 				checkWarnings.append('&nbsp;-&nbsp;'+checks[x]['remark']+'<br/>');
 			}
@@ -349,3 +391,9 @@ var chectTyTool={
 			});
 	}
 };
+
+if ($.inArray(mw.config.get('wgAction'), ['edit', 'submit']) + 1)
+    $(document).ready(function(){
+	if (!window.checkToolName) checkToolName = 'בדיקה';
+	$('#wpPreview').after( $('<input type="button" id="btnCheckTool" title="צ\'קטי - כלי לבדיקת בעיות נפוצות ועוד" value="'+checkToolName+'" />').click(chectTyTool.run));
+});

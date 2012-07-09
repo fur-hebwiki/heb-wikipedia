@@ -8,7 +8,7 @@
 // "2d context" attributes used for highlighting.
 		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.35)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 2},
 //every imagemap that wants highlighting, should reside in a div of this 'class':
-		hilightDivMarker = '.imageMapHighlighter',
+		hilightDivMarker = '.imageMapHighlighterTest',
 // specifically for wikis - redlinks tooltip adds this message
 		pageDoesntExistMessage = (mw && mw.config && mw.config.get('wgUserLanguage') == 'he')
 			? ' (הדף אינו קיים)'
@@ -98,9 +98,12 @@
 				var $this = $(this), text = this.title;
 				var li = lis[text];	// title already met? use the same li
 				if (!li) {			//no? create a new one.
-					var href = this.href, cssClass = this['class'] || '';
+					var 
+						thisClass = this['className'] || '',
+						linkClass = (thisClass.indexOf('plainlinks') + 1) ? 'external text' : thisClass,
+						href = this.href;
 					lis[text] = li = $('<li>', {'class': myClassName})
-						.append($('<a>', {href: href, title: pageOfHref(href, cssClass), text: text, 'class': cssClass})) 
+						.append($('<a>', {href: href, title: pageOfHref(href, linkClass), text: text, 'class': linkClass})) 
 						.bind('mouseover mouseout', mouseAction)
 						.data({areas: [], context: context});
 					ol.append(li);
