@@ -2,15 +2,46 @@
 (function() {
 	var
 		board = [],
+		stages = [],
 		currentMove = 0,
 		pgn,
-		white,
 		div,
+		blockSize,
 		black,
 		imageUrl = {},
-		pieces = {},
+		pieces = {l: {}, d: {}},
 		dummy = {remove: function(){}};
 
+	function bindex(file, row) {
+		return 8 * file + row;
+	}
+	
+	function calcTop(row) {
+		return (8-row) * blocksize;
+	}
+	
+	function calcLeft(file) {
+		return file * blockSize;
+	}
+	
+	function pieceAt(file, row, piece) { 
+		int i = bindex(file, row);
+		if (piece)
+			board[i] = piece; 
+		return board[i];
+	};
+	
+	function copyBoard() {
+		return board.slice(0, board.length)
+	}
+	
+	function clearPieceAt(file, row) {
+		var piece = pieceAt(file, row);
+		if (piece)
+			piece.removeFromBoard();
+		delete board[bindex(file, row)];
+	}
+	
 	function roadIsClear(file1, file2, row1, row2) {
 		var file, row, dfile, drow, moves;
 		dfile = file1 == file2 ? 0 : file1 < file2 ? 1 : -1;
@@ -20,38 +51,53 @@
 		file = file1 + dfile;
 		row = row1 + drow;
 		for (var i = 1; i < moves; i++, file += dfile, row += drow) 
-			if (board[file, row])
+			if (pieceAt(file, row))
 				return false;
 		return true;
 	}
 	
-	function ChessPiece(type, color, initialFile, initialRow) {
+	function ChessPiece(type, color) {
 		this.type = type;
 		this.color = color;
-		this.file = this.initialFile = initialFile;
-		this.row = initialRow;
 		this.img = $('<img>', {src: imageUrl(type, color)})
-			.css({position: 'absolute', zIndex: 3, top: calcTop(this.row), left: calcLeft(this.file), display: this.onboard ? 'inherit' : 'none'})
+			.css({position: 'absolute', zIndex: 3, display: 'none'})
 			.appendTo(div);
-		pieces[type + color + initialFile] = this;
 	}
 	
-	ChessPiece.prototype.move = function(newFile, newRow, anim) {
-		// if (this.type == 'p' // handle en passe later.
-		(board[newFile][newRow] || dummy).remove();
-		if (anim)
-			this.img.animate({top: calcTop(this.row), left: calcLeft(this.file)}, 'slow');
-		this.file = newfile;
-		this.row = newRow;
-		board[this.file, this.row] = this;
+	ChessPiece.prototype.setSquare = function(file, row) {
+		this.file = file;
+		this.row = row;
+		pieceAt(file, row, this);
+	}
+	
+	ChessPiece.prototype.repaint() {
+		if (this.onBoard)
+			this.img.css({top: calcTop(this.row), left: calcLeft(this.file), width: blockSize + 'px', display: 'inherit'});
+	}
+	
+	ChessPiece.prototype.placeOnBoard = function(file, row) {
+		this.onBoard = true;
+		this.repaint();
+	}
+	
+	ChessPiece.prototype.move = function(file, row, dontClear) {
+		if (!dontClear)
+			clearPieceAt(this.file, this.row);
+		this.setSquare(file, row);
+		this.img.animate({top: calcTop(this.row), left: calcLeft(this.file)}, 'slow');
+	}
+	
+	ChessPiece.prototype.promote = function(type) {
+		this.type = type;
+		this.img.attr({src: imageUrl(type, this.color)});
 	}
 	
 	ChessPiece.prototype.pawnDirection = function () { return this.color == 'd' ? 1 : -1; }
 	ChessPiece.prototype.pawnStart = function() { return this.color == 'd' ? 2 : 7; }
 	
-	ChessPiece.prototype.remove = function() {
+	ChessPiece.prototype.remove = function(clearBoard) {
 		this.onBoard = false;
-		this.img.css({display: 'none'});
+		this.img.fadeOut('slow');
 	}
 	
 	ChessPiece.prototype.canMoveTo = function(file, row) {
@@ -90,17 +136,17 @@
 	function drawBoard() {
 	}
 	
+	function createPiece(type, color) {
+	}
+	
 	function populateBoard() {
 		div = $('<div>');
-		var officers = ['', 'r','n', 'b', 'q', 'k', 'b', 'n', 'r'];
-		for (var file = 0; file < 9; file++) {
-			board[file] = [];
-			for (var row = 0; row < 9; row++)
-				board[file][row] = null;
-			board[file][1] = new ChessPiece(officers[file], 'd', file, 1);
-			board[file][2] = new ChessPiece('p', 'd', file, 2);
-			board[file][7] = new ChessPiece('p', 'l', file, 7);
-			board[file][8] = new ChessPiece(officers[file], 'l', file, 8);
+		var officers = ['r','n', 'b', 'q', 'k', 'b', 'n', 'r'];
+		for (var file = 0; file < 8; file++) {
+			pieceAt(file, 1, new ChessPiece(officers[file], 'd', file, 1));
+			pieceAt(file, 2, new ChessPiece('p', 'd', file, 2));
+			pieceAt(file, 7, new ChessPiece('p', 'l', file, 7);
+			pieceAt(file, 8, new ChessPiece(officers[file], 'l', file, 8);
 		}
 	}
 	
