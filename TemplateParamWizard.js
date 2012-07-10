@@ -9,9 +9,13 @@ $(function() {
 	//// multiline: number of lines
 	//// depends: another field's name
 	//// required: boolean
+	//// date: use JS date widget
 	//// choices: array of legal values for the field
+
+	var
 	// templateParams is keyed by paramName.
-	var templateParams,
+		templateParams,
+		paramsOrder,
 	// which template are we working on
 		template,
 	// array of pairs - [paramName, inputField]
@@ -50,6 +54,8 @@ $(function() {
 			var name = $.trim(paramPair.shift());
 			if (name && paramPair.length) {
 				templateParams[name] = templateParams[name] || {options: {notInParamPage: 1}};
+				if ($.inArray(name, paramsOrder) == -1)
+					paramsOrder.push(name);
 				$.extend(templateParams[name].options, {'defval': paramPair.join('=')});
 			}
 		}
@@ -59,8 +65,10 @@ $(function() {
 		var
 			paramExtractor = /{{3,}(.*?)[\|}]/mg,
 			m;
-		while (m = paramExtractor.exec(data))
+		while (m = paramExtractor.exec(data)) {
 			templateParams[m[1]] = {desc: '', options: {multiline: 5}};
+			paramsOrder.push(m[1]);
+		}
 	}
 
 	function buildParams(data) {
@@ -108,12 +116,14 @@ $(function() {
 				pAttribs.options = analyzeOptions($.trim(fields[2]));
 
 			templateParams[name] = pAttribs;
+			paramsOrder.push(name);
+
 		}
 	}
 
 	function analyzeOptions(str) {
 		var res = {},
-			avail = ['multiline', 'required', 'depends', 'defval', 'choices'], // maybe we'll have more in the future
+			avail = ['multiline', 'required', 'depends', 'defval', 'choices', 'date'], // maybe we'll have more in the future
 			tavail = $.map(avail, i18n),
 			options = str.split(/\s*;\s*/);
 		for (var i in options) {
@@ -193,6 +203,7 @@ $(function() {
 					case 'depends': return 'תלוי';
 					case 'defval': return 'ברירת מחדל';
 					case 'choices': return 'אפשרויות';
+					case 'date': return 'תאריך';
 					case 'button hint': return 'אשף מילוי תבניות';
 					case 'able templates category name': return 'תבניות הנתמכות על ידי אשף התבניות';
 					case 'template selector title': return 'אנא הזינו את שם התבנית:';
@@ -201,6 +212,7 @@ $(function() {
 					case 'unknown error': return 'טעות בהפעלת האשף.\n' + param;
 					case 'please select template': return 'שם התבנית';
 					case 'oneliner': return 'תבנית בשורה אחת';
+					case 'dateFormat': return 'd בMM, yy';
 				}
 			default:
 				switch (key) {
@@ -217,6 +229,7 @@ $(function() {
 					case 'depends': return 'Depends on';
 					case 'defval': return 'Default';
 					case 'choices': return 'Choices';
+					case 'date': return 'Date';
 					case 'button hint': return 'Template parameters wizard';
 					case 'able templates category name': throw('Must define category name for wizard-capable templates');
 					case 'template selector title': return 'Please enter the template name';
@@ -225,7 +238,7 @@ $(function() {
 					case 'unknown error': return 'Error occured: \n' + param;
 					case 'please select template': return 'Please enter template name';
 					case 'oneliner': return 'Single-line template';
-
+					case 'dateFormat': return 'MM d, yy';
 				}
 		}
 		return key;
@@ -295,6 +308,9 @@ $(function() {
 
 		if (options.required)
 			f.addClass('tpw_required').css({border: '1px red solid'});
+
+		if (options.date)
+			f.datepicker({dateFormat: typeof options.date  == "string" ? options.date : i18n('dateFormat')});
 		return f;
 	}
 
@@ -401,8 +417,8 @@ $(function() {
 			.append($('<pre>', {id: 'tpw_preview'})
 				.css({backgroundColor: "lightGreen", maxWidth: '40em', maxHeight: '8em', overflow: 'auto'}));
 
-		for (var paramName in templateParams)
-			addRow(paramName, table);
+		while (paramsOrder.length)
+			addRow(paramsOrder.shift(), table);
 
 		var buttons = {}; // we need to do it this way, because with literal object, the keys must be literal.
 		buttons[i18n('ok')] = function() {injectResults(); dialog.dialog('close'); };
@@ -419,6 +435,7 @@ $(function() {
 	function init() {
 		template = null;
 		templateParams = {};
+		paramsOrder = [];
 		dialogFields = [];
 		rowsBypName = {};
 		fieldsBypName = {};
@@ -470,6 +487,7 @@ $(function() {
 			url: mw.util.wikiScript(),
 			data: {title: paramPage(), action: 'raw', ctype: 'text/x-wiki'},
 			success: buildDialog,
+			cache: false,
 			error: function() {
 				rawTemplate = true;
 				$.ajax({
@@ -483,7 +501,7 @@ $(function() {
 	}
 
 	function doIt() {
-		mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.autocomplete', 'jquery.ui.dialog'], function() {
+		mw.loader.using(['jquery.ui.widget','jquery.tipsy','jquery.textSelection', 'jquery.ui.autocomplete', 'jquery.ui.dialog', 'jquery.ui.datepicker'], function() {
 			init();
 			var match = $("#wpTextbox1").textSelection('getSelection').match(/^\{\{([^|}]*)/);
 			template = match ? $.trim(match[1]) : null;
