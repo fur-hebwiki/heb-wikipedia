@@ -1,53 +1,45 @@
 /* הסקריפט מוסיף לשוניות "מחיקה", "הגנה" ו"חסימה" על מנת שאפשר יהיה לבקש מחיקת דפים, הגנת דפים וחסימת משתמשים באמצעות דף בקשות ממפעילים. */
-function wbm_save_topage(title, summary, content, section, next) {
+if(mw.config.get('wgNamespaceNumber') + 1) // not a special page
+$(function(){
 
-	function doneSave(data) {
-		if (data && data.error) 
-			alert('error saving: ' + data.error['info']);
+function save(title, summary, content, section, next) {
+	var param = {action: 'edit', title: title, summary: summary, token: mw.user.tokens.get('editToken'), section: section || '0', appendtext: content, format: 'json'};
+	$.post(mw.util.wikiScript('api'), param, function(data) {
+		if (data && data.error)
+			mw.util.jsMessage('שגיאה בשמירה: ' + data.error['info']);
 		else if (data && data.edit && data.edit.result == 'Success' && typeof next == 'function')
 			next();
-	}
-	
-	function tokenReceived(token) {
-		var param = {action: 'edit', title: title, summary: summary, token: token, section: section || '0', appendtext: content, format: 'json'};
-		$.post(wgScriptPath + '/api.php?', param, doneSave);
-	}
-
-	function doneGetToken(data) {
-		for (var page in data.query.pages) {
-			tokenReceived(data.query.pages[page].edittoken);
-			break;
-		}
-	}
-	
-	$.getJSON(wgScriptPath + '/api.php?', {action: 'query', prop: 'info', intoken: 'edit', titles: title, format: 'json'}, doneGetToken);
+	});
 }
 
-function wbm_add_menus() {
-	var whereToShove = typeof wgPlaceRequestInToolbox == 'undefined' ? 'div#p-cactions div.menu li:last-child' : 'div#p-tb li:last-child';
-	if ($(whereToShove).length == 0)
-		whereToShove = '#ca-edit';
-				
-	function add_one(caption, tooltip, section, message, summary) {
-		var a = $('<a>', {href: '#', text: caption, title: 'בקשות מפעילים: ' + tooltip});
-		a.click(function() {
-			var reason = prompt("הסיבה לבקשה");
-			if ($.trim(reason) == '')
-				return;
-			message += ' סיבה: ' + reason + ' ~~' + '~~';
-			wbm_save_topage('ויקיפדיה:בקשות ממפעילים', summary, '\n* ' + message, section, function() { alert('בקשתך נשמרה ב-וק:במ')});
-		});
-		$(whereToShove).after($('<li>').append($('<span>').append(a)));
+function addMenuItem(caption, tooltip, section, message, summary, accessKey, replaceParam) {
+	if (replaceParam) {
+		var r = /replaceParam/g;
+		tooltip = tooltip.replace(r, replaceParam);
+		message = message.replace(r, replaceParam);
+		summary = summary.replace(r, replaceParam);
 	}
-	
-	if ($('#t-contributions').length) {
-		var badUser = wgTitle.split('/')[0];
-		add_one('חסימה', 'בקשה לחסום משתמש ' + badUser, 2, "{{לחסום|" + badUser + "}}", ' נא לחסום את ' + badUser);
-	}
-	add_one('הגנה', 'בקשה להגן על דף ' + wgPageName, 3, "[[" + wgPageName + "]]", ' נא להגן על [[' + wgPageName + "]]");
-	add_one('מחיקה', 'בקשה למחוק דף ' + wgPageName, 1, "[[" + wgPageName + "]]", ' נא למחוק את [[' + wgPageName + "]]");
-	if (getParamValue('oldid') && getParamValue('diff')) 
-		add_one('מחיקת גרסה', 'מחיקת גרסה ' + getParamValue('diff') , 5, '[' + window.location + '  גירסה זו]. ', 'מחיקת גירסה');
+	var a = mw.util.addPortletLink('p-cactions','#',caption,'',tooltip,(accessKey||''));
+	$(a).click(function() {
+		var reason = prompt("הסיבה לבקשת ה" + caption);
+		if ($.trim(reason) == '')
+			return;
+		message += ' - ' + reason + ' ~~' + '~~';
+		save('ויקיפדיה:בקשות ממפעילים', summary, '\n\n* ' + message, section, function() { mw.util.jsMessage('בקשתך נשמרה בבקשות מהמפעילים');});
+	});
 }
 
-wbm_add_menus();
+var ca = $.inArray(mw.config.get('wgNamespaceNumber'), [6, 14]) + 1 ?  ':' : '';
+var pageName = mw.config.get('wgPageName').replace( /_/g, " " );
+if ($('#t-contributions').length) {
+	var badUser = mw.config.get('wgTitle').split('/')[0];
+	addMenuItem('חסימה', 'בקשה לחסום את replaceParam', 2, "{{לחסום|replaceParam}}", '/* בקשות חסימה / הסרת חסימה */ [[משתמש:replaceParam|replaceParam]] ([[שיחת משתמש:replaceParam|ש]]|[[מיוחד:תרומות/replaceParam|ת]]|[[מיוחד:חסימה/replaceParam|ח]])',']', badUser);
+}
+var pageLink = $('.redirectMsg').length ? '{{הפניה|replaceParam}}' : '[[' + ca + 'replaceParam]]';
+addMenuItem('הגנה', 'בקשה להגן על הדף replaceParam', 3, pageLink, '/* בקשות הגנה / הסרת הגנה */ [[replaceParam]]','=', pageName);
+addMenuItem('מחיקה', 'בקשה למחוק את הדף replaceParam', 1, pageLink, '/* בקשות מחיקה */ [[replaceParam]]','d', pageName);
+
+if (getParamValue('oldid') && getParamValue('diff'))
+	addMenuItem('הסתרת גרסה', 'בקשה להסתיר את הגרסה ' + mw.util.getParamValue('diff') , 5, '{{הבדל|' + mw.config.get('wgPageName') + '|' + mw.util.getParamValue('diff') + '|' + mw.util.getParamValue('oldid') + '|טקסט=גרסה זו}}', '/* בקשות מחיקת גרסאות מסוימות */ הסתרת גרסה','[');
+	
+}); 

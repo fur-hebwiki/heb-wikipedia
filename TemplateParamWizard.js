@@ -30,7 +30,12 @@ $(function() {
 	// test to see if a string contains wikiCode and hence needs parsing, or cen be used as is.
 		wikiCodeFinder = /[\[\]\{\}\<\>]/,
 		globalExplanation = '';
-
+	
+	function addParam(name) {
+		if ($.inArray(name, paramsOrder) == -1)
+			paramsOrder.push(name);
+	}
+	
 	function paramsFromSelection() {
 		var selection = $("#wpTextbox1").textSelection('getSelection').replace(/^\s*\{\{|\}\}\s*$/g, ''); //scrap the first {{ and last }}
 		var specials = [];
@@ -54,8 +59,7 @@ $(function() {
 			var name = $.trim(paramPair.shift());
 			if (name && paramPair.length) {
 				templateParams[name] = templateParams[name] || {options: {notInParamPage: 1}};
-				if ($.inArray(name, paramsOrder) == -1)
-					paramsOrder.push(name);
+				addParam(name);
 				$.extend(templateParams[name].options, {'defval': paramPair.join('=')});
 			}
 		}
@@ -67,7 +71,7 @@ $(function() {
 			m;
 		while (m = paramExtractor.exec(data)) {
 			templateParams[m[1]] = {desc: '', options: {multiline: 5}};
-			paramsOrder.push(m[1]);
+			addParam(m[1]);
 		}
 	}
 
@@ -116,8 +120,7 @@ $(function() {
 				pAttribs.options = analyzeOptions($.trim(fields[2]));
 
 			templateParams[name] = pAttribs;
-			paramsOrder.push(name);
-
+			addParam(name);
 		}
 	}
 
