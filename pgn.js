@@ -10,13 +10,17 @@
 		black,
 		imageUrl = {},
 		pieces = [],
+		piecesByTypeCol = {},
+		anim = 0,
 		dummy = {remove: function(){}};
 
-	function bindex(file, row) {return 8 * file + row;}
-	function top(row) {return ((8-row) * blocksize) + 'px';}
-	function left(file) {return (file * blockSize) + 'px';}
+	function bindex(file, row) { return 8 * file + row; }
+	function top(row) { return ((8-row) * blocksize) + 'px'; }
+	function left(file) { return (file * blockSize) + 'px'; }
 	function row(ind) { return ind % 8; }
 	function file(ind) { return Math.floor(ind / 8);}
+	function copyBoard() { return board.slice(); }
+	function sign(a, b) { return a == b ? 0 : (a < b ? 1 : -1); }
 
 	function pieceAt(file, row, piece) {
 		int i = bindex(file, row);
@@ -27,29 +31,32 @@
 		return board[i];
 	};
 
-	function copyBoard() {
-		return board.slice(0, board.length)
-	}
 
 	function clearPieceAt(file, row) {
-		var piece = pieceAt(file, row);
-		if (piece)
-			piece.remove();
-		delete board[bindex(file, row)];
+		var i = bindex(file, row);
+		(board[i] || dummy).remove();
+		delete board[i];
 	}
-
+	
+	
 	function roadIsClear(file1, file2, row1, row2) {
-		var file, row, dfile, drow, moves;
-		dfile = file1 == file2 ? 0 : file1 < file2 ? 1 : -1;
-		drow = row1 == row2 ? 0 : row1 < row2 ? 1 : -1;
-		moves = Math.max((file2 - file1) * dfile, (row2 - row1) * drow);
-
-		file = file1 + dfile;
-		row = row1 + drow;
-		for (var i = 1; i < moves; i++, file += dfile, row += drow)
+		var file, row, dfile, drow, moves = 0;
+		dfile = sign(file1, file2);
+		drow = sign(row1, row2);
+		var file = file1, row = row1;
+		while (true) {
+			file += dfile;
+			row += drow;
+			if (file == file2 && row == row2)
+				return true;
 			if (pieceAt(file, row))
 				return false;
-		return true;
+			if (moves++ > 10)
+				throw ('something is wrong in function roadIsClear.' + 
+					' file=' + file + ' file1=' + file1 + ' file2=' + file2 + 
+					' row=' + row + ' row1=' + row1 + ' row2=' + row2 + 
+					' dfile=' + dfile + ' drow=' + drow);
+		}
 	}
 
 	function ChessPiece(type, color) {
@@ -58,9 +65,20 @@
 		this.img = $('<img>', {src: imageUrl(type, color), 'class': 'pgn-chessPiece'})
 			.css({display: 'none'})
 			.appendTo(div);
-		pieces.push(this);
+		this.addPieceToDicts();
 	}
 
+	ChessPiece.prototype.addPieceToDicts() {
+		pieces.push(this);
+		var byType = piecesByTypeCol[this.type];
+		if (! byType)
+			byType = piecesByTypeCol[this.type] = {};
+		var byTypeCol = byType[this.color];
+		if (!byTypeCol)
+			byTypeCol = byType[this.color] = [];
+		byTypeCol.push(this);
+	}
+	
 	ChessPiece.prototype.repaint() {
 		if (this.onBoard)
 			this.img.css({top: calcTop(this.row), left: calcLeft(this.file), width: blockSize + 'px', display: 'inherit'});
@@ -72,10 +90,22 @@
 		this.onBoard = true;
 	}
 
-	ChessPiece.prototype.move = function(file, row, dontClear) {
-		clearPieceAt(this.file, this.row);
-		pieceAt(file, row, this);
-		this.img.animate({top: calcTop(this.row), left: calcLeft(this.file)}, 'slow');
+	ChessPiece.prototype.capture = function(file, row) {
+		if (this.type == 'p' && !pieceAt(file, row) && pieceAt(file, row + this.pawnDirection()).type == 'p') { // en passant
+			var captureRow = row - this.pawnDirection();
+			clearPieceAt(file, captureRow);
+		} 
+		else
+			clearPieceAt(file, row);
+		this.move(file, row);
+	}
+	
+	ChessPiece.prototype.move = function(file, row) {
+		this.file = file; 
+		this.row = row;
+		pieceAt(file, fow, this); // place it on the board)
+		this.onBoard = true;
+		this.img.animate({top: calcTop(this.row), left: calcLeft(this.file)}, anim);
 	}
 
 	ChessPiece.prototype.pawnDirection = function () { return this.color == 'd' ? 1 : -1; }
@@ -83,68 +113,108 @@
 
 	ChessPiece.prototype.remove = function(clearBoard) {
 		this.onBoard = false;
-		this.img.fadeOut(anim());
+		this.img.fadeOut(anim);
 	}
 
 	ChessPiece.prototype.canMoveTo = function(file, row) {
+		if (!this.onBoard)
+			return false;
+		var rd = Math.abs(this.row - row), fd = Math.abs(this.file = file);
 		switch(type) {
 			case 'n':
-				var diffx = Math.abs(file - this.file), diffy = Math.abs(row - this.row);
-				return diffx + diffy == 3 && diffx * diffy; // no need to test if target is occupied.
+				return rb + fd == 3 && rd * fd == 2; // no need to test if target is occupied.
 			case 'p':
 				var occupied = !!board[file][row];
 				return
 					(this.row == this.pawnStart() && row ==  this.row + this.pawnDirection() * 2 && this.file == file && !occupied)
-					|| (this.row + this.direction() == row && Math.abs(this.file - file) == 1) // do not test "occupied" - can be en passe
-					|| (this.row + this.direction() == row && this.file == file && ! occupied)
+					|| (this.row + this.pawnDirection() == row && fd == 1) // do not test "occupied" - can be en passant
+					|| (this.row + this.pawnDirection() == row && !fd && !occupied)
 			case 'k':
-				return Math.abs(this.row - row) < 2 && Math.abs(this.file - file);
+				return rd < 2 && fd < 2;
 			case 'q':
 				return
-					(
-						(this.file == file)
-						|| (this.row == row)
-						|| (Math.abs(this.file - file) == Math.abs(this.row - row))
-					) && rowdIsClear(this.file, file, this.row, row);
+					! ((rd - fd) * rd * fd) // either equal or one of them is 0. 
+					&& roadIsClear(this.file, file, this.row, row);
 			case 'r':
 				return
-					(
-						(this.file == file)
-						|| (this.row == row)
-					) && rowdIsClear(this.file, file, this.row, row);
+					!(rd * fd) && roadIsClear(this.file, file, this.row, row);
 			case 'b':
 				return
-					Math.abs(this.file - file) == Math.abs(this.row - row)
-					&& rowdIsClear(this.file, file, this.row, row);
+					rd == fd
+					&& roadIsClear(this.file, file, this.row, row);
 		}
 	}
 
 	function drawBoard() {
 	}
 
+	function kingSideCastel(color) {
+		var king = piecesByTypeCol['k'][color][0];
+		var rook = piecesByTypeCol['r'][color][1];
+		king.move('g');
+		rook.move('f');
+	}
+	
+	function queenSideCastel(color) {
+		var king = piecesByTypeCol['k'][color][0];
+		var rook = piecesByTypeCol['r'][color][0];
+		king.move('b');
+		rook.move('c');	
+	}
+	
+	function promote(piece, type, file, row) {
+		piece.remove();
+		new ChessPiece(type, piece.color).place
+	}
+	
 	function executeMove(color, move) {
-		move = move..replace(/[!?+# ]*(\$\d{1,3})?$/, ''); // check, mate, comments, glyphs.
-		var piece = move.charAt(0);
-		var lp = piece.toLowerCase();
-		if (piece == lp) { // pawn. all officer's moves begin with uppercase;
-			lp = 'p';
-			move = 'P' + move; // ordnung muss zein. now all moves look the same.
+		move = move.replace(/[!?+# ]*(\$\d{1,3})?$/, ''); // check, mate, comments, glyphs.
+		if (!move.length)
+			return;
+		if (move == 'O-O')
+			return kingSideCastle(color);
+		if (move == 'O-O-O')
+			return queensideCastle(color);
+		if ($.inArray(move, ['1-0', '0-1', '1/2-1/2', '*']) + 1)
+			return; // end of game - white wins, black wins, draw, game halted/abandoned/unknown.
+		var match = move.match(/([RNBKQ])?([a-h])?([1-8])?(x)?([a-h])([1-8])(=[RNBKQ])?/);
+		if (!match) {
+			alert('bad move! "' + move + '"');
+			return;
 		}
-		piece = lp;
-		var target = piece.substr(-2);
+		
+		var type = match[1] ? match[1].toLowerCase() : 'p';
+		var oldFile = match[2];
+		var oldRow = match[3];
+		var isCapture = !!match[4];
+		var file = match[5];
+		var row = match[6];
+		var promotion = match[7];
+		var candidates = piecesByTypeCol[type, color];
+		if (!candidates || !candidates.length)
+			throw('could not find matching pieces. type="' + type + ' color=' + color + ' moveAGN=' + move);
+		var found = false;
+		for (var c in candidates)
+			found = found || candidates[c].matches(oldFile, oldRow, file, row);
+		if (!found)
+			throw('could not find a piece that can execute this move. type="' + type + ' color=' + color + ' moveAGN=' + move);
+		if (promotion)
+			promote(found, promotion, file, row);
+		else if (isCapture)
+			found.capture(file, row);
+		else
+			found.move(file, row);
 	}
 
 	function analyzePgn() {
 		var moveSequences = getMoveSequences();
 		stages.push(copyBoard());
 		while (moveSequences.length) {
-			var move = moveSequences[0];
-			executeMove('d', move[0]);
-			stages.push(copyBoard())
-			if (move.length > 1) {
-				executeMove('l', move[1]);
+			var move = moveSequences.shift();
+			if (executeMove('d', move[0]))
 				stages.push(copyBoard());
-			}
+			if (move.length > 1 && executeMove('l', move[1]))
+				stages.push(copyBoard());
 		}
 	}
 
