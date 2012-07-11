@@ -12,11 +12,11 @@
 		pieces = [],
 		dummy = {remove: function(){}};
 
-	function bindex(file, row) { return 8 * file + row; }
-	function top(row) { return ((8-row) * blocksize) + 'px'; }
-	function left(file) { return (file * blockSize) + 'px'; }
+	function bindex(file, row) {return 8 * file + row;}
+	function top(row) {return ((8-row) * blocksize) + 'px';}
+	function left(file) {return (file * blockSize) + 'px';}
 	function row(ind) { return ind % 8; }
-	function file(ind) { return Math.floor(ind / 8); }
+	function file(ind) { return Math.floor(ind / 8);}
 
 	function pieceAt(file, row, piece) {
 		int i = bindex(file, row);
@@ -152,10 +152,10 @@
 		div = $('<div>');
 		var officers = ['r','n', 'b', 'q', 'k', 'b', 'n', 'r'];
 		for (var file = 0; file < 8; file++) {
-			var o = officers[file], p = 'p';
+			var o = officers[file];
 			pieceAt(file, 1, new ChessPiece(o, 'd'));
-			pieceAt(file, 2, new ChessPiece(p, 'd'));
-			pieceAt(file, 7, new ChessPiece(p, 'l');
+			pieceAt(file, 2, new ChessPiece('p', 'd'));
+			pieceAt(file, 7, new ChessPiece('p', 'l');
 			pieceAt(file, 8, new ChessPiece(o, 'l');
 		}
 	}
