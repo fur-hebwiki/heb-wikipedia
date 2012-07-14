@@ -2,7 +2,7 @@
 $(function() {
 	var
 		div,
-		blockSize,
+		blockSize = 30,
 		imageUrl = {},
 		anim = 0,
 		WHITE = 'd',
@@ -378,22 +378,64 @@ $(function() {
 		});
 	}
 
-
+	function selectGame() {
+		
+	}
+	function buildBoardDiv(container) {
+		
+	}
+	
+	function doIt() {
+		var selector;
+		
+		$('div.pgn-source-wrapper').each(function() {
+			var 
+				wrapperDiv = $(this),
+				pgnSource = $('div.pgn-sourcegame', wrapperDiv),
+				boardDiv = buildBoardDiv(wrapperDiv);
+										 
+			if (pgnSource.length > 1) 
+				var selector = $('<select>')
+				.change(selectGame)
+				.insertBefore(boardDiv);
+			
+			pgnSource.each(function() {
+				var
+					gameDiv = $('<div>')
+						.addClass('pgn-gamedisplay')
+						.css({display: 'none'})
+						.appendTo(wrapperDiv),
+					pgnDiv = $(this),
+					game = new Game(boardDiv);
+					game.alalyzePgn(pgnDiv.text());
+				if (selector) {
+					selector.append($('<option>', {value: game, text:game.description()}));
+						
+				}
+			})
+		})
+	}
+	
 	function pupulateImages() {
 		var
-			allPieposition: 'absolute', zIndex: 3, ces = [],
 			colors = [WHITE, BLACK],
+			allImageNames = 
 			types = ['p', 'r', 'n', 'b', 'q', 'k'];
-		for (var c in colors)
+		for (var c in colors) {
 			for (var t in types)
 				allPieces.push('File:Chess ' + types[t] + colors[c] + 't45.svg');
+			
+		}
 		new mw.Api().get(
 			{titles: allPieces.join('|'), prop: 'imageinfo', iiprop: 'url'},
 			function(data) {
 				if (data && data.query) {
 					$.each(data.query.pages, function(index, page) {
-						var url = page.imageinfo[0].url;
-						var match = url.match(/Chess_([prnbqk][dl])t45\.svg/);
+						var 
+							url = page.imageinfo[0].url,
+							match = 
+								url.match(/Chess_([prnbqk][dl])t45\.svg/) // piece
+								|| url.match(/Chess_([dl])45\.svg/); // empty square
 						if (match)
 							imageUrl[match[1]] = url;
 					});
