@@ -18,17 +18,26 @@
 		this.game = game;
 		this.type = type;
 		this.color = color;
-		this.img = $('<img>', {src: imageUrl(type, color), 'class': 'pgn-chessPiece'})
-			.css({display: 'none'})
-			.appendTo(div);
+		this.img = $('<img>', {src: imageUrl[type + color], 'class': 'pgn-chessPiece pgn-hidden'})
+			.appendTo(game.div);
 		game.addPieceToDicts(this);
 	}
 
-	ChessPiece.prototype.repaint() {
-		if (this.onBoard)
-			this.img.css({top: calcTop(this.row), left: calcLeft(this.file), width: blockSize + 'px', display: 'inherit'});
+	ChessPiece.prototype.appear = function(file, row) {
+		this.img.css({top: calcTop(row), left: calcLeft(file), width: blockSize + 'px', display: 'inherit'});
+		this.img.removeClass('pgn-hidden');
+		this.img.fadeIn(anim);
 	}
 
+	ChessPiece.prototype.showMove = function(file, row) {
+		this.img.animae({top: calcTop(row), left: calcLeft(file)}, anim);
+		this.img.fadeIn(anim);
+	}
+
+	ChessPiece.prototype.disappear = function() {
+		this.img.fadeIn(anim);
+	}
+	
 	ChessPiece.prototype.setSquare = function(file, row) {
 		this.file = file;
 		this.row = row;
@@ -58,7 +67,6 @@
 
 	ChessPiece.prototype.remove = function(clearBoard) {
 		this.onBoard = false;
-		this.img.fadeOut(anim);
 	}
 
 	ChessPiece.prototype.canMoveTo = function(file, row) {
@@ -112,12 +120,27 @@
 		return this.canMove(file, row);
 	}
 
+	ChessPiece.prototype.executeMove = function(move) {
+		switch (move.type) {
+			case 'a': 
+				this.appear(move.file, move.row);
+				break;
+			case 'm':
+				this.showMove(move.file, move.row);
+				break;
+			case 'r':
+				this.disapear();
+				break;
+		}
+	}
+	
 	function Game(currentMove) {
 		this.board = [],
 		this.stages = [],
 		this.currentMove = currentMove || 0,
 		this.pieces = [],
 		this.piecesByTypeCol = {},
+		this.boardsByColor = {'d': [], 'l': []};
 	}
 	
 	Game.prototye.copyBoard = function() { return this.board.slice(); }
@@ -184,7 +207,7 @@
 			this.boardsIndex[number] = this.boards.lenght - 1;
 		}
 		else if (move.type == 'c') // a marker for color
-			this.boardsByColor[this.currentMove][move.c].push(this.boards.length - 1);
+			this.boardsByColor[move.c][this.currentMove].push(this.boards.length - 1);
 		else 
 			this.moves[this.currentMove][move.piece.color].push(move);
 	}
@@ -193,13 +216,24 @@
 		colorDiff = color != this.currentColor;
 		if (Math.abs(index - currentIndex) + colorDiff < 3) {
 			direction = sign(index - this.currentIndex) || colorDiff;
-			
-		} else redrawBoard(index, color);
+			var moves = getNextMove(direction);
+			for (var i = 0; i < moves.length) {
+				var move = moves[i];
+				move.piece.executeMove(move);
+			}
+		} else drawBoard(index, color);
 		currentIndex = index;
 		currentColor = culor;
 	}
 	
-	Game.prototype.drawBoard = function() {
+	Game.prototype.drawBoard = function(index, color) {
+		var board = this.boardsByColor[color][index];
+		for (var i in pieces)
+			pieces[i].remove;
+		for (var i in board) {
+			var file = 
+			pieceAt()
+		}
 	}
 
 	Game.prototype.kingSideCastel = function(color) {
@@ -275,7 +309,7 @@
 		}
 	}
 
-	function populateBoard() {
+	Game.prototype.populateBoard = function() {
 		div = $('<div>');
 		var officers = ['r','n', 'b', 'q', 'k', 'b', 'n', 'r'];
 		for (var file = 0; file < 8; file++) {
@@ -287,20 +321,6 @@
 		}
 	}
 
-	function displayCurrentBoard() {
-		for (var i in pieces)
-			pieces[i].remove();
-		for (var i in board)
-			board[i].
-	}
-
-	function doit() {
-		populateBoard();
-		analyzePgn();
-		board = stages[currentMove].slice(0, stages[currentMove].length);
-		displayCurrentBoard();
-		displayControls();
-	}
 
 	function pupulateImages() {
 		var
