@@ -1,16 +1,9 @@
 "use strict";
 (function() {
 	var
-		board = [],
-		stages = [],
-		currentMove = 0,
-		pgn,
 		div,
 		blockSize,
-		black,
 		imageUrl = {},
-		pieces = [],
-		piecesByTypeCol = {},
 		anim = 0,
 		dummy = {remove: function(){}};
 
@@ -19,66 +12,18 @@
 	function left(file) { return (file * blockSize) + 'px'; }
 	function row(ind) { return ind % 8; }
 	function file(ind) { return Math.floor(ind / 8);}
-	function copyBoard() { return board.slice(); }
 	function sign(a, b) { return a == b ? 0 : (a < b ? 1 : -1); }
 
-	function pieceAt(file, row, piece) {
-		int i = bindex(file, row);
-		if (piece) {
-			board[i] = piece;
-			piece.setSquare(file, row);
-		}
-		return board[i];
-	};
-
-
-	function clearPieceAt(file, row) {
-		var i = bindex(file, row);
-		(board[i] || dummy).remove();
-		delete board[i];
-	}
-	
-	
-	function roadIsClear(file1, file2, row1, row2) {
-		var file, row, dfile, drow, moves = 0;
-		dfile = sign(file1, file2);
-		drow = sign(row1, row2);
-		var file = file1, row = row1;
-		while (true) {
-			file += dfile;
-			row += drow;
-			if (file == file2 && row == row2)
-				return true;
-			if (pieceAt(file, row))
-				return false;
-			if (moves++ > 10)
-				throw ('something is wrong in function roadIsClear.' + 
-					' file=' + file + ' file1=' + file1 + ' file2=' + file2 + 
-					' row=' + row + ' row1=' + row1 + ' row2=' + row2 + 
-					' dfile=' + dfile + ' drow=' + drow);
-		}
-	}
-
-	function ChessPiece(type, color) {
+	function ChessPiece(type, color, game) {
+		this.game = game;
 		this.type = type;
 		this.color = color;
 		this.img = $('<img>', {src: imageUrl(type, color), 'class': 'pgn-chessPiece'})
 			.css({display: 'none'})
 			.appendTo(div);
-		this.addPieceToDicts();
+		game.addPieceToDicts(this);
 	}
 
-	ChessPiece.prototype.addPieceToDicts() {
-		pieces.push(this);
-		var byType = piecesByTypeCol[this.type];
-		if (! byType)
-			byType = piecesByTypeCol[this.type] = {};
-		var byTypeCol = byType[this.color];
-		if (!byTypeCol)
-			byTypeCol = byType[this.color] = [];
-		byTypeCol.push(this);
-	}
-	
 	ChessPiece.prototype.repaint() {
 		if (this.onBoard)
 			this.img.css({top: calcTop(this.row), left: calcLeft(this.file), width: blockSize + 'px', display: 'inherit'});
@@ -91,21 +36,21 @@
 	}
 
 	ChessPiece.prototype.capture = function(file, row) {
-		if (this.type == 'p' && !pieceAt(file, row) && pieceAt(file, row + this.pawnDirection()).type == 'p') { // en passant
+		if (this.type == 'p' && !this.game.pieceAt(file, row) && this.game.pieceAt(file, row + this.pawnDirection()).type == 'p') { // en passant
 			var captureRow = row - this.pawnDirection();
-			clearPieceAt(file, captureRow);
+			this.game.clearPieceAt(file, captureRow);
 		} 
 		else
-			clearPieceAt(file, row);
+			this.game.clearPieceAt(file, row);
 		this.move(file, row);
 	}
 	
 	ChessPiece.prototype.move = function(file, row) {
 		this.file = file; 
 		this.row = row;
-		pieceAt(file, fow, this); // place it on the board)
+		this.game.pieceAt(file, fow, this); // place it on the board)
 		this.onBoard = true;
-		this.img.animate({top: calcTop(this.row), left: calcLeft(this.file)}, anim);
+		this.game.registerMove({what:'m', piece:this, file: file, row: row})
 	}
 
 	ChessPiece.prototype.pawnDirection = function () { return this.color == 'd' ? 1 : -1; }
@@ -122,62 +67,173 @@
 		var rd = Math.abs(this.row - row), fd = Math.abs(this.file = file);
 		switch(type) {
 			case 'n':
-				return rb + fd == 3 && rd * fd == 2; // no need to test if target is occupied.
+				return (rb + fd == 3 && rd * fd == 2) // no need to test if target is occupied.
+						? this
+						: false;
 			case 'p':
 				var occupied = !!board[file][row];
 				return
-					(this.row == this.pawnStart() && row ==  this.row + this.pawnDirection() * 2 && this.file == file && !occupied)
+					((this.row == this.pawnStart() && row ==  this.row + this.pawnDirection() * 2 && this.file == file && !occupied)
 					|| (this.row + this.pawnDirection() == row && fd == 1) // do not test "occupied" - can be en passant
-					|| (this.row + this.pawnDirection() == row && !fd && !occupied)
+					|| (this.row + this.pawnDirection() == row && !fd && !occupied))
+						? this
+						: false;
 			case 'k':
-				return rd < 2 && fd < 2;
+				return (rd < 2 && fd < 2)
+						? this
+						: false;
 			case 'q':
 				return
-					! ((rd - fd) * rd * fd) // either equal or one of them is 0. 
-					&& roadIsClear(this.file, file, this.row, row);
+					(! ((rd - fd) * rd * fd) // either equal or one of them is 0. 
+					&& roadIsClear(this.file, file, this.row, row))
+						? this
+						: false;
+					
 			case 'r':
 				return
-					!(rd * fd) && roadIsClear(this.file, file, this.row, row);
+					()!(rd * fd) && roadIsClear(this.file, file, this.row, row))
+						? this
+						: false;
+					
 			case 'b':
 				return
-					rd == fd
-					&& roadIsClear(this.file, file, this.row, row);
+					(rd == fd
+					&& roadIsClear(this.file, file, this.row, row))
+						? this
+						: false;
+		}
+	}
+	
+	ChessPiece.prototype.matches = function(oldFile, oldRow, file, row) {
+		if (oldFile && oldFile != this.file)
+			return false;
+		if (oldRow && oldRow != this.row)
+			return false;
+		return this.canMove(file, row);
+	}
+
+	function Game(currentMove) {
+		this.board = [],
+		this.stages = [],
+		this.currentMove = currentMove || 0,
+		this.pieces = [],
+		this.piecesByTypeCol = {},
+	}
+	
+	Game.prototye.copyBoard = function() { return this.board.slice(); }
+	
+	Game.prototye.pieceAt = function(file, row, piece) {
+		int i = bindex(file, row);
+		if (piece) {
+			this.board[i] = piece;
+			piece.setSquare(file, row);
+		}
+		return this.board[i];
+	};
+
+	Game.prototye.clearPieceAt = function(file, row) {
+		var 
+			i = bindex(file, row),
+			piece = this.pieceAt(file, row);
+		if (piece)
+			piece.remove();
+		delete this.board[i];
+		this.registerMove({what:'r', piece:this, file: file, row: row})
+	}
+	
+	Game.prototye.roadIsClear = function(file1, file2, row1, row2) {
+		var file, row, dfile, drow, moves = 0;
+		dfile = sign(file1, file2);
+		drow = sign(row1, row2);
+		var file = file1, row = row1;
+		while (true) {
+			file += dfile;
+			row += drow;
+			if (file == file2 && row == row2)
+				return true;
+			if (this.pieceAt(file, row))
+				return false;
+			if (moves++ > 10)
+				throw ('something is wrong in function roadIsClear.' + 
+					' file=' + file + ' file1=' + file1 + ' file2=' + file2 + 
+					' row=' + row + ' row1=' + row1 + ' row2=' + row2 + 
+					' dfile=' + dfile + ' drow=' + drow);
 		}
 	}
 
-	function drawBoard() {
+	Game.prototype.addPieceToDicts = function(piece) {
+		this.pieces.push(piece);
+		var type = piece.type, color = piece.color;
+		var byType = this.piecesByTypeCol[type];
+		if (! byType)
+			byType = this.piecesByTypeCol[type] = {};
+		var byTypeCol = byType[color];
+		if (!byTypeCol)
+			byTypeCol = byType[color] = [];
+		byTypeCol.push(piece);
+		this.registerMove({what:'a', piece:piece, file: piece.file, row: piece.row})
+		
+	}
+	
+	game.prototype.registerMove = function(move) {
+		if (moveDescription.type == 'n') {
+			var rec = {d: [], l: []};
+			this.moves.push(rec);
+			this.currentMove = this.movesIndex[number] = this.moves.length - 1;
+			this.boards.push(this.board.slice());
+			this.boardsIndex[number] = this.boards.lenght - 1;
+		}
+		else if (move.type == 'c') // a marker for color
+			this.boardsByColor[this.currentMove][move.c].push(this.boards.length - 1);
+		else 
+			this.moves[this.currentMove][move.piece.color].push(move);
+	}
+	
+	game.prototype.executeMove(index, color) {
+		colorDiff = color != this.currentColor;
+		if (Math.abs(index - currentIndex) + colorDiff < 3) {
+			direction = sign(index - this.currentIndex) || colorDiff;
+			
+		} else redrawBoard(index, color);
+		currentIndex = index;
+		currentColor = culor;
+	}
+	
+	Game.prototype.drawBoard = function() {
 	}
 
-	function kingSideCastel(color) {
-		var king = piecesByTypeCol['k'][color][0];
-		var rook = piecesByTypeCol['r'][color][1];
+	Game.prototype.kingSideCastel = function(color) {
+		var king = this.piecesByTypeCol['k'][color][0];
+		var rook = this.piecesByTypeCol['r'][color][1];
 		king.move('g');
 		rook.move('f');
 	}
 	
-	function queenSideCastel(color) {
-		var king = piecesByTypeCol['k'][color][0];
-		var rook = piecesByTypeCol['r'][color][0];
+	Game.prototype.queenSideCastel = function(color) {
+		var king = this.piecesByTypeCol['k'][color][0];
+		var rook = this.piecesByTypeCol['r'][color][0];
 		king.move('b');
 		rook.move('c');	
 	}
 	
-	function promote(piece, type, file, row) {
+	Game.prototype.promote = function(piece, type, file, row) {
 		piece.remove();
-		new ChessPiece(type, piece.color).place
+		var piece = ChessPiece(type, piece.color, this);
+		this.pieceAt(file, row, piece);
+		this.Regi
 	}
 	
-	function executeMove(color, move) {
-		move = move.replace(/[!?+# ]*(\$\d{1,3})?$/, ''); // check, mate, comments, glyphs.
-		if (!move.length)
+	Game.prototype.createMove = function(color, moveStr) {
+		moveStr = moveStr.replace(/[!?+# ]*(\$\d{1,3})?$/, ''); // check, mate, comments, glyphs.
+		if (!moveStr.length)
 			return;
-		if (move == 'O-O')
-			return kingSideCastle(color);
-		if (move == 'O-O-O')
-			return queensideCastle(color);
-		if ($.inArray(move, ['1-0', '0-1', '1/2-1/2', '*']) + 1)
+		if (moveStr == 'O-O')
+			return this.kingSideCastle(color);
+		if (moveStr == 'O-O-O')
+			return this.queensideCastle(color);
+		if ($.inArray(moveStr, ['1-0', '0-1', '1/2-1/2', '*']) + 1)
 			return; // end of game - white wins, black wins, draw, game halted/abandoned/unknown.
-		var match = move.match(/([RNBKQ])?([a-h])?([1-8])?(x)?([a-h])([1-8])(=[RNBKQ])?/);
+		var match = moveStr.match(/([RNBKQ])?([a-h])?([1-8])?(x)?([a-h])([1-8])(=[RNBKQ])?/);
 		if (!match) {
 			alert('bad move! "' + move + '"');
 			return;
@@ -190,7 +246,7 @@
 		var file = match[5];
 		var row = match[6];
 		var promotion = match[7];
-		var candidates = piecesByTypeCol[type, color];
+		var candidates = this.piecesByTypeCol[type, color];
 		if (!candidates || !candidates.length)
 			throw('could not find matching pieces. type="' + type + ' color=' + color + ' moveAGN=' + move);
 		var found = false;
@@ -199,11 +255,12 @@
 		if (!found)
 			throw('could not find a piece that can execute this move. type="' + type + ' color=' + color + ' moveAGN=' + move);
 		if (promotion)
-			promote(found, promotion, file, row);
+			this.promote(found, promotion, file, row);
 		else if (isCapture)
 			found.capture(file, row);
 		else
 			found.move(file, row);
+		this.
 	}
 
 	function analyzePgn() {
