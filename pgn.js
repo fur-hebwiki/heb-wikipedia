@@ -12,7 +12,8 @@ $(function() {
 		flip = false,
 		acode = 'a'.charCodeAt(0),
 		moveBucket = [],
-		allGames =[];
+		allGames =[],
+		currentGame;
 
 	function bindex(file, row) { return 8 * file + row; }
 	function top(row) { return ((flip ? row : (7 - row)) * blockSize) + 'px'; }
@@ -154,17 +155,19 @@ $(function() {
 			piecesByTypeCol: {},
 			descriptions: {},
 			tds: tds});
-		this.boardDiv = $('<div>', {'class': 'pgn-board-div'});
-		this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'});
-		this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'});
+		tds.boardTd.append(this.boardDiv = $('<div>', {'class': 'pgn-board-div'}));
+		tds.pgnTd.append(this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}));
+		tds.descriptionsTd.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
 	}
 	
 	Game.prototype.show = function() {
+		currentGame = this;
 		for (var td in this.tds)
-			this.tds[td].children().remove();
-		this.tds.boardTd.append(this.boardDiv);
-		this.tds.pgnTd.append(this.pgnDiv);
-		this.tds.descriptionsTd.append(this.descriptionsDiv);
+			this.tds[td].find('div').toggle(false);
+		this.boardDiv.toggle(true);
+		this.pgnDiv.toggle(true);
+		this.descriptionsDiv.toggle(true);
+		this.drawBoard();
 	}
 	
 	Game.prototype.copyBoard = function() { return this.board.slice(); }
@@ -441,9 +444,6 @@ $(function() {
 			$('<img>', {src: flipImageUrl})
 				.css({width: '40px'})
 				.click(function() { 
-					var 
-						wrapper = $(this).closest('div.pgn-source-wrapper'),
-						currentGame = wrapper.data('currentGame');
 					flip ^= 1;
 					var rotation = flip ? 'rotate(180deg)' : 'rotate(0deg)';
 					$(this).css({
@@ -463,9 +463,6 @@ $(function() {
 	function advanceButton() {
 		var button = $('<input>', {type: 'button', value: '=>', dir:'ltr'})
 			.click(function() {
-				var 
-					wrapper = $(this).closest('div.pgn-source-wrapper'),
-					currentGame = wrapper.data('currentGame');
 				currentGame.advance();
 			});
 		return button;
@@ -473,8 +470,7 @@ $(function() {
 	
 	function setWidth() {
 		var table = $(this).closest('table'),
-			width = parseInt($(this).slider('value'), 10),
-			currentGame = $(this).closest('div.pgn-source-wrapper').data('currentGame');
+			width = parseInt($(this).slider('value'), 10);
 			
 		blockSize = width;
 		table.attr({width: width * 8 + 70}).css({width: width * 8 + 70});
@@ -561,6 +557,8 @@ $(function() {
 				else
 					game.show();
 			});
+			if (selector)
+				selector.trigger('change');
 		})
 	}
 	
