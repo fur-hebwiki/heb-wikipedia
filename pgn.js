@@ -149,6 +149,7 @@ $(function() {
 			boards: [],
 			pieces: [],
 			moves: [],
+			linkOfIndex: [],
 			index: 0,
 			piecesByTypeCol: {},
 			descriptions: {},
@@ -228,7 +229,15 @@ $(function() {
 	
 	Game.prototype.gotoBoard = function(index) {
 		this.index = index;
-		this.drawBoard(index);
+		this.drawBoard();
+	}
+	
+	Game.prototype.advance = function() {
+		if (this.index < this.moves.length - 1)
+			this.showMoveTo(this.index + 1);
+		this.pgnDiv.find('span').removeClass('pgn-current-move');
+		if (this.linkOfIndex[this.index])
+			this.linkOfIndex[this.index].addClass('pgn-current-move');
 	}
 	
 	Game.prototype.showMoveTo = function(index, noAnim) {
@@ -243,15 +252,20 @@ $(function() {
 			this.gotoBoard(index);
 	}
 	
-	Game.prototype.drawBoard = function(index) {
+	Game.prototype.drawBoard = function() {
 		var 
 			saveAnim = anim,
-			board = this.boards[index];
+			board = this.boards[this.index];
 		anim = 0;
 		for (var i in this.pieces)
 			this.pieces[i].disappear();
 		for (var i in board) 
 			board[i].appear(file(i), row(i));
+		this.descriptionsDiv.children().remove();
+		var s = '';
+		for (var d in this.descriptions)
+			s += (d + ': ' + this.descriptions[d] + '<br/>');
+		this.descriptionsDiv.html(s);
 		anim = saveAnim;
 	}
 
@@ -289,7 +303,7 @@ $(function() {
 		if (moveStr == 'O-O') 
 			return this.kingSideCastle(color);
 		if (moveStr == 'O-O-O') 
-			return this.queensideCastle(color);
+			return this.queenSideCastle(color);
 		if ($.inArray(moveStr, ['1-0', '0-1', '1/2-1/2', '*']) + 1)
 			return moveStr; // end of game - white wins, black wins, draw, game halted/abandoned/unknown.
 		var match = moveStr.match(/([RNBKQ])?([a-h])?([1-8])?(x)?([a-h])([1-8])(=[RNBKQ])?/);
@@ -303,7 +317,7 @@ $(function() {
 		var isCapture = !!match[4];
 		var file = fileOfStr(match[5]);
 		var row = rowOfStr(match[6]);
-		var isPromotion = match[7];
+		var promotion = match[7];
 		var candidates = this.piecesByTypeCol[type][color];
 		if (!candidates || !candidates.length)
 			throw 'could not find matching pieces. type="' + type + ' color=' + color + ' moveAGN=' + moveStr;
@@ -316,7 +330,7 @@ $(function() {
 		if (!found)
 			throw 'could not find a piece that can execute this move. type="' + type + ' color=' + color + ' moveAGN=' + moveStr;
 //		confirm('about to execute ' + moveStr + ' piece type is ' + found.type + ' at ' + found.file + found.row + ' file=' + file + ' row=' + row)
-		if (isPromotion)
+		if (promotion)
 			this.promote(found, promotion.charAt(1), file, row);
 		else if (isCapture)
 			found.capture(file, row);
@@ -332,11 +346,14 @@ $(function() {
 			moveBucket = [];
 		}
 		if (str) {
-			var link = $('<span>', {'class': 'pgn-movelink'})
+			var index = this.moves.length-1,
+				link = $('<span>', {'class': (noAnim ? 'pgn-steplink' : 'pgn-movelink')})
 				.text(str)
-				.data({game: this, index: this.moves.length-1, noAnim: noAnim})
+				.data({game: this, index: index, noAnim: noAnim})
 				.click(linkMoveClick);
 			this.pgnDiv.append(link);
+			if (!noAnim) 
+				this.linkOfIndex[index] = link;
 		}
 	}
 	
@@ -345,9 +362,16 @@ $(function() {
 	}
 	
 	Game.prototype.addDescription = function(description) {
-		var match = description.match(/ /);
+		description = $.trim(description);
+		var match = description.match(/\[([^"]+)"(.*)"\]/);
 		if (match)
-			this.descriptions[match[1]] = match[2];
+			this.descriptions[$.trim(match[1])] = match[2];
+	}
+	
+	Game.prototype.description = function(pgn) {
+		var d = this.descriptions;
+		var s = (d.Event || '') + ' ' + (d.White || '') + ' vs.' + (d.Black || '');
+		return s;
 	}
 	
 	Game.prototype.analyzePgn = function(pgn) {
@@ -407,16 +431,13 @@ $(function() {
 	}
 
 	function selectGame() {
-		var selector = $(this),
-			wrapper = selector.closest('div.pgn-source-wrapper'),
-			currentGame = wrapper.data('currentGame');
-		currentGame.hide();
-		game.gotoBoard(0);
-		wrapper.data('currentGame', game);
+		var game = allGames[this.value];
+		if (game) 
+			game.show();
 	}
 	
 	function createFlipper() {
-		return 
+		var flipper =
 			$('<img>', {src: flipImageUrl})
 				.css({width: '40px'})
 				.click(function() { 
@@ -432,22 +453,60 @@ $(function() {
 						'-o-transform': rotation,
 						'transform': rotation})
 					currentGame.gotoBoard(currentGame.index);
+					$(this).closest('table').find('td.pgn-row').each(function() {
+						$(this).text(9 - $(this).text())
+					})
 				});
+		return flipper;
+	}
+	
+	function advanceButton() {
+		var button = $('<input>', {type: 'button', value: '=>', dir:'ltr'})
+			.click(function() {
+				var 
+					wrapper = $(this).closest('div.pgn-source-wrapper'),
+					currentGame = wrapper.data('currentGame');
+				currentGame.advance();
+			});
+		return button;
+	}
+	
+	function setWidth() {
+		var table = $(this).closest('table'),
+			width = parseInt($(this).slider('value'), 10),
+			currentGame = $(this).closest('div.pgn-source-wrapper').data('currentGame');
+			
+		blockSize = width;
+		table.attr({width: width * 8 + 70}).css({width: width * 8 + 70});
+		table.find('td.pgn-game-square').attr({width: width, height: width}).css({width: width, maxWidth: width, height: width});
+		currentGame.drawBoard();
 	}
 	
 	function buildBoardDiv(container, selector) {
 		var 
 			boardTd, pgnTd, descriptionsTd,
-			table = $('<table>', {'class': 'pgn-table', border: 0, cellpadding: 0, cellspacing: 0}).appendTo(container),
-			pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}),
-			descriptionDiv = $('<div>', {'class': 'pgn-descriptions'}),
+			table,
+			controlsTd,
 			flipper = createFlipper(),
+			advance = advanceButton(),
+			slider,
 			fileLegend = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
 
+			
+		slider = $('<div>', {'class': 'pgn-slider'})
+			.slider({
+				max: 60,
+				min: 20,
+				valign: 'middle',
+				value: blockSize,
+				stop: setWidth
+			});
+		table = $('<table>', {'class': 'pgn-table', border: 0, cellpadding: 0, cellspacing: 0}).appendTo(container);
 		if (selector)	
 			table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-selector'}).append(selector)));
+		
 		table.append($('<tr>').append(descriptionsTd = $('<td>', {colspan: 10, 'class': 'pgn-descriptions'})));
-		table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-controls'})));
+		table.append($('<tr>').append(controlsTd = $('<td>', {colspan: 10, 'class': 'pgn-controls'})));
 		var tr = $('<tr>').appendTo(table);
 		for (var i in fileLegend) 
 			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
@@ -456,19 +515,20 @@ $(function() {
 		
 		for (var i = 0; i < 8; i++) { // create row i: legend, 8 
 			tr = $('<tr>').appendTo(table);
-			tr.append($('<td>', {'class': 'pgn-legend'}).text(8 - i));
+			tr.append($('<td>', {'class': 'pgn-legend pgn-row'}).text(8 - i));
 			for (var file = 0; file < 8; file++) {
 				var td = $('<td>', (((i+file)%2) ? blackSq : whiteSq));
 				if (!i && !file)
 					boardTd = td; 
 				tr.append(td);
 			}
-			tr.append($('<td>', {'class': 'pgn-legend'}).text(8 - i));
+			tr.append($('<td>', {'class': 'pgn-legend pgn-row'}).text(8 - i));
 		}
 		tr = $('<tr>').appendTo(table);
 		for (var i in fileLegend) 
 			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
 		table.append($('<tr>').append(pgnTd = $('<td>', {colspan: 10, 'class': 'pgn-pgn-moves'})));
+		controlsTd.css({textAlign: 'right'}).append(flipper).append(advance).append(slider);
 		return {boardTd: boardTd, pgnTd: pgnTd, descriptionsTd: descriptionsTd};
 	}
 	
@@ -482,11 +542,10 @@ $(function() {
 				boardDiv;
 										 
 			if (pgnSource.length > 1) 
-				var selector = $('<select>')
-				.change(selectGame)
-				.insertBefore(boardDiv);
+				selector = $('<select>').change(selectGame);
 			
 			var tds = buildBoardDiv(wrapperDiv, selector);
+			var ind = 0;
 			pgnSource.each(function() {
 				var
 					pgnDiv = $(this),
@@ -495,8 +554,10 @@ $(function() {
 					game.analyzePgn(pgnDiv.text());
 					game.gotoBoard(0);
 					wrapperDiv.data({currentGame: game});
-				if (selector) 
-					selector.append($('<option>', {value: game, text:game.description()}));
+				if (selector) {
+					allGames.push(game);
+					selector.append($('<option>', {value: allGames.length - 1, text:game.description()}));
+				}
 				else
 					game.show();
 			});
@@ -543,18 +604,20 @@ $(function() {
 		mw.util.addCSS(
 			'img.pgn-chessPiece { position: absolute; zIndex: 3;}\n' + 
 			'div.pgn-board-div { position: relative;}\n' +
+			'div.pgn-slider { max-width: 100px; min-width: 100px; clear: both; float: right; margin: 15px;}\n' +
 			'table.pgn-table { direction: ltr; width: 360px;}\n' +
-			'td.pgn-selector { height: 2em; text-align: center; vertical-aligh: middle}\n' +
+			'td.pgn-selector { height: 2em; text-align: center; vertical-aligh: middle;}\n' +
 			'td.pgn-controls { height: 2em; text-align: right; vertical-aligh: middle}\n' +
 			'td.pgn-legend { text-align: center; vertical-align: middle;}\n' +
 			'td.pgn-game-square { opacity; 0.8; width: 40px; height: 40px; text-align: left; vertical-align: top; padding: 0;}\n' +
-			'td.pgn-game-square-black { background-color: #333;}\n' +
-			'td.pgn-game-square-white { background-color: #ccc;}\n' +
+			'td.pgn-game-square-black { background-color: #d18b47;}\n' +
+			'td.pgn-game-square-white { background-color: #ffce9e;}\n' +
 			'div.pgn-pgn-display { padding: 0.5em 2em; }\n' +
 			'div.pgn-descriptions { padding: 0.5em 2em; }\n' +
 			'span.pgn-movelink { margin: 0 0.3em;}\n' +
+			'span.pgn-steplink { margin: 0 0.3em; color: green; font-weight: bold;}\n' +
 			'span.pgn-comment { margin: 0 0.3em; color: blue;}\n' +
 			'span.pgn-current-move { background-color: yellow;}');
-		mw.loader.using('mediawiki.api', pupulateImages);
+		mw.loader.using(['mediawiki.api', 'jquery.ui.slider'], pupulateImages);
 	}
 });
