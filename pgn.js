@@ -2,9 +2,10 @@
 $(function() {
 	var
 		div,
-		blockSize = 30,
+		blockSize = 40,
 		imageUrl = {},
 		boardImageUrl,
+		flipImageUrl,
 		anim = 'slow',
 		WHITE = 'l',
 		BLACK = 'd',
@@ -39,7 +40,7 @@ $(function() {
 		this.type = type;
 		this.color = color;
 		this.img = $('<img>', {src: imageUrl[type + color], 'class': 'pgn-chessPiece', opacity: 0})
-			.appendTo(game.div);
+			.appendTo(game.boardDiv);
 	}
 
 	ChessPiece.prototype.appear = function(file, row) {
@@ -142,7 +143,7 @@ $(function() {
 		}
 	}
 	
-	function Game(div) {
+	function Game(tds) {
 		$.extend(this, {
 			board: [],
 			boards: [],
@@ -151,8 +152,18 @@ $(function() {
 			index: 0,
 			piecesByTypeCol: {},
 			descriptions: {},
-			div: div});
-		this.pgnDisplay = $('<div>', {'class': 'pgn-pgnDisplay'}).appendTo(div);
+			tds: tds});
+		this.boardDiv = $('<div>', {'class': 'pgn-board-div'});
+		this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'});
+		this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'});
+	}
+	
+	Game.prototype.show = function() {
+		for (var td in this.tds)
+			this.tds[td].children().remove();
+		this.tds.boardTd.append(this.boardDiv);
+		this.tds.pgnTd.append(this.pgnDiv);
+		this.tds.descriptionsTd.append(this.descriptionsDiv);
 	}
 	
 	Game.prototype.copyBoard = function() { return this.board.slice(); }
@@ -325,12 +336,12 @@ $(function() {
 				.text(str)
 				.data({game: this, index: this.moves.length-1, noAnim: noAnim})
 				.click(linkMoveClick);
-			this.pgnDisplay.append(link);
+			this.pgnDiv.append(link);
 		}
 	}
 	
 	Game.prototype.addComment = function(str) {
-		this.pgnDisplay.append($('<span>', {'class': 'pgn-comment'}).text(str));
+		this.pgnDiv.append($('<span>', {'class': 'pgn-comment'}).text(str));
 	}
 	
 	Game.prototype.addDescription = function(description) {
@@ -404,22 +415,61 @@ $(function() {
 		wrapper.data('currentGame', game);
 	}
 	
-	function buildBoardDiv(container) {
-		var 
-			boardDiv = $('<div>', {'class': 'pgn-board-div'}).appendTo(container),
-			boardImage = $('<img>', {src: boardImageUrl, 'class': 'pgn-board-image'})
-				.css({width: (blockSize * 8) + 'px'})
-				.appendTo(boardDiv);
-			$('<input>', {type: 'button', value: 'flip'})
-				.appendTo(boardDiv)
-				.click(function(){ 
+	function createFlipper() {
+		return 
+			$('<img>', {src: flipImageUrl})
+				.css({width: '40px'})
+				.click(function() { 
 					var 
 						wrapper = $(this).closest('div.pgn-source-wrapper'),
 						currentGame = wrapper.data('currentGame');
 					flip ^= 1;
+					var rotation = flip ? 'rotate(180deg)' : 'rotate(0deg)';
+					$(this).css({
+						'-webkit-transform': rotation,
+						'-moz-transform': rotation,
+						'-ms-transform': rotation,
+						'-o-transform': rotation,
+						'transform': rotation})
 					currentGame.gotoBoard(currentGame.index);
-				})
-		return boardDiv;
+				});
+	}
+	
+	function buildBoardDiv(container, selector) {
+		var 
+			boardTd, pgnTd, descriptionsTd,
+			table = $('<table>', {'class': 'pgn-table', border: 0, cellpadding: 0, cellspacing: 0}).appendTo(container),
+			pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}),
+			descriptionDiv = $('<div>', {'class': 'pgn-descriptions'}),
+			flipper = createFlipper(),
+			fileLegend = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
+
+		if (selector)	
+			table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-selector'}).append(selector)));
+		table.append($('<tr>').append(descriptionsTd = $('<td>', {colspan: 10, 'class': 'pgn-descriptions'})));
+		table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-controls'})));
+		var tr = $('<tr>').appendTo(table);
+		for (var i in fileLegend) 
+			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
+		var blackSq = {height: 40, width: 40, 'class': 'pgn-game-square pgn-game-square-black'};
+		var whiteSq = {height: 40, width: 40, 'class': 'pgn-game-square pgn-game-square-white'};
+		
+		for (var i = 0; i < 8; i++) { // create row i: legend, 8 
+			tr = $('<tr>').appendTo(table);
+			tr.append($('<td>', {'class': 'pgn-legend'}).text(8 - i));
+			for (var file = 0; file < 8; file++) {
+				var td = $('<td>', (((i+file)%2) ? blackSq : whiteSq));
+				if (!i && !file)
+					boardTd = td; 
+				tr.append(td);
+			}
+			tr.append($('<td>', {'class': 'pgn-legend'}).text(8 - i));
+		}
+		tr = $('<tr>').appendTo(table);
+		for (var i in fileLegend) 
+			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
+		table.append($('<tr>').append(pgnTd = $('<td>', {colspan: 10, 'class': 'pgn-pgn-moves'})));
+		return {boardTd: boardTd, pgnTd: pgnTd, descriptionsTd: descriptionsTd};
 	}
 	
 	function doIt() {
@@ -429,23 +479,27 @@ $(function() {
 			var 
 				wrapperDiv = $(this),
 				pgnSource = $('div.pgn-sourcegame', wrapperDiv),
-				boardDiv = buildBoardDiv(wrapperDiv);
+				boardDiv;
 										 
 			if (pgnSource.length > 1) 
 				var selector = $('<select>')
 				.change(selectGame)
 				.insertBefore(boardDiv);
 			
+			var tds = buildBoardDiv(wrapperDiv, selector);
 			pgnSource.each(function() {
 				var
 					pgnDiv = $(this),
-					game = new Game(boardDiv);
+					game = new Game(tds);
 					game.populateBoard(); // later use FEN, maybe
 					game.analyzePgn(pgnDiv.text());
+					game.gotoBoard(0);
 					wrapperDiv.data({currentGame: game});
 				if (selector) 
 					selector.append($('<option>', {value: game, text:game.description()}));
-			})
+				else
+					game.show();
+			});
 		})
 	}
 	
@@ -460,6 +514,8 @@ $(function() {
 			allPieces.push('File:Chess ' + colors[c] + '45.svg')
 		}
 		allPieces.push('File:Chess Board, gray.png');
+		allPieces.push('File:Yin and Yang.svg');
+		
 		new mw.Api().get(
 			{titles: allPieces.join('|'), prop: 'imageinfo', iiprop: 'url'},
 			function(data) {
@@ -474,6 +530,8 @@ $(function() {
 							imageUrl[match[1]] = url;
 						else if (/Board/.test(url))
 							boardImageUrl = url;
+						else if (/Yin/.test(url))
+							flipImageUrl = url;
 					});
 					doIt();
 				}
@@ -482,10 +540,21 @@ $(function() {
 	}
 
 	if ($('div.pgn-source-wrapper').length) {
-		mw.util.addCSS('img.pgn-chessPiece {position: absolute; zIndex: 3;}\n' + 
-			'div.pgn-board-div {direction: ltr; position: relative;}\n' +
-			'span.pgn-movelink {margin: 0 0.5em;}\n' +
-			'span.pgn-current-move {background-color: yellow;}');
+		mw.util.addCSS(
+			'img.pgn-chessPiece { position: absolute; zIndex: 3;}\n' + 
+			'div.pgn-board-div { position: relative;}\n' +
+			'table.pgn-table { direction: ltr; width: 360px;}\n' +
+			'td.pgn-selector { height: 2em; text-align: center; vertical-aligh: middle}\n' +
+			'td.pgn-controls { height: 2em; text-align: right; vertical-aligh: middle}\n' +
+			'td.pgn-legend { text-align: center; vertical-align: middle;}\n' +
+			'td.pgn-game-square { opacity; 0.8; width: 40px; height: 40px; text-align: left; vertical-align: top; padding: 0;}\n' +
+			'td.pgn-game-square-black { background-color: #333;}\n' +
+			'td.pgn-game-square-white { background-color: #ccc;}\n' +
+			'div.pgn-pgn-display { padding: 0.5em 2em; }\n' +
+			'div.pgn-descriptions { padding: 0.5em 2em; }\n' +
+			'span.pgn-movelink { margin: 0 0.3em;}\n' +
+			'span.pgn-comment { margin: 0 0.3em; color: blue;}\n' +
+			'span.pgn-current-move { background-color: yellow;}');
 		mw.loader.using('mediawiki.api', pupulateImages);
 	}
 });
