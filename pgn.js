@@ -23,20 +23,20 @@ $(function() {
 			clearInterval(timer);
 		timer = null;
 	}
-	
+
 	function linkMoveClick(e) {
 		var
 			$this = $(this),
-			game = $this.data('game'), 
-			index = $this.data('index'), 
+			game = $this.data('game'),
+			index = $this.data('index'),
 			noAnim = $this.data('noAnim');
 		clearTimer();
 		$this.addClass('pgn-current-move').siblings().removeClass('pgn-current-move');
 		game.showMoveTo(index, noAnim);
 	}
-		
-	
-	
+
+
+
 	function Gameset() { // set of functions and features that depend on blocksize, flip and currentGame.
 		$.extend(this, {
 			blockSize: 40,
@@ -47,7 +47,7 @@ $(function() {
 			top: function(row) { return ((this.flip ? row : (7 - row)) * this.blockSize) + 'px'; },
 			left: function(file) { return ((this.flip ? 7 - file : file) * this.blockSize) + 'px'; },
 			selectGame: function(val) {
-				if (this.currentGame) 
+				if (this.currentGame)
 					this.currentGame.toggle(false);
 				var game = this.allGames[val];
 				if (game) {
@@ -57,7 +57,7 @@ $(function() {
 			}
 		});
 	}
-	
+
 	function ChessPiece(type, color, game) {
 		this.game = game;
 		this.type = type;
@@ -78,7 +78,7 @@ $(function() {
 	ChessPiece.prototype.disappear = function() {
 		this.img.fadeOut(anim);
 	}
-	
+
 	ChessPiece.prototype.setSquare = function(file, row) {
 		this.file = file;
 		this.row = row;
@@ -86,13 +86,13 @@ $(function() {
 	}
 
 	ChessPiece.prototype.capture = function(file, row) {
-		if (this.type == 'p' && !this.game.pieceAt(file, row))  // en passant 
+		if (this.type == 'p' && !this.game.pieceAt(file, row))  // en passant
 			this.game.clearPieceAt(file, this.row);
 		else
 			this.game.clearPieceAt(file, row);
 		this.move(file, row);
 	}
-	
+
 	ChessPiece.prototype.move = function(file, row) {
 		this.game.clearSquare(this.file, this.row);
 		this.game.pieceAt(file, row, this); // place it on the board)
@@ -141,7 +141,7 @@ $(function() {
 					: false);
 		}
 	}
-	
+
 	ChessPiece.prototype.matches = function(oldFile, oldRow, isCapture, file, row) {
 		if (typeof oldFile == 'number' && oldFile != this.file)
 			return false;
@@ -152,7 +152,7 @@ $(function() {
 
 	ChessPiece.prototype.showAction = function(move) {
 		switch (move.what) {
-			case 'a': 
+			case 'a':
 				this.appear(move.file, move.row);
 				break;
 			case 'm':
@@ -163,7 +163,7 @@ $(function() {
 				break;
 		}
 	}
-	
+
 	function Game(tds, gameSet) {
 		$.extend(this, {
 			board: [],
@@ -181,21 +181,21 @@ $(function() {
 		tds.descriptionsTd.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
 		this.toggle(false);
 	}
-	
+
 	Game.prototype.toggle = function(what) {
 		this.boardDiv.toggle(what);
 		this.pgnDiv.toggle(what);
 		this.descriptionsDiv.toggle(what);
 	}
-	
+
 	Game.prototype.show = function() {
 		clearTimer();
 		this.toggle(true);
 		this.drawBoard();
 	}
-	
+
 	Game.prototype.copyBoard = function() { return this.board.slice(); }
-	
+
 	Game.prototype.pieceAt = function(file, row, piece) {
 		var i = bindex(file, row);
 		if (piece) {
@@ -208,16 +208,16 @@ $(function() {
 	Game.prototype.clearSquare = function(file, row) {
 		delete this.board[bindex(file, row)];
 	}
-	
+
 	Game.prototype.clearPieceAt = function(file, row) {
-		var 
+		var
 			piece = this.pieceAt(file, row);
 		if (piece)
 			piece.remove();
 		this.clearSquare(file, row);
 		this.registerMove({what:'r', piece: piece, file: file, row: row})
 	}
-	
+
 	Game.prototype.roadIsClear = function(file1, file2, row1, row2) {
 		var file, row, dfile, drow, moves = 0;
 		dfile = sign(file1, file2);
@@ -231,9 +231,9 @@ $(function() {
 			if (this.pieceAt(file, row))
 				return false;
 			if (moves++ > 10)
-				throw 'something is wrong in function roadIsClear.' + 
-					' file=' + file + ' file1=' + file1 + ' file2=' + file2 + 
-					' row=' + row + ' row1=' + row1 + ' row2=' + row2 + 
+				throw 'something is wrong in function roadIsClear.' +
+					' file=' + file + ' file1=' + file1 + ' file2=' + file2 +
+					' row=' + row + ' row1=' + row1 + ' row2=' + row2 +
 					' dfile=' + dfile + ' drow=' + drow;
 		}
 	}
@@ -249,16 +249,16 @@ $(function() {
 			byTypeCol = byType[color] = [];
 		byTypeCol.push(piece);
 	}
-	
+
 	Game.prototype.registerMove = function(move) {
 		moveBucket.push(move);
 	}
-	
+
 	Game.prototype.gotoBoard = function(index) {
 		this.index = index;
 		this.drawBoard();
 	}
-	
+
 	Game.prototype.advance = function() {
 		if (this.index < this.moves.length - 1)
 			this.showMoveTo(this.index + 1);
@@ -266,27 +266,27 @@ $(function() {
 		if (this.linkOfIndex[this.index])
 			this.linkOfIndex[this.index].addClass('pgn-current-move');
 	}
-	
+
 	Game.prototype.showMoveTo = function(index, noAnim) {
 		var dif = index - this.index;
 			if (noAnim || dif < 1 || 2 < dif)
 				this.gotoBoard(index);
-			else 
+			else
 				while (this.index < index) {
 					var mb = this.moves[++this.index];
 					for (var m in mb)
 						mb[m].piece.showAction(mb[m]);
 				}
 	}
-	
+
 	Game.prototype.drawBoard = function() {
-		var 
+		var
 			saveAnim = anim,
 			board = this.boards[this.index];
 		anim = 0;
 		for (var i in this.pieces)
 			this.pieces[i].disappear();
-		for (var i in board) 
+		for (var i in board)
 			board[i].appear(file(i), row(i));
 		anim = saveAnim;
 	}
@@ -297,35 +297,35 @@ $(function() {
 		king.move(fileOfStr('g'), king.row);
 		rook.move(fileOfStr('f'), rook.row);
 	}
-	
+
 	Game.prototype.queenSideCastle = function(color) {
 		var king = this.piecesByTypeCol['k'][color][0];
 		var rook = this.piecesByTypeCol['r'][color][0];
 		king.move(fileOfStr('c'), king.row);
 		rook.move(fileOfStr('d'), rook.row);
 	}
-	
+
 	Game.prototype.promote = function(piece, type, file, row, capture) {
 		piece[capture ? 'capture' : 'move'](file, row);
 		this.clearPieceAt(file, row);
 		var newPiece = this.createPiece(type, piece.color, file, row);
 		this.registerMove({what:'a', piece: newPiece, file: file, row: row})
 	}
-	
+
 	Game.prototype.createPiece = function(type, color, file, row) {
 		var piece = new ChessPiece(type, color, this);
 		this.pieceAt(file, row, piece);
 		this.addPieceToDicts(piece);
 		return piece;
 	}
-	
+
 	Game.prototype.createMove = function(color, moveStr) {
 		moveStr = moveStr.replace(/^\s+|[!?+# ]*(\$\d{1,3})?$/g, ''); // check, mate, comments, glyphs.
 		if (!moveStr.length)
 			return false;
-		if (moveStr == 'O-O') 
+		if (moveStr == 'O-O')
 			return this.kingSideCastle(color);
-		if (moveStr == 'O-O-O') 
+		if (moveStr == 'O-O-O')
 			return this.queenSideCastle(color);
 		if ($.inArray(moveStr, ['1-0', '0-1', '1/2-1/2', '*']) + 1)
 			return moveStr; // end of game - white wins, black wins, draw, game halted/abandoned/unknown.
@@ -333,7 +333,7 @@ $(function() {
 		if (!match) {
 			return false;
 		}
-		
+
 		var type = match[1] ? match[1].toLowerCase() : 'p';
 		var oldFile = fileOfStr(match[2]);
 		var oldRow = rowOfStr(match[3]);
@@ -375,22 +375,22 @@ $(function() {
 				.data({game: this, index: index, noAnim: noAnim})
 				.click(linkMoveClick);
 			this.pgnDiv.append(link);
-			if (!noAnim) 
+			if (!noAnim)
 				this.linkOfIndex[index] = link;
 		}
 	}
-	
+
 	Game.prototype.addComment = function(str) {
 		this.pgnDiv.append($('<span>', {'class': 'pgn-comment'}).text(str));
 	}
-	
+
 	Game.prototype.addDescription = function(description) {
 		description = $.trim(description);
 		var match = description.match(/\[([^"]+)"(.*)"\]/);
-		if (match) 
+		if (match)
 			this.descriptions[$.trim(match[1])] = match[2];
 	}
-	
+
 	Game.prototype.description = function(pgn) {
 		var d = this.descriptions;
 		var s =
@@ -398,27 +398,27 @@ $(function() {
 			( (d['Event'] || d['אירוע'] || '') + ': ' + (d['White'] || d[''] || 'לבן') + ' - ' + (d['Black'] || d['שחור'] || '') );
 		return s;
 	}
-	
+
 	Game.prototype.analyzePgn = function(pgn) {
-		
-		
+
+
 		function removeHead(match) {
 			var ind = pgn.indexOf(match) + match.length;
 			pgn = pgn.substring(ind);
 			return match;
 		}
-		
+
 		function tryMatch(regex) {
 			var match = pgn.match(regex);
-			if (match) 
+			if (match)
 				removeHead(match[0]);
 			return match && match[0];
 		}
-		
-		var 
-			match, 
+
+		var
+			match,
 			turn;
-		
+
 		while (match = tryMatch(/^\s*\[[^\]]*\]/))
 			this.addDescription(match);
 
@@ -426,15 +426,15 @@ $(function() {
 			this.descriptionsDiv.css({direction: this.descriptions['direction']});
 			delete this.descriptions['direction'];
 		}
-		
+
 		var dar = [];
 		$.each(this.descriptions, function(key, val){dar.push(key + ': ' + val);})
 		this.descriptionsDiv.html(dar.join('<br />'));
-		
+
 		pgn = pgn.replace(/;(.*)\n/g, ' {$1} ').replace(/\s+/g, ' '); // replace to-end-of-line comments with block comments, remove newlines and noramlize spaces to 1
-		
-		this.populateBoard(); // 
-		
+
+		this.populateBoard(); //
+
 		var prevLen = -1;
 		this.addMoveLink();
 		while (pgn.length) {
@@ -470,12 +470,12 @@ $(function() {
 		var gameSet = $(this).data('gameSet');
 		gameSet.selectGame(this.value);
 	}
-	
+
 	function createFlipper(gameSet) {
 		var flipper =
 			$('<img>', {src: flipImageUrl})
 				.css({width: '37px', float:'right', clear: 'right', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
-				.click(function() { 
+				.click(function() {
 					gameSet.flip ^= 1;
 					var rotation = gameSet.flip ? 'rotate(180deg)' : 'rotate(0deg)';
 					$(this).css({
@@ -501,7 +501,7 @@ $(function() {
 			});
 		return button;
 	}
-	
+
 	function slideShowButton(gameSet) {
 		var button = $('<input>', {type: 'button', value: '\u25B6'})
 			.css({float: 'right', clear: 'right', fontSize: '16px', width: 40})
@@ -511,27 +511,27 @@ $(function() {
 			});
 		return button;
 	}
-	
+
 	function setWidth() {
 		var
 			$this = $(this),
 			table = $this.closest('table.pgn-table'),
 			width = parseInt($this.slider('value'), 10),
 			gs = $this.data('gameSet');
-			
+
 		gs.blockSize = width;
 		table.attr({width: width * 8 + 70}).css({width: width * 8 + 70});
 		table.find('td.pgn-game-square').attr({width: width, height: width}).css({width: width, maxWidth: width, height: width});
 		gs.currentGame.drawBoard();
 	}
-	
+
 	function buildBoardDiv(container, selector, gameSet) {
-		var 
+		var
 			boardTd, pgnTd, descriptionsTd,
 			table,
 			controlsTd,
 			sliderTd,
-			cdTd, 
+			cdTd,
 			cdTable,
 			flipper = createFlipper(gameSet),
 			advance = advanceButton(gameSet),
@@ -540,7 +540,7 @@ $(function() {
 			slider,
 			fileLegend = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
 
-			
+
 		slider = $('<div>', {'class': 'pgn-slider'})
 			.slider({
 				max: 60,
@@ -550,9 +550,9 @@ $(function() {
 				stop: setWidth
 			}).data({gameSet: gameSet});
 		table = $('<table>', {'class': 'pgn-table', border: 0, cellpadding: 0, cellspacing: 0}).appendTo(container);
-		if (selector)	
+		if (selector)
 			table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-selector'}).append(selector)));
-		
+
 		table.append($('<tr>').append(cdTd = $('<td>', {colspan: 10})));
 		//controlsDiv = $('<div>').css({textAlign: 'right', width: '100%'}).appendTo(controlsTd);
 		cdTable = $('<table>').css({width: '100%'}).appendTo(cdTd);
@@ -562,43 +562,43 @@ $(function() {
 			.append(controlsTd = $('<td>', {'class': 'pgn-controls'}))
 			.append(sliderTd = $('<td>', {'vertical-align': 'top'}).append(slider));
 		var tr = $('<tr>').appendTo(table);
-		for (var i in fileLegend) 
+		for (var i in fileLegend)
 			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
 		var blackSq = {height: 40, width: 40, 'class': 'pgn-game-square pgn-game-square-black'};
 		var whiteSq = {height: 40, width: 40, 'class': 'pgn-game-square pgn-game-square-white'};
-		
-		for (var i = 0; i < 8; i++) { // create row i: legend, 8 
+
+		for (var i = 0; i < 8; i++) { // create row i: legend, 8
 			tr = $('<tr>').appendTo(table);
 			tr.append($('<td>', {'class': 'pgn-legend pgn-row'}).text(8 - i));
 			for (var file = 0; file < 8; file++) {
 				var td = $('<td>', (((i+file)%2) ? blackSq : whiteSq));
 				if (!i && !file)
-					boardTd = td; 
+					boardTd = td;
 				tr.append(td);
 			}
 			tr.append($('<td>', {'class': 'pgn-legend pgn-row'}).text(8 - i));
 		}
 		tr = $('<tr>').appendTo(table);
-		for (var i in fileLegend) 
+		for (var i in fileLegend)
 			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
 		table.append($('<tr>').append(pgnTd = $('<td>', {colspan: 10, 'class': 'pgn-pgn-moves'})));
 		controlsTd.append(advance).append(slideShow).append(flipper);
 		return {boardTd: boardTd, pgnTd: pgnTd, descriptionsTd: descriptionsTd};
 	}
-	
+
 	function doIt() {
-		
+
 		$('div.pgn-source-wrapper').each(function() {
-			var 
+			var
 				wrapperDiv = $(this),
 				pgnSource = $('div.pgn-sourcegame', wrapperDiv),
 				boardDiv,
 				selector,
 				gameSet = new Gameset();
-										 
-			if (pgnSource.length > 1) 
+
+			if (pgnSource.length > 1)
 				selector = $('<select>').data({gameSet: gameSet}).change(selectGame);
-			
+
 			var tds = buildBoardDiv(wrapperDiv, selector, gameSet);
 			var ind = 0;
 			pgnSource.each(function() {
@@ -610,9 +610,9 @@ $(function() {
 						game.gotoBoard(0);
 						wrapperDiv.data({currentGame: game});
 					ind++;
-					
+
 					gameSet.allGames.push(game);
-					if (selector) 
+					if (selector)
 						selector.append($('<option>', {value: gameSet.allGames.length - 1, text: game.description()}));
 					else
 						game.show();
@@ -624,7 +624,7 @@ $(function() {
 				selector.trigger('change');
 		})
 	}
-	
+
 	function pupulateImages() {
 		var
 			colors = [WHITE, BLACK],
@@ -637,15 +637,15 @@ $(function() {
 		}
 		allPieces.push('File:Chess Board, gray.png');
 		allPieces.push('File:Yin and Yang.svg');
-		
+
 		new mw.Api().get(
 			{titles: allPieces.join('|'), prop: 'imageinfo', iiprop: 'url'},
 			function(data) {
 				if (data && data.query) {
 					$.each(data.query.pages, function(index, page) {
-						var 
+						var
 							url = page.imageinfo[0].url,
-							match = 
+							match =
 								url.match(/Chess_([prnbqk][dl])t45\.svg/) // piece
 								|| url.match(/Chess_([dl])45\.svg/); // empty square
 						if (match)
@@ -661,7 +661,7 @@ $(function() {
 
 	if ($('div.pgn-source-wrapper').length) {
 		mw.util.addCSS(
-			'img.pgn-chessPiece { position: absolute; zIndex: 3;}\n' + 
+			'img.pgn-chessPiece { position: absolute; zIndex: 3;}\n' +
 			'div.pgn-board-div { position: relative;}\n' +
 			'div.pgn-slider { float: right; clear: right; height: 120px;}\n' +
 			'table.pgn-table { direction: ltr; width: 360px;}\n' +
