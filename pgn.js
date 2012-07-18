@@ -13,6 +13,7 @@ $(function() {
 		acode = 'a'.charCodeAt(0),
 		moveBucket = [],
 		allGames =[],
+		timer,
 		currentGame;
 
 	function bindex(file, row) { return 8 * file + row; }
@@ -26,12 +27,19 @@ $(function() {
 	function fileOfStr(file) { return file && file.charCodeAt(0) - acode;}
 	function rowOfStr(row) { return row && (row - 1);}
 
+	function clearTimer() {
+		if (timer)
+			clearInterval(timer);
+		timer = null;
+	}
+	
 	function linkMoveClick(e) {
 		var
 			$this = $(this),
 			game = $this.data('game'), 
 			index = $this.data('index'), 
 			noAnim = $this.data('noAnim');
+		clearTimer();
 		$this.addClass('pgn-current-move').siblings().removeClass('pgn-current-move');
 		game.showMoveTo(index, noAnim);
 	}
@@ -45,7 +53,7 @@ $(function() {
 	}
 
 	ChessPiece.prototype.appear = function(file, row) {
-		this.img.css({top: top(row), left: left(file), width: blockSize + 'px'})
+		this.img.css({top: top(row), left: left(file), width: blockSize})
 			.fadeIn(anim);
 	}
 
@@ -123,9 +131,9 @@ $(function() {
 	}
 	
 	ChessPiece.prototype.matches = function(oldFile, oldRow, isCapture, file, row) {
-		if (oldFile != undefined && oldFile != this.file)
+		if (typeof oldFile == 'number' && oldFile != this.file)
 			return false;
-		if (oldRow != undefined && oldRow != this.row)
+		if (typeof oldRow  == 'number' && oldRow != this.row)
 			return false;
 		return this.canMoveTo(file, row, isCapture);
 	}
@@ -158,15 +166,21 @@ $(function() {
 		tds.boardTd.append(this.boardDiv = $('<div>', {'class': 'pgn-board-div'}));
 		tds.pgnTd.append(this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}));
 		tds.descriptionsTd.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
+		this.toggle(false);
+	}
+	
+	Game.prototype.toggle = function(what) {
+		this.boardDiv.toggle(what);
+		this.pgnDiv.toggle(what);
+		this.descriptionsDiv.toggle(what);
 	}
 	
 	Game.prototype.show = function() {
+		clearTimer();
+		if (currentGame)
+			currentGame.toggle(false);
 		currentGame = this;
-		for (var td in this.tds)
-			this.tds[td].find('div').toggle(false);
-		this.boardDiv.toggle(true);
-		this.pgnDiv.toggle(true);
-		this.descriptionsDiv.toggle(true);
+		this.toggle(true);
 		this.drawBoard();
 	}
 	
@@ -282,14 +296,15 @@ $(function() {
 	Game.prototype.queenSideCastle = function(color) {
 		var king = this.piecesByTypeCol['k'][color][0];
 		var rook = this.piecesByTypeCol['r'][color][0];
-		king.move(fileOfStr('b'), king.row);
-		rook.move(fileOfStr('c'), rook.row);
+		king.move(fileOfStr('c'), king.row);
+		rook.move(fileOfStr('d'), rook.row);
 	}
 	
-	Game.prototype.promote = function(piece, type, file, row) {
-		this.clearPieceAt(piece.file, piece.row);
+	Game.prototype.promote = function(piece, type, file, row, capture) {
+		piece[capture ? 'capture' : 'move'](file, row);
+		this.clearPieceAt(file, row);
 		var newPiece = this.createPiece(type, piece.color, file, row);
-		this.registerMove({what:'a', piece: piece, file: file, row: row})
+		this.registerMove({what:'a', piece: newPiece, file: file, row: row})
 	}
 	
 	Game.prototype.createPiece = function(type, color, file, row) {
@@ -334,7 +349,7 @@ $(function() {
 			throw 'could not find a piece that can execute this move. type="' + type + ' color=' + color + ' moveAGN=' + moveStr;
 //		confirm('about to execute ' + moveStr + ' piece type is ' + found.type + ' at ' + found.file + found.row + ' file=' + file + ' row=' + row)
 		if (promotion)
-			this.promote(found, promotion.charAt(1), file, row);
+			this.promote(found, promotion.toLowerCase().charAt(1), file, row, isCapture);
 		else if (isCapture)
 			found.capture(file, row);
 		else
@@ -442,7 +457,7 @@ $(function() {
 	function createFlipper() {
 		var flipper =
 			$('<img>', {src: flipImageUrl})
-				.css({width: '40px'})
+				.css({width: '40px', float:'right', clear: 'right'})
 				.click(function() { 
 					flip ^= 1;
 					var rotation = flip ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -459,17 +474,29 @@ $(function() {
 				});
 		return flipper;
 	}
-	
+
 	function advanceButton() {
 		var button = $('<input>', {type: 'button', value: '=>', dir:'ltr'})
+			.css({float: 'right', clear: 'right'})
 			.click(function() {
+				clearTimer();
 				currentGame.advance();
 			});
 		return button;
 	}
 	
+	function slideShowButton() {
+		var button = $('<input>', {type: 'button', value: 'A', dir:'ltr'})
+			.css({float: 'right', clear: 'right'})
+			.click(function() {
+				clearTimer();
+				timer = setInterval(function(){currentGame.advance()}, 1000);
+			});
+		return button;
+	}
+	
 	function setWidth() {
-		var table = $(this).closest('table'),
+		var table = $(this).closest('table.pgn-table'),
 			width = parseInt($(this).slider('value'), 10);
 			
 		blockSize = width;
@@ -483,8 +510,13 @@ $(function() {
 			boardTd, pgnTd, descriptionsTd,
 			table,
 			controlsTd,
+			sliderTd,
+			cdTd, 
+			cdTable,
 			flipper = createFlipper(),
 			advance = advanceButton(),
+			slideShow = slideShowButton(),
+			buttons = $('<div>').css({maxWidth: 40}).append(advance).append(slideShow),
 			slider,
 			fileLegend = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
 
@@ -493,7 +525,7 @@ $(function() {
 			.slider({
 				max: 60,
 				min: 20,
-				valign: 'middle',
+				orientation: 'vertical',
 				value: blockSize,
 				stop: setWidth
 			});
@@ -501,8 +533,14 @@ $(function() {
 		if (selector)	
 			table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-selector'}).append(selector)));
 		
-		table.append($('<tr>').append(descriptionsTd = $('<td>', {colspan: 10, 'class': 'pgn-descriptions'})));
-		table.append($('<tr>').append(controlsTd = $('<td>', {colspan: 10, 'class': 'pgn-controls'})));
+		table.append($('<tr>').append(cdTd = $('<td>', {colspan: 10, 'class': 'pgn-descriptions'})));
+		//controlsDiv = $('<div>').css({textAlign: 'right', width: '100%'}).appendTo(controlsTd);
+		cdTable = $('<table>').css({width: '100%'}).appendTo(cdTd);
+		$('<tr>')
+			.appendTo(cdTable)
+			.append(descriptionsTd = $('<td>', {'class': 'pgn-descriptions'}))
+			.append(controlsTd = $('<td>', {'class': 'pgn-controls'}))
+			.append(sliderTd = $('<td>', {'vertical-align': 'top'}).append(slider));
 		var tr = $('<tr>').appendTo(table);
 		for (var i in fileLegend) 
 			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
@@ -524,7 +562,7 @@ $(function() {
 		for (var i in fileLegend) 
 			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
 		table.append($('<tr>').append(pgnTd = $('<td>', {colspan: 10, 'class': 'pgn-pgn-moves'})));
-		controlsTd.css({textAlign: 'right'}).append(flipper).append(advance).append(slider);
+		controlsTd.append(advance).append(slideShow).append(flipper);
 		return {boardTd: boardTd, pgnTd: pgnTd, descriptionsTd: descriptionsTd};
 	}
 	
@@ -602,10 +640,10 @@ $(function() {
 		mw.util.addCSS(
 			'img.pgn-chessPiece { position: absolute; zIndex: 3;}\n' + 
 			'div.pgn-board-div { position: relative;}\n' +
-			'div.pgn-slider { max-width: 100px; min-width: 100px; clear: both; float: right; margin: 15px;}\n' +
+			'div.pgn-slider { float: right; clear: right; height: 120px;}\n' +
 			'table.pgn-table { direction: ltr; width: 360px;}\n' +
 			'td.pgn-selector { height: 2em; text-align: center; vertical-aligh: middle;}\n' +
-			'td.pgn-controls { height: 2em; text-align: right; vertical-aligh: middle}\n' +
+			'td.pgn-controls { height: 2em; text-align: right; vertical-align: top;}\n' +
 			'td.pgn-legend { text-align: center; vertical-align: middle;}\n' +
 			'td.pgn-game-square { opacity; 0.8; width: 40px; height: 40px; text-align: left; vertical-align: top; padding: 0;}\n' +
 			'td.pgn-game-square-black { background-color: #d18b47;}\n' +
