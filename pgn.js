@@ -1,31 +1,23 @@
 "use strict";
 $(function() {
 	var
-		blockSize = 40,
 		imageUrl = {},
-		boardImageUrl,
 		flipImageUrl,
-		anim = 1000,
 		WHITE = 'l',
 		BLACK = 'd',
-		flip = false,
 		acode = 'a'.charCodeAt(0),
-		moveBucket = [],
-		allGames =[],
-		timer,
-		currentGame;
+		moveBucket = [], // this is a scratch thing, but since we access it from different objects, it's convenient to have it global
+		anim = 1000,
+		timer;
 
+// some global, utility functions.
 	function bindex(file, row) { return 8 * file + row; }
-	function top(row) { return ((flip ? row : (7 - row)) * blockSize) + 'px'; }
-	function left(file) { return ((flip ? 7 - file : file) * blockSize) + 'px'; }
-	function row(ind) { return ind % 8; }
 	function file(ind) { return Math.floor(ind / 8);}
+	function row(ind) { return ind % 8; }
 	function sign(a, b) { return a == b ? 0 : (a < b ? 1 : -1); }
 	function colorDiff(a, b) {return (a == BLACK) - (b == BLACK);}
-	
 	function fileOfStr(file) { return file && file.charCodeAt(0) - acode;}
 	function rowOfStr(row) { return row && (row - 1);}
-
 	function clearTimer() {
 		if (timer)
 			clearInterval(timer);
@@ -42,6 +34,29 @@ $(function() {
 		$this.addClass('pgn-current-move').siblings().removeClass('pgn-current-move');
 		game.showMoveTo(index, noAnim);
 	}
+		
+	
+	
+	function Gameset() { // set of functions and features that depend on blocksize, flip and currentGame.
+		$.extend(this, {
+			blockSize: 40,
+			flip: false,
+			allGames: [],
+			currentGame: null,
+
+			top: function(row) { return ((this.flip ? row : (7 - row)) * this.blockSize) + 'px'; },
+			left: function(file) { return ((this.flip ? 7 - file : file) * this.blockSize) + 'px'; },
+			selectGame: function(val) {
+				if (this.currentGame) 
+					this.currentGame.toggle(false);
+				var game = this.allGames[val];
+				if (game) {
+					this.currentGame = game;
+					game.show();
+				}
+			}
+		});
+	}
 	
 	function ChessPiece(type, color, game) {
 		this.game = game;
@@ -52,12 +67,12 @@ $(function() {
 	}
 
 	ChessPiece.prototype.appear = function(file, row) {
-		this.img.css({top: top(row), left: left(file), width: blockSize})
+		this.img.css({top: this.game.gs.top(row), left: this.game.gs.left(file), width: this.game.gs.blockSize})
 			.fadeIn(anim);
 	}
 
 	ChessPiece.prototype.showMove = function(file, row) {
-		this.img.animate({top: top(row), left: left(file)}, anim);
+		this.img.animate({top: this.game.gs.top(row), left: this.game.gs.left(file)}, anim);
 	}
 
 	ChessPiece.prototype.disappear = function() {
@@ -97,35 +112,33 @@ $(function() {
 		var rd = Math.abs(this.row - row), fd = Math.abs(this.file - file);
 		switch(this.type) {
 			case 'n':
-				if (rd + fd == 3 && rd * fd == 2) // no need to test if target is occupied.
-					return this;
-				else return false;
+				return ((rd + fd == 3 && rd * fd) // sum is 3, none is 0
+					? this
+					: false);
 			case 'p':
-				var occupied = !!this.game.pieceAt(file, row);
-				if ((this.row == this.pawnStart() && row ==  this.row + this.pawnDirection() * 2 && fd == 0 && !occupied)
-					|| (this.row + this.pawnDirection() == row && fd == 1 && capture) // do not test "occupied" - can be en passant
-					|| (this.row + this.pawnDirection() == row && !fd && !occupied))
-					return this;
-				else return false;
+				var dir = this.pawnDirection();
+				return (
+					((this.row == this.pawnStart() && row ==  this.row + dir * 2 && !fd && !capture)
+					|| (this.row + dir == row && !fd && !capture)
+					|| (this.row + dir == row && fd == 1 && capture))
+						? this
+						: false);
 			case 'k':
-				if (rd < 2 && fd < 2)
-					return this
-				else return false;
+				return ((rd < 2 && fd < 2)
+					? this
+					: false);
 			case 'q':
-				if (! ((rd - fd) * rd * fd) // either equal or one of them is 0. 
-					&& this.game.roadIsClear(this.file, file, this.row, row))
-					return this;
-				else return false;
-					
+				return ((! ((rd - fd) * rd * fd) && this.game.roadIsClear(this.file, file, this.row, row))
+					? this
+					: false);
 			case 'r':
-				if (!(rd * fd) && this.game.roadIsClear(this.file, file, this.row, row))
-					return this;
-				else return false;
-					
+				return ((!(rd * fd) && this.game.roadIsClear(this.file, file, this.row, row))
+					? this
+					: false);
 			case 'b':
-				if ((rd == fd) && this.game.roadIsClear(this.file, file, this.row, row))
-					return this;
-				else return false;
+				return (((rd == fd) && this.game.roadIsClear(this.file, file, this.row, row))
+					? this
+					: false);
 		}
 	}
 	
@@ -151,7 +164,7 @@ $(function() {
 		}
 	}
 	
-	function Game(tds) {
+	function Game(tds, gameSet) {
 		$.extend(this, {
 			board: [],
 			boards: [],
@@ -161,7 +174,8 @@ $(function() {
 			index: 0,
 			piecesByTypeCol: {},
 			descriptions: {},
-			tds: tds});
+			tds: tds,
+			gs: gameSet});
 		tds.boardTd.append(this.boardDiv = $('<div>', {'class': 'pgn-board-div'}));
 		tds.pgnTd.append(this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}));
 		tds.descriptionsTd.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
@@ -176,9 +190,6 @@ $(function() {
 	
 	Game.prototype.show = function() {
 		clearTimer();
-		if (currentGame)
-			currentGame.toggle(false);
-		currentGame = this;
 		this.toggle(true);
 		this.drawBoard();
 	}
@@ -258,14 +269,14 @@ $(function() {
 	
 	Game.prototype.showMoveTo = function(index, noAnim) {
 		var dif = index - this.index;
-		if (!noAnim && 0 < dif && dif < 3)
-			while (this.index < index) {
-				moveBucket = this.moves[++this.index];
-				for (var m in moveBucket)
-					moveBucket[m].piece.showAction(moveBucket[m]);
-			}
-		else 
-			this.gotoBoard(index);
+			if (noAnim || dif < 1 || 2 < dif)
+				this.gotoBoard(index);
+			else 
+				while (this.index < index) {
+					var mb = this.moves[++this.index];
+					for (var m in mb)
+						mb[m].piece.showAction(mb[m]);
+				}
 	}
 	
 	Game.prototype.drawBoard = function() {
@@ -277,11 +288,6 @@ $(function() {
 			this.pieces[i].disappear();
 		for (var i in board) 
 			board[i].appear(file(i), row(i));
-		this.descriptionsDiv.children().remove();
-		var s = '';
-		for (var d in this.descriptions)
-			s += (d + ': ' + this.descriptions[d] + '<br/>');
-		this.descriptionsDiv.html(s);
 		anim = saveAnim;
 	}
 
@@ -381,13 +387,15 @@ $(function() {
 	Game.prototype.addDescription = function(description) {
 		description = $.trim(description);
 		var match = description.match(/\[([^"]+)"(.*)"\]/);
-		if (match)
+		if (match) 
 			this.descriptions[$.trim(match[1])] = match[2];
 	}
 	
 	Game.prototype.description = function(pgn) {
 		var d = this.descriptions;
-		var s = (d.Event || '') + ' ' + (d.White || '') + ' vs.' + (d.Black || '');
+		var s =
+			d['Name'] || d['שם'] ||
+			( (d['Event'] || d['אירוע'] || '') + ': ' + (d['White'] || d[''] || 'לבן') + ' - ' + (d['Black'] || d['שחור'] || '') );
 		return s;
 	}
 	
@@ -413,8 +421,19 @@ $(function() {
 		
 		while (match = tryMatch(/^\s*\[[^\]]*\]/))
 			this.addDescription(match);
+
+		if (this.descriptions['direction']) {
+			this.descriptionsDiv.css({direction: this.descriptions['direction']});
+			delete this.descriptions['direction'];
+		}
+		
+		var dar = [];
+		$.each(this.descriptions, function(key, val){dar.push(key + ': ' + val);})
+		this.descriptionsDiv.html(dar.join('<br />'));
 		
 		pgn = pgn.replace(/;(.*)\n/g, ' {$1} ').replace(/\s+/g, ' '); // replace to-end-of-line comments with block comments, remove newlines and noramlize spaces to 1
+		
+		this.populateBoard(); // 
 		
 		var prevLen = -1;
 		this.addMoveLink();
@@ -448,15 +467,14 @@ $(function() {
 	}
 
 	function selectGame() {
-		var game = allGames[this.value];
-		if (game) 
-			game.show();
+		var gameSet = $(this).data('gameSet');
+		gameSet.selectGame(this.value);
 	}
 	
 	function createFlipper() {
 		var flipper =
 			$('<img>', {src: flipImageUrl})
-				.css({width: '40px', float:'right', clear: 'right'})
+				.css({width: '37px', float:'right', clear: 'right', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
 				.click(function() { 
 					flip ^= 1;
 					var rotation = flip ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -474,37 +492,40 @@ $(function() {
 		return flipper;
 	}
 
-	function advanceButton() {
-		var button = $('<input>', {type: 'button', value: '=>', dir:'ltr'})
-			.css({float: 'right', clear: 'right'})
+	function advanceButton(gameSet) {
+		var button = $('<input>', {type: 'button', value: '<'})
+			.css({float: 'right', clear: 'right', fontSize: '16px', width: 40})
 			.click(function() {
 				clearTimer();
-				currentGame.advance();
+				gameSet.currentGame.advance();
 			});
 		return button;
 	}
 	
-	function slideShowButton() {
-		var button = $('<input>', {type: 'button', value: 'A', dir:'ltr'})
-			.css({float: 'right', clear: 'right'})
+	function slideShowButton(gameSet) {
+		var button = $('<input>', {type: 'button', value: '\u25B6'})
+			.css({float: 'right', clear: 'right', fontSize: '16px', width: 40})
 			.click(function() {
 				clearTimer();
-				timer = setInterval(function(){currentGame.advance()}, 1000 + anim);
+				timer = setInterval(function(){gameSet.currentGame.advance()}, 1000 + anim);
 			});
 		return button;
 	}
 	
 	function setWidth() {
-		var table = $(this).closest('table.pgn-table'),
-			width = parseInt($(this).slider('value'), 10);
+		var
+			$this = $(this),
+			table = $this.closest('table.pgn-table'),
+			width = parseInt($this.slider('value'), 10),
+			gs = $this.data('gameSet');
 			
-		blockSize = width;
+		gs.blockSize = width;
 		table.attr({width: width * 8 + 70}).css({width: width * 8 + 70});
 		table.find('td.pgn-game-square').attr({width: width, height: width}).css({width: width, maxWidth: width, height: width});
-		currentGame.drawBoard();
+		gs.currentGame.drawBoard();
 	}
 	
-	function buildBoardDiv(container, selector) {
+	function buildBoardDiv(container, selector, gameSet) {
 		var 
 			boardTd, pgnTd, descriptionsTd,
 			table,
@@ -525,19 +546,19 @@ $(function() {
 				max: 60,
 				min: 20,
 				orientation: 'vertical',
-				value: blockSize,
+				value: gameSet.blockSize,
 				stop: setWidth
-			});
+			}).data({gameSet: gameSet});
 		table = $('<table>', {'class': 'pgn-table', border: 0, cellpadding: 0, cellspacing: 0}).appendTo(container);
 		if (selector)	
 			table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-selector'}).append(selector)));
 		
-		table.append($('<tr>').append(cdTd = $('<td>', {colspan: 10, 'class': 'pgn-descriptions'})));
+		table.append($('<tr>').append(cdTd = $('<td>', {colspan: 10})));
 		//controlsDiv = $('<div>').css({textAlign: 'right', width: '100%'}).appendTo(controlsTd);
 		cdTable = $('<table>').css({width: '100%'}).appendTo(cdTd);
 		$('<tr>')
 			.appendTo(cdTable)
-			.append(descriptionsTd = $('<td>', {'class': 'pgn-descriptions'}))
+			.append(descriptionsTd = $('<td>'))
 			.append(controlsTd = $('<td>', {'class': 'pgn-controls'}))
 			.append(sliderTd = $('<td>', {'vertical-align': 'top'}).append(slider));
 		var tr = $('<tr>').appendTo(table);
@@ -566,33 +587,33 @@ $(function() {
 	}
 	
 	function doIt() {
-		var selector;
 		
 		$('div.pgn-source-wrapper').each(function() {
 			var 
 				wrapperDiv = $(this),
 				pgnSource = $('div.pgn-sourcegame', wrapperDiv),
-				boardDiv;
+				boardDiv,
+				selector,
+				gameSet = new Gameset();
 										 
 			if (pgnSource.length > 1) 
-				selector = $('<select>').change(selectGame);
+				selector = $('<select>').data({gameSet: gameSet}).change(selectGame);
 			
-			var tds = buildBoardDiv(wrapperDiv, selector);
+			var tds = buildBoardDiv(wrapperDiv, selector, gameSet);
 			var ind = 0;
 			pgnSource.each(function() {
 				try {
 					var
 						pgnDiv = $(this),
-						game = new Game(tds);
-						game.populateBoard(); // later use FEN, maybe
+						game = new Game(tds, gameSet);
 						game.analyzePgn(pgnDiv.text());
 						game.gotoBoard(0);
 						wrapperDiv.data({currentGame: game});
 					ind++;
-					if (selector) {
-						allGames.push(game);
-						selector.append($('<option>', {value: allGames.length - 1, text:game.description()}));
-					}
+					
+					gameSet.allGames.push(game);
+					if (selector) 
+						selector.append($('<option>', {value: gameSet.allGames.length - 1, text: game.description()}));
 					else
 						game.show();
 				} catch (e) {
@@ -629,8 +650,6 @@ $(function() {
 								|| url.match(/Chess_([dl])45\.svg/); // empty square
 						if (match)
 							imageUrl[match[1]] = url;
-						else if (/Board/.test(url))
-							boardImageUrl = url;
 						else if (/Yin/.test(url))
 							flipImageUrl = url;
 					});
@@ -653,7 +672,7 @@ $(function() {
 			'td.pgn-game-square-black { background-color: #d18b47;}\n' +
 			'td.pgn-game-square-white { background-color: #ffce9e;}\n' +
 			'div.pgn-pgn-display { padding: 0.5em 2em; }\n' +
-			'div.pgn-descriptions { padding: 0.5em 2em; }\n' +
+			'div.pgn-descriptions { padding: 0.5em 2em;}\n' +
 			'span.pgn-movelink { margin: 0 0.3em;}\n' +
 			'span.pgn-steplink { margin: 0 0.3em; color: green; font-weight: bold;}\n' +
 			'span.pgn-comment { margin: 0 0.3em; color: blue;}\n' +
