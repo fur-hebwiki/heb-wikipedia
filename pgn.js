@@ -467,7 +467,7 @@ $(function() {
 						'-o-transform': rotation,
 						'transform': rotation})
 					currentGame.gotoBoard(currentGame.index);
-					$(this).closest('table').find('td.pgn-row').each(function() {
+					$(this).closest('table.pgn-table').find('td.pgn-row').each(function() {
 						$(this).text(9 - $(this).text())
 					})
 				});
