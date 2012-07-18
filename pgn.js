@@ -1,12 +1,11 @@
 "use strict";
 $(function() {
 	var
-		div,
 		blockSize = 40,
 		imageUrl = {},
 		boardImageUrl,
 		flipImageUrl,
-		anim = 'slow',
+		anim = 1000,
 		WHITE = 'l',
 		BLACK = 'd',
 		flip = false,
@@ -490,7 +489,7 @@ $(function() {
 			.css({float: 'right', clear: 'right'})
 			.click(function() {
 				clearTimer();
-				timer = setInterval(function(){currentGame.advance()}, 1000);
+				timer = setInterval(function(){currentGame.advance()}, 1000 + anim);
 			});
 		return button;
 	}
@@ -581,19 +580,24 @@ $(function() {
 			var tds = buildBoardDiv(wrapperDiv, selector);
 			var ind = 0;
 			pgnSource.each(function() {
-				var
-					pgnDiv = $(this),
-					game = new Game(tds);
-					game.populateBoard(); // later use FEN, maybe
-					game.analyzePgn(pgnDiv.text());
-					game.gotoBoard(0);
-					wrapperDiv.data({currentGame: game});
-				if (selector) {
-					allGames.push(game);
-					selector.append($('<option>', {value: allGames.length - 1, text:game.description()}));
+				try {
+					var
+						pgnDiv = $(this),
+						game = new Game(tds);
+						game.populateBoard(); // later use FEN, maybe
+						game.analyzePgn(pgnDiv.text());
+						game.gotoBoard(0);
+						wrapperDiv.data({currentGame: game});
+					ind++;
+					if (selector) {
+						allGames.push(game);
+						selector.append($('<option>', {value: allGames.length - 1, text:game.description()}));
+					}
+					else
+						game.show();
+				} catch (e) {
+					mw.log('exception in game ' + ind + ' problem is: "' + e + '"');
 				}
-				else
-					game.show();
 			});
 			if (selector)
 				selector.trigger('change');
