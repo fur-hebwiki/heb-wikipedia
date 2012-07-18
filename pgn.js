@@ -471,20 +471,20 @@ $(function() {
 		gameSet.selectGame(this.value);
 	}
 	
-	function createFlipper() {
+	function createFlipper(gameSet) {
 		var flipper =
 			$('<img>', {src: flipImageUrl})
 				.css({width: '37px', float:'right', clear: 'right', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
 				.click(function() { 
-					flip ^= 1;
-					var rotation = flip ? 'rotate(180deg)' : 'rotate(0deg)';
+					gameSet.flip ^= 1;
+					var rotation = gameSet.flip ? 'rotate(180deg)' : 'rotate(0deg)';
 					$(this).css({
 						'-webkit-transform': rotation,
 						'-moz-transform': rotation,
 						'-ms-transform': rotation,
 						'-o-transform': rotation,
 						'transform': rotation})
-					currentGame.gotoBoard(currentGame.index);
+					gameSet.currentGame.drawBoard();
 					$(this).closest('table.pgn-table').find('td.pgn-row').each(function() {
 						$(this).text(9 - $(this).text())
 					})
@@ -533,9 +533,9 @@ $(function() {
 			sliderTd,
 			cdTd, 
 			cdTable,
-			flipper = createFlipper(),
-			advance = advanceButton(),
-			slideShow = slideShowButton(),
+			flipper = createFlipper(gameSet),
+			advance = advanceButton(gameSet),
+			slideShow = slideShowButton(gameSet),
 			buttons = $('<div>').css({maxWidth: 40}).append(advance).append(slideShow),
 			slider,
 			fileLegend = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
