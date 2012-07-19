@@ -433,7 +433,8 @@ $(function() {
 
 		pgn = pgn.replace(/;(.*)\n/g, ' {$1} ').replace(/\s+/g, ' '); // replace to-end-of-line comments with block comments, remove newlines and noramlize spaces to 1
 
-		this.populateBoard(); //
+		var fen = this.descriptions.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+		this.populateBoard(fen); //
 
 		var prevLen = -1;
 		this.addMoveLink();
@@ -458,14 +459,23 @@ $(function() {
 		}
 	}
 
-	Game.prototype.populateBoard = function() {
-		var p = 'p', game = this;
-		$.each(['r','n', 'b', 'q', 'k', 'b', 'n', 'r'], function(file, o) {
-			game.createPiece(o, WHITE, file, 0);
-			game.createPiece(p, WHITE, file, 1);
-			game.createPiece(p, BLACK, file, 6);
-			game.createPiece(o, BLACK, file, 7);
-		});
+	Game.prototype.populateBoard = function(fen) {
+		var fenar = fen.split(/[\/\s]/);
+		if (fenar.length < 8)
+		throw 'illegal fen: "' + fen + '"';
+		for (var row = 0; row < 8; row++) {
+			var file = 0;
+			var filear = fenar[row].split('');
+			for (var i in filear) {
+				var p = filear[i], lp = p.toLowerCase();
+				if (/[1-8]/.test(p))
+					file += parseInt(p, 10);
+				else if (/[prnbkq]/.test(lp))
+					this.createPiece(lp, (p == lp ? BLACK : WHITE), file++, 7-row)
+				else
+					throw 'illegal fen: "' + fen + '"';
+			}
+		}
 	}
 
 	function selectGame() {
@@ -662,23 +672,6 @@ $(function() {
 	}
 
 	if ($('div.pgn-source-wrapper').length) {
-		mw.util.addCSS(
-			'img.pgn-chessPiece { position: absolute; z-index: 3;}\n' +
-			'div.pgn-board-div { position: relative;}\n' +
-			'div.pgn-slider { float: right; clear: right; height: 120px;}\n' +
-			'table.pgn-table { direction: ltr; width: 360px;}\n' +
-			'td.pgn-selector { height: 2em; text-align: center; vertical-aligh: middle;}\n' +
-			'td.pgn-controls { height: 2em; text-align: right; vertical-align: top;}\n' +
-			'td.pgn-legend { text-align: center; vertical-align: middle;}\n' +
-			'td.pgn-game-square { opacity; 0.8; width: 40px; height: 40px; text-align: left; vertical-align: top; padding: 0;}\n' +
-			'td.pgn-game-square-black { background-color: #d18b47;}\n' +
-			'td.pgn-game-square-white { background-color: #ffce9e;}\n' +
-			'div.pgn-pgn-display { padding: 0.5em 2em; }\n' +
-			'div.pgn-descriptions { padding: 0.5em 2em;}\n' +
-			'span.pgn-movelink { margin: 0 0.3em;}\n' +
-			'span.pgn-steplink { margin: 0 0.3em; color: green; font-weight: bold;}\n' +
-			'span.pgn-comment { margin: 0 0.3em; color: blue;}\n' +
-			'span.pgn-current-move { background-color: yellow;}');
 		mw.loader.using(['mediawiki.api', 'jquery.ui.slider'], pupulateImages);
 	}
 });
