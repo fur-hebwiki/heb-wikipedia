@@ -443,12 +443,14 @@ $(function() {
 			prevLen = pgn.length;
 			if (match = tryMatch(/^\s*\{[^\}]*\}/))
 				this.addComment(match);
+			if (match = tryMatch(/^\s*\([^\)]*\)/))
+				this.addComment(match);
 			if (match = tryMatch(/^\s*\d+\.+/)) {
 				turn = /\.\.\./.test(match) ? BLACK : WHITE;
 				this.addMoveLink(match, true);
 				continue;
 			}
-			if (match = tryMatch(/^\s*[^ ]+ /)) {
+			if (match = tryMatch(/^\s*[^ ]+ ?/)) {
 				this.createMove(turn, match);
 				this.addMoveLink(match);
 				turn = BLACK;
@@ -661,7 +663,7 @@ $(function() {
 
 	if ($('div.pgn-source-wrapper').length) {
 		mw.util.addCSS(
-			'img.pgn-chessPiece { position: absolute; zIndex: 3;}\n' +
+			'img.pgn-chessPiece { position: absolute; z-index: 3;}\n' +
 			'div.pgn-board-div { position: relative;}\n' +
 			'div.pgn-slider { float: right; clear: right; height: 120px;}\n' +
 			'table.pgn-table { direction: ltr; width: 360px;}\n' +
