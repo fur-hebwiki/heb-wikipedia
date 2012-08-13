@@ -1,13 +1,17 @@
 "use strict";
 $(function() {
 	var
-		imageUrl = {},
+		pieceImageUrl = {},
 		flipImageUrl,
+		boardImageUrl,
 		WHITE = 'l',
 		BLACK = 'd',
 		acode = 'a'.charCodeAt(0),
 		moveBucket = [], // this is a scratch thing, but since we access it from different objects, it's convenient to have it global
 		anim = 1000,
+		sides = ['n', 'e', 's', 'w'], // used for legends
+		brainDamage = $.browser.msie, // do not allow resize, do not use svg images.
+		defaultBlockSize = 40,
 		timer;
 
 // some global, utility functions.
@@ -15,7 +19,6 @@ $(function() {
 	function file(ind) { return Math.floor(ind / 8);}
 	function row(ind) { return ind % 8; }
 	function sign(a, b) { return a == b ? 0 : (a < b ? 1 : -1); }
-	function colorDiff(a, b) {return (a == BLACK) - (b == BLACK);}
 	function fileOfStr(file) { return file && file.charCodeAt(0) - acode;}
 	function rowOfStr(row) { return row && (row - 1);}
 	function clearTimer() {
@@ -35,17 +38,33 @@ $(function() {
 		game.showMoveTo(index, noAnim);
 	}
 
-
-
 	function Gameset() { // set of functions and features that depend on blocksize, flip and currentGame.
 		$.extend(this, {
-			blockSize: 40,
+			blockSize: defaultBlockSize,
 			flip: false,
 			allGames: [],
 			currentGame: null,
 
-			top: function(row) { return ((this.flip ? row : (7 - row)) * this.blockSize) + 'px'; },
-			left: function(file) { return ((this.flip ? 7 - file : file) * this.blockSize) + 'px'; },
+			top: function(row, l) { return (((this.flip ? row : (7 - row)) + (l ? 0.3 : 0)) * this.blockSize + 20) + 'px'; },
+			left: function(file, l) { return (((this.flip ? 7 - file : file) + (l ? 0.5 : 0)) * this.blockSize + 20) + 'px'; },
+			legendLocation: function(side, num) {
+				var n = 0.5 + num;
+				switch (side) {
+					case 'n':
+						return {top: 0, left: this.left(num, true)};
+					case 'e':
+						return {top: this.top(num, true), left: this.blockSize * 8 + 20};
+					case 's':
+						return {top: this.blockSize * 8 + 20, left: this.left(num, true)};
+					case 'w':
+						return {top: this.top(num, true), left: 10};
+				}
+			},
+			relocateLegends: function() {
+				for (var si in sides)
+					for (var n = 0; n < 8; n++)
+						this[sides[si]][n].css(this.legendLocation(sides[si], n));
+			},
 			selectGame: function(val) {
 				if (this.currentGame)
 					this.currentGame.toggle(false);
@@ -62,7 +81,8 @@ $(function() {
 		this.game = game;
 		this.type = type;
 		this.color = color;
-		this.img = $('<img>', {src: imageUrl[type + color], 'class': 'pgn-chessPiece', opacity: 0})
+		this.img = $('<img>', {src: pieceImageUrl[type + color], 'class': 'pgn-chessPiece'})
+			.toggle(false)
 			.appendTo(game.boardDiv);
 	}
 
@@ -75,9 +95,7 @@ $(function() {
 		this.img.animate({top: this.game.gs.top(row), left: this.game.gs.left(file)}, anim);
 	}
 
-	ChessPiece.prototype.disappear = function() {
-		this.img.fadeOut(anim);
-	}
+	ChessPiece.prototype.disappear = function() { this.img.fadeOut(anim); }
 
 	ChessPiece.prototype.setSquare = function(file, row) {
 		this.file = file;
@@ -100,11 +118,10 @@ $(function() {
 	}
 
 	ChessPiece.prototype.pawnDirection = function () { return this.color == WHITE ? 1 : -1; }
+
 	ChessPiece.prototype.pawnStart = function() { return this.color == WHITE ? 1 : 6; }
 
-	ChessPiece.prototype.remove = function() {
-		this.onBoard = false;
-	}
+	ChessPiece.prototype.remove = function() { this.onBoard = false; }
 
 	ChessPiece.prototype.canMoveTo = function(file, row, capture) {
 		if (!this.onBoard)
@@ -112,31 +129,30 @@ $(function() {
 		var rd = Math.abs(this.row - row), fd = Math.abs(this.file - file);
 		switch(this.type) {
 			case 'n':
-				return ((rd + fd == 3 && rd * fd) // sum is 3, none is 0
+				return (rd * fd == 2 // how nice that 2 is prime: its only factors are 2 and 1....
 					? this
 					: false);
 			case 'p':
 				var dir = this.pawnDirection();
 				return (
-					((this.row == this.pawnStart() && row ==  this.row + dir * 2 && !fd && !capture)
-					|| (this.row + dir == row && !fd && !capture)
-					|| (this.row + dir == row && fd == 1 && capture))
+					((this.row == this.pawnStart() && row ==  this.row + dir * 2 && !fd && this.game.roadIsClear(this.file, file, this.row, row) && !capture)
+					|| (this.row + dir == row && fd == !!capture)) // advance 1, and either stay in file and no capture, or move exactly one file and capture.
 						? this
 						: false);
 			case 'k':
-				return ((rd < 2 && fd < 2)
+				return ((rd | fd) == 1 // we'll accept 1 and 1 or 1 and 0.
 					? this
 					: false);
 			case 'q':
-				return ((! ((rd - fd) * rd * fd) && this.game.roadIsClear(this.file, file, this.row, row))
+				return ((rd - fd) * rd * fd == 0 && this.game.roadIsClear(this.file, file, this.row, row) // same row, same file or same diagonal.
 					? this
 					: false);
 			case 'r':
-				return ((!(rd * fd) && this.game.roadIsClear(this.file, file, this.row, row))
+				return (rd * fd == 0 && this.game.roadIsClear(this.file, file, this.row, row)
 					? this
 					: false);
 			case 'b':
-				return (((rd == fd) && this.game.roadIsClear(this.file, file, this.row, row))
+				return (rd == fd && this.game.roadIsClear(this.file, file, this.row, row)
 					? this
 					: false);
 		}
@@ -176,8 +192,8 @@ $(function() {
 			descriptions: {},
 			tds: tds,
 			gs: gameSet});
-		tds.boardTd.append(this.boardDiv = $('<div>', {'class': 'pgn-board-div'}));
-		tds.pgnTd.append(this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}));
+		tds.boardDiv.append(this.boardDiv = $('<div>', {'class': 'pgn-board-div'}).css({position: 'absolute', top: 0, left: 0}));
+		tds.pgnDiv.append(this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}));
 		tds.descriptionsTd.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
 		this.toggle(false);
 	}
@@ -291,16 +307,25 @@ $(function() {
 		anim = saveAnim;
 	}
 
+	Game.prototype.wrapAround = function() {
+		if (this.index >= this.boards.length - 1)
+			this.gotoBoard(0);
+	}
+
 	Game.prototype.kingSideCastle = function(color) {
 		var king = this.piecesByTypeCol['k'][color][0];
-		var rook = this.piecesByTypeCol['r'][color][1];
+		var rook = this.pieceAt(7, (color == WHITE ? 0 : 7));
+		if (!rook || rook.type != 'r')
+			throw 'attempt to castle without rook on appropriate square';
 		king.move(fileOfStr('g'), king.row);
 		rook.move(fileOfStr('f'), rook.row);
 	}
 
 	Game.prototype.queenSideCastle = function(color) {
 		var king = this.piecesByTypeCol['k'][color][0];
-		var rook = this.piecesByTypeCol['r'][color][0];
+		var rook = this.pieceAt(0, (color == WHITE ? 0 : 7));
+		if (!rook || rook.type != 'r')
+			throw 'attempt to castle without rook on appropriate square';
 		king.move(fileOfStr('c'), king.row);
 		rook.move(fileOfStr('d'), rook.row);
 	}
@@ -352,7 +377,6 @@ $(function() {
 		}
 		if (!found)
 			throw 'could not find a piece that can execute this move. type="' + type + ' color=' + color + ' moveAGN=' + moveStr;
-//		confirm('about to execute ' + moveStr + ' piece type is ' + found.type + ' at ' + found.file + found.row + ' file=' + file + ' row=' + row)
 		if (promotion)
 			this.promote(found, promotion.toLowerCase().charAt(1), file, row, isCapture);
 		else if (isCapture)
@@ -495,11 +519,9 @@ $(function() {
 						'-moz-transform': rotation,
 						'-ms-transform': rotation,
 						'-o-transform': rotation,
-						'transform': rotation})
+						'transform': rotation});
 					gameSet.currentGame.drawBoard();
-					$(this).closest('table.pgn-table').find('td.pgn-row').each(function() {
-						$(this).text(9 - $(this).text())
-					})
+					gameSet.relocateLegends();
 				});
 		return flipper;
 	}
@@ -518,84 +540,90 @@ $(function() {
 		var button = $('<input>', {type: 'button', value: '\u25B6'})
 			.css({float: 'right', clear: 'right', fontSize: '16px', width: 40})
 			.click(function() {
+				gameSet.currentGame.wrapAround();
 				clearTimer();
 				timer = setInterval(function(){gameSet.currentGame.advance()}, 1000 + anim);
 			});
 		return button;
 	}
 
-	function setWidth() {
+	function setWidth(width, $this) {
 		var
-			$this = $(this),
-			table = $this.closest('table.pgn-table'),
-			width = parseInt($this.slider('value'), 10),
-			gs = $this.data('gameSet');
+			gs = $this.data('gameSet'),
+			table = $this.closest('table');
 
 		gs.blockSize = width;
-		table.attr({width: width * 8 + 70}).css({width: width * 8 + 70});
-		table.find('td.pgn-game-square').attr({width: width, height: width}).css({width: width, maxWidth: width, height: width});
+		table.attr({width: width * 8 + 20}).css({width: width * 8 + 20});
+		gs.boardImg.css({width: width * 8});
+		gs.boardDiv.css({width: width * 8 + 40});
 		gs.currentGame.drawBoard();
+		gs.relocateLegends();
 	}
 
 	function buildBoardDiv(container, selector, gameSet) {
 		var
-			boardTd, pgnTd, descriptionsTd,
-			table,
+			pgnDiv, descriptionsTd,
+			gameSetDiv,
 			controlsTd,
 			sliderTd,
-			cdTd,
 			cdTable,
 			flipper = createFlipper(gameSet),
 			advance = advanceButton(gameSet),
 			slideShow = slideShowButton(gameSet),
 			buttons = $('<div>').css({maxWidth: 40}).append(advance).append(slideShow),
 			slider,
-			fileLegend = ['', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
+			sizeTextInput,
+			fileLegend = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
 
 
-		slider = $('<div>', {'class': 'pgn-slider'})
-			.slider({
-				max: 60,
-				min: 20,
-				orientation: 'vertical',
-				value: gameSet.blockSize,
-				stop: setWidth
-			}).data({gameSet: gameSet});
-		table = $('<table>', {'class': 'pgn-table', border: 0, cellpadding: 0, cellspacing: 0}).appendTo(container);
+		if (!brainDamage)
+			slider = $('<div>', {'class': 'pgn-slider'})
+				.slider({
+					max: 60,
+					min: 20,
+					orientation: 'vertical',
+					value: gameSet.blockSize,
+					stop: function() {
+						var $this = $(this),
+							newWidth = parseInt($this.slider('value'), 10);
+						setWidth(newWidth, $this);
+					}
+				}).data({gameSet: gameSet});
+
+		gameSetDiv = $('<div>', {'class': 'pgn-gameset-div'})
+			.css({width: 40 + 8 * gameSet.blockSize})
+			.appendTo(container);
 		if (selector)
-			table.append($('<tr>').append($('<td>', {colspan: 10, 'class': 'pgn-selector'}).append(selector)));
+			gameSetDiv.append(selector);
 
-		table.append($('<tr>').append(cdTd = $('<td>', {colspan: 10})));
-		//controlsDiv = $('<div>').css({textAlign: 'right', width: '100%'}).appendTo(controlsTd);
-		cdTable = $('<table>').css({width: '100%'}).appendTo(cdTd);
+		cdTable = $('<table>').css({width: '100%', direction: 'ltr'}).appendTo(gameSetDiv);
 		$('<tr>')
 			.appendTo(cdTable)
 			.append(descriptionsTd = $('<td>'))
 			.append(controlsTd = $('<td>', {'class': 'pgn-controls'}))
-			.append(sliderTd = $('<td>', {'vertical-align': 'top'}).append(slider));
-		var tr = $('<tr>').appendTo(table);
-		for (var i in fileLegend)
-			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
-		var blackSq = {height: 40, width: 40, 'class': 'pgn-game-square pgn-game-square-black'};
-		var whiteSq = {height: 40, width: 40, 'class': 'pgn-game-square pgn-game-square-white'};
+			.append(sliderTd = $('<td>', {'valign': 'top'}).append(slider || ''));
 
-		for (var i = 0; i < 8; i++) { // create row i: legend, 8
-			tr = $('<tr>').appendTo(table);
-			tr.append($('<td>', {'class': 'pgn-legend pgn-row'}).text(8 - i));
-			for (var file = 0; file < 8; file++) {
-				var td = $('<td>', (((i+file)%2) ? blackSq : whiteSq));
-				if (!i && !file)
-					boardTd = td;
-				tr.append(td);
-			}
-			tr.append($('<td>', {'class': 'pgn-legend pgn-row'}).text(8 - i));
-		}
-		tr = $('<tr>').appendTo(table);
-		for (var i in fileLegend)
-			tr.append($('<td>', {'class': 'pgn-legend'}).text(fileLegend[i]));
-		table.append($('<tr>').append(pgnTd = $('<td>', {colspan: 10, 'class': 'pgn-pgn-moves'})));
 		controlsTd.append(advance).append(slideShow).append(flipper);
-		return {boardTd: boardTd, pgnTd: pgnTd, descriptionsTd: descriptionsTd};
+		gameSet.boardDiv = $('<div>', {'class': 'pgn-board-div'}).appendTo(gameSetDiv);
+		pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}).appendTo(gameSetDiv);
+		gameSet.boardImg = $('<img>', {'class': 'pgn-board-img', src: boardImageUrl})
+			.css({padding: 20, width: gameSet.blockSize * 8})
+			.appendTo(gameSet.boardDiv);
+		var fl = 'abcdefgh';
+
+		for (var side in sides) {
+			var s = sides[side],
+				isFile = /n|s/.test(s);
+			gameSet[s] = [];
+			for (var i = 0; i < 8; i++) {
+				var sp = $('<span>', {'class': isFile ? 'pgn-file-legend' : 'pgn-row-legend'})
+					.text(isFile ? fl.charAt(i) : (i + 1))
+					.appendTo(gameSet.boardDiv)
+					.css(gameSet.legendLocation(s, i));
+				gameSet[s][i] = sp;
+			}
+		}
+		return {boardDiv: gameSet.boardDiv, pgnDiv: pgnDiv, descriptionsTd: descriptionsTd};
 	}
 
 	function doIt() {
@@ -619,7 +647,7 @@ $(function() {
 						pgnDiv = $(this),
 						game = new Game(tds, gameSet);
 						game.analyzePgn(pgnDiv.text());
-						game.gotoBoard(0);
+						game.linkOfIndex[game.boards.length - 1].trigger('click');
 						wrapperDiv.data({currentGame: game});
 					ind++;
 
@@ -632,8 +660,7 @@ $(function() {
 					mw.log('exception in game ' + ind + ' problem is: "' + e + '"');
 				}
 			});
-			if (selector)
-				selector.trigger('change');
+			gameSet.selectGame(0);
 		})
 	}
 
@@ -642,36 +669,43 @@ $(function() {
 			colors = [WHITE, BLACK],
 			allPieces = [],
 			types = ['p', 'r', 'n', 'b', 'q', 'k'];
-		for (var c in colors) {
+		for (var c in colors)
 			for (var t in types)
 				allPieces.push('File:Chess ' + types[t] + colors[c] + 't45.svg');
-			allPieces.push('File:Chess ' + colors[c] + '45.svg')
-		}
-		allPieces.push('File:Chess Board, gray.png');
 		allPieces.push('File:Yin and Yang.svg');
-
-		new mw.Api().get(
-			{titles: allPieces.join('|'), prop: 'imageinfo', iiprop: 'url'},
+		if (!brainDamage)
+			allPieces.push('File:Chessboard480.png');
+		var params = {titles: allPieces.join('|'), prop: 'imageinfo', iiprop: 'url'};
+		if (brainDamage)
+			params.iiurlwidth = defaultBlockSize;
+		var api = new mw.Api();
+		api.get(
+			params,
 			function(data) {
 				if (data && data.query) {
 					$.each(data.query.pages, function(index, page) {
 						var
-							url = page.imageinfo[0].url,
-							match =
-								url.match(/Chess_([prnbqk][dl])t45\.svg/) // piece
-								|| url.match(/Chess_([dl])45\.svg/); // empty square
+							url = page.imageinfo[0][brainDamage ? 'thumburl' : 'url'],
+							match = url.match(/Chess_([prnbqk][dl])t45\.svg/); // piece
 						if (match)
-							imageUrl[match[1]] = url;
+							pieceImageUrl[match[1]] = url;
 						else if (/Yin/.test(url))
 							flipImageUrl = url;
 					});
-					doIt();
+					delete params.iiurlwidth;
+					params.titles = 'File:Chessboard480.png';
+					api.get(params,
+						function(data) {
+							if (data && data.query)
+								$.each(data.query.pages, function(index, page) {boardImageUrl = page.imageinfo[0].url});
+								doIt();
+						}
+					);
 				}
 			}
 		);
 	}
 
-	if ($('div.pgn-source-wrapper').length) {
+	if ($('div.pgn-source-wrapper').length)
 		mw.loader.using(['mediawiki.api', 'jquery.ui.slider'], pupulateImages);
-	}
 });
