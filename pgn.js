@@ -1,3 +1,14 @@
+/*
+this work is placed by its authors in the public domain.
+it was created from scratch, and no part of it was copied from elsewhere.
+it can be used, copied, modified, redistributed, as-is or modified, 
+	whole or in part, without restrictions.
+it can be embedded in a copyright protected work, as long as it's clear 
+	that the copyright does not apply to the embedded parts themselves.
+please do not claim for yourself copyrights for this work or parts of it.
+the work comes with no warranty or guarantee, stated or implied, including
+	fitness for a particular purpose.
+*/
 "use strict";
 $(function() {
 	var
@@ -42,8 +53,10 @@ $(function() {
 		$.extend(this, {
 			blockSize: defaultBlockSize,
 			flip: false,
+			needRefresh: false,
 			allGames: [],
 			currentGame: null,
+			showDetails:false,
 
 			top: function(row, l) { return (((this.flip ? row : (7 - row)) + (l ? 0.3 : 0)) * this.blockSize + 20) + 'px'; },
 			left: function(file, l) { return (((this.flip ? 7 - file : file) + (l ? 0.5 : 0)) * this.blockSize + 20) + 'px'; },
@@ -73,6 +86,25 @@ $(function() {
 					this.currentGame = game;
 					game.show();
 				}
+			},
+			drawIfNeedRefresh: function() {
+				if (this.needRefresh && this.currentGame)
+					this.currentGame.drawBoard();
+				this.needRefresh = false;
+			},
+			setWidth: function(width) {
+				this.blockSize = width;
+				this.boardImg.css({width: width * 8, height: width * 8});
+				this.boardDiv.css('width', 40+(width * 8));
+				this.currentGame.drawBoard();
+				this.relocateLegends();
+				this.needRefresh = true;
+			},
+			doFlip: function() {
+				this.flip ^= 1;
+				this.needRefresh = true;
+				this.currentGame.drawBoard();
+				this.relocateLegends();
 			}
 		});
 	}
@@ -92,7 +124,8 @@ $(function() {
 	}
 
 	ChessPiece.prototype.showMove = function(file, row) {
-		this.img.animate({top: this.game.gs.top(row), left: this.game.gs.left(file)}, anim);
+		var gameSet = this.game.gs;
+		this.img.animate({top: gameSet.top(row), left: gameSet.left(file)}, anim, function() { gameSet.drawIfNeedRefresh(); });
 	}
 
 	ChessPiece.prototype.disappear = function() { this.img.fadeOut(anim); }
@@ -129,32 +162,20 @@ $(function() {
 		var rd = Math.abs(this.row - row), fd = Math.abs(this.file - file);
 		switch(this.type) {
 			case 'n':
-				return (rd * fd == 2 // how nice that 2 is prime: its only factors are 2 and 1....
-					? this
-					: false);
+				return rd * fd == 2; // how nice that 2 is prime: its only factors are 2 and 1....
 			case 'p':
 				var dir = this.pawnDirection();
 				return (
 					((this.row == this.pawnStart() && row ==  this.row + dir * 2 && !fd && this.game.roadIsClear(this.file, file, this.row, row) && !capture)
-					|| (this.row + dir == row && fd == !!capture)) // advance 1, and either stay in file and no capture, or move exactly one file and capture.
-						? this
-						: false);
+					|| (this.row + dir == row && fd == !!capture))); // advance 1, and either stay in file and no capture, or move exactly one 
 			case 'k':
-				return ((rd | fd) == 1 // we'll accept 1 and 1 or 1 and 0.
-					? this
-					: false);
+				return (rd | fd) == 1; // we'll accept 1 and 1 or 1 and 0.
 			case 'q':
-				return ((rd - fd) * rd * fd == 0 && this.game.roadIsClear(this.file, file, this.row, row) // same row, same file or same diagonal.
-					? this
-					: false);
+				return (rd - fd) * rd * fd == 0 && this.game.roadIsClear(this.file, file, this.row, row); // same row, same file or same diagonal.
 			case 'r':
-				return (rd * fd == 0 && this.game.roadIsClear(this.file, file, this.row, row)
-					? this
-					: false);
+				return rd * fd == 0 && this.game.roadIsClear(this.file, file, this.row, row);
 			case 'b':
-				return (rd == fd && this.game.roadIsClear(this.file, file, this.row, row)
-					? this
-					: false);
+				return rd == fd && this.game.roadIsClear(this.file, file, this.row, row);
 		}
 	}
 
@@ -194,14 +215,14 @@ $(function() {
 			gs: gameSet});
 		tds.boardDiv.append(this.boardDiv = $('<div>', {'class': 'pgn-board-div'}).css({position: 'absolute', top: 0, left: 0}));
 		tds.pgnDiv.append(this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}));
-		tds.descriptionsTd.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
+		tds.descriptionsDiv.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
 		this.toggle(false);
 	}
 
 	Game.prototype.toggle = function(what) {
 		this.boardDiv.toggle(what);
-		this.pgnDiv.toggle(what);
-		this.descriptionsDiv.toggle(what);
+		this.pgnDiv.toggle(this.gs.showDetails && what);
+		this.descriptionsDiv.toggle(this.gs.showDetails && what);
 	}
 
 	Game.prototype.show = function() {
@@ -359,30 +380,26 @@ $(function() {
 			return false;
 		}
 
-		var type = match[1] ? match[1].toLowerCase() : 'p';
-		var oldFile = fileOfStr(match[2]);
-		var oldRow = rowOfStr(match[3]);
-		var isCapture = !!match[4];
-		var file = fileOfStr(match[5]);
-		var row = rowOfStr(match[6]);
-		var promotion = match[7];
-		var candidates = this.piecesByTypeCol[type][color];
-		if (!candidates || !candidates.length)
-			throw 'could not find matching pieces. type="' + type + ' color=' + color + ' moveAGN=' + moveStr;
-		var found = false;
-		for (var c in candidates) {
-			found = candidates[c].matches(oldFile, oldRow, isCapture, file, row);
-			if (found)
-				break;
-		}
-		if (!found)
-			throw 'could not find a piece that can execute this move. type="' + type + ' color=' + color + ' moveAGN=' + moveStr;
-		if (promotion)
-			this.promote(found, promotion.toLowerCase().charAt(1), file, row, isCapture);
-		else if (isCapture)
-			found.capture(file, row);
+		var type = match[1] ? match[1].toLowerCase() : 'p',
+			oldFile = fileOfStr(match[2]),
+			oldRow = rowOfStr(match[3]),
+			isCapture = !!match[4],
+			file = fileOfStr(match[5]),
+			row = rowOfStr(match[6]),
+			promotion = match[7],
+			thePiece = $(this.piecesByTypeCol[type][color]).filter(function() { 
+					return this.matches(oldFile, oldRow, isCapture, file, row); 
+				});
+		if (thePiece.length != 1)
+			throw 'could not find matching pieces. type="' + type + ' color=' + color + ' moveAGN="' + moveStr + '". found ' + thePiece.length + ' matching pieces';
 		else
-			found.move(file, row);
+			thePiece = thePiece[0];
+		if (promotion)
+			this.promote(thePiece, promotion.toLowerCase().charAt(1), file, row, isCapture);
+		else if (isCapture)
+			thePiece.capture(file, row);
+		else
+			thePiece.move(file, row);
 		return moveStr;
 	}
 
@@ -393,6 +410,7 @@ $(function() {
 			moveBucket = [];
 		}
 		if (str) {
+			str = str.replace(/-/g, '\u2011'); // replace hyphens with non-breakable hyphens, to avoid linebreak within O-O or 1-0
 			var index = this.moves.length-1,
 				link = $('<span>', {'class': (noAnim ? 'pgn-steplink' : 'pgn-movelink')})
 				.text(str)
@@ -446,20 +464,15 @@ $(function() {
 		while (match = tryMatch(/^\s*\[[^\]]*\]/))
 			this.addDescription(match);
 
-		if (this.descriptions['direction']) {
-			this.descriptionsDiv.css({direction: this.descriptions['direction']});
-			delete this.descriptions['direction'];
-		}
+		var rtl = this.descriptions['Direction'] == 'rtl';
+		delete this.descriptions['Direction'];
+		this.descriptionsDiv.css({direction: rtl ? 'rtl' : 'ltr', textAlign: rtl ? 'right' : 'left' });
 
-		var dar = [];
-		$.each(this.descriptions, function(key, val){dar.push(key + ': ' + val);})
+		var dar = $.map(this.descriptions, function(val, key) { return key + ': ' + val; });
 		this.descriptionsDiv.html(dar.join('<br />'));
 
 		pgn = pgn.replace(/;(.*)\n/g, ' {$1} ').replace(/\s+/g, ' '); // replace to-end-of-line comments with block comments, remove newlines and noramlize spaces to 1
-
-		var fen = this.descriptions.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
-		this.populateBoard(fen); //
-
+		this.populateBoard(this.descriptions.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'); 
 		var prevLen = -1;
 		this.addMoveLink();
 		while (pgn.length) {
@@ -512,7 +525,7 @@ $(function() {
 			$('<img>', {src: flipImageUrl})
 				.css({width: '37px', float:'right', clear: 'right', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
 				.click(function() {
-					gameSet.flip ^= 1;
+					gameSet.doFlip();
 					var rotation = gameSet.flip ? 'rotate(180deg)' : 'rotate(0deg)';
 					$(this).css({
 						'-webkit-transform': rotation,
@@ -520,8 +533,6 @@ $(function() {
 						'-ms-transform': rotation,
 						'-o-transform': rotation,
 						'transform': rotation});
-					gameSet.currentGame.drawBoard();
-					gameSet.relocateLegends();
 				});
 		return flipper;
 	}
@@ -530,6 +541,7 @@ $(function() {
 		var button = $('<input>', {type: 'button', value: '<'})
 			.css({float: 'right', clear: 'right', fontSize: '16px', width: 40})
 			.click(function() {
+				gameSet.currentGame.wrapAround();
 				clearTimer();
 				gameSet.currentGame.advance();
 			});
@@ -547,34 +559,21 @@ $(function() {
 		return button;
 	}
 
-	function setWidth(width, $this) {
-		var
-			gs = $this.data('gameSet'),
-			table = $this.closest('table');
-
-		gs.blockSize = width;
-		table.attr({width: width * 8 + 20}).css({width: width * 8 + 20});
-		gs.boardImg.css({width: width * 8});
-		gs.boardDiv.css({width: width * 8 + 40});
-		gs.currentGame.drawBoard();
-		gs.relocateLegends();
-	}
+	function setWidth(width, $this) { $this.data('gameSet').setWidth(width); }
 
 	function buildBoardDiv(container, selector, gameSet) {
 		var
-			pgnDiv, descriptionsTd,
+			pgnDiv, 
+			descriptionsDiv,
 			gameSetDiv,
-			controlsTd,
-			sliderTd,
+			controlsDiv,
+			scrollDiv,
 			cdTable,
 			flipper = createFlipper(gameSet),
 			advance = advanceButton(gameSet),
 			slideShow = slideShowButton(gameSet),
 			buttons = $('<div>').css({maxWidth: 40}).append(advance).append(slideShow),
-			slider,
-			sizeTextInput,
-			fileLegend = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', ''];
-
+			slider;
 
 		if (!brainDamage)
 			slider = $('<div>', {'class': 'pgn-slider'})
@@ -596,18 +595,22 @@ $(function() {
 		if (selector)
 			gameSetDiv.append(selector);
 
-		cdTable = $('<table>').css({width: '100%', direction: 'ltr'}).appendTo(gameSetDiv);
-		$('<tr>')
-			.appendTo(cdTable)
-			.append(descriptionsTd = $('<td>'))
-			.append(controlsTd = $('<td>', {'class': 'pgn-controls'}))
-			.append(sliderTd = $('<td>', {'valign': 'top'}).append(slider || ''));
-
-		controlsTd.append(advance).append(slideShow).append(flipper);
+		$(gameSetDiv)
+			.append(scrollDiv = $('<div>', {'valign': 'top'}).append(slider || '').css({'float':'right', 'display':'none'}))
+			.append(controlsDiv = $('<div>', {'class': 'pgn-controls'}).css({'float':'right', 'display':'none'}))
+			.append($('<div>',{ text: mw.msg('showtoc') }).button().click(function(){
+				$(this).hide()
+				gameSet.showDetails=true;
+				gameSet.currentGame.toggle(true);
+				controlsDiv.show();
+				scrollDiv.show();
+			}))
+			.append(descriptionsDiv = $('<div>'))
+		controlsDiv.append(advance).append(slideShow).append(flipper);
 		gameSet.boardDiv = $('<div>', {'class': 'pgn-board-div'}).appendTo(gameSetDiv);
 		pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}).appendTo(gameSetDiv);
 		gameSet.boardImg = $('<img>', {'class': 'pgn-board-img', src: boardImageUrl})
-			.css({padding: 20, width: gameSet.blockSize * 8})
+			.css({padding: 20, width: gameSet.blockSize * 8, height: gameSet.blockSize * 8})
 			.appendTo(gameSet.boardDiv);
 		var fl = 'abcdefgh';
 
@@ -623,7 +626,7 @@ $(function() {
 				gameSet[s][i] = sp;
 			}
 		}
-		return {boardDiv: gameSet.boardDiv, pgnDiv: pgnDiv, descriptionsTd: descriptionsTd};
+		return {boardDiv: gameSet.boardDiv, pgnDiv: pgnDiv, descriptionsDiv: descriptionsDiv};
 	}
 
 	function doIt() {
@@ -691,16 +694,23 @@ $(function() {
 							pieceImageUrl[match[1]] = url;
 						else if (/Yin/.test(url))
 							flipImageUrl = url;
+						else if (/Chessboard/.test(url))
+							boardImageUrl = url;
 					});
-					delete params.iiurlwidth;
-					params.titles = 'File:Chessboard480.png';
-					api.get(params,
-						function(data) {
-							if (data && data.query)
-								$.each(data.query.pages, function(index, page) {boardImageUrl = page.imageinfo[0].url});
-								doIt();
-						}
-					);
+					if (brainDamage) {
+						delete params.iiurlwidth;
+						params.titles = 'File:Chessboard480.png';
+						api.get(params,
+							function(data) {
+								if (data && data.query) {
+									$.each(data.query.pages, function(index, page) {boardImageUrl = page.imageinfo[0].url});
+									doIt();
+								}
+							}
+						);
+					}
+					else
+						doIt();
 				}
 			}
 		);
