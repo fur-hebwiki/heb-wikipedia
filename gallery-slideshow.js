@@ -65,52 +65,72 @@ $(function() {
 		}
 		
 		function advance(step) { // step might be nagative.
-			return switchToSlide(next(currentSlide, step));
+			return switchToSlide(next(step));
 		}
 		
-		function next(index, offset) {
-			return (index + offset + allImgAnchors.length) % allImgAnchors.length;
+		function next(offset) {
+			return (currentSlide + offset + allImgAnchors.length) % allImgAnchors.length;
 		}
 		
-		function tipsyTooltip(e) {
+		function tipOfGotoImage(index) {
+			index = (index + allImgAnchors.length) % allImgAnchors.length;
+			return 'עבור לתמונה ' + (index+1) + ':<br/>' + allCaptions[index].innerHTML;
+		}
+		
+		function tipsyTooltip() {
 			var $this = $(this);
 			switch ($this.data('tiptype')) {
 				case 'image': 
 					var imgnum = $this.data('index'),
 						mouseloc = $this.data('mouseloc');
 					switch (quadrant($this, mouseloc)) {
-						case 0: return 'לתמונה הבאה (' + (next(imgnum, 1)+1) + ')<br/>' + allCaptions[next(imgnum, 1)].innerHTML;
+						case 0: return tipOfGotoImage(next(1))
 						case 1:
 						case 2: return 'לדף הקובץ של התמונה';
-						case 3: return 'לתמונה הקודמת (' + (next(imgnum, -1) + 1) + ')<br/>' + allCaptions[next(imgnum, -1)].innerHTML;
+						case 3: return tipOfGotoImage(next(-1));
 					}
 					break;
 				case 'button':
-					return $this.text();
+					var offset = $this.data('offset'),
+						index = $this.data('index'),
+						tooltip = $this.data('tooltip');
+					if (offset)
+						return tipOfGotoImage(next(offset));
+					if (typeof index != 'undefined')
+						return tipOfGotoImage(index);
+					return tooltip;
+					break;
 			}
 		}
 		
+		function beginSlideshow() {
+			timer = setInterval(function() {
+				advance(1);
+			}, slideShowDelay);
+		}
+		
+		function buttonOptions(button) {
+			if (button.hasClass('gallery-slideshow-last')) return {index: -1};
+			if (button.hasClass('gallery-slideshow-first')) return {index: 0};
+			if (button.hasClass('gallery-slideshow-next')) return {offset: 1};
+			if (button.hasClass('gallery-slideshow-prev')) return {offset: -1};
+			if (button.hasClass('gallery-slideshow-play')) return {tooltip: 'החל מצגת תמונות', special: 'play'};
+			if (button.hasClass('gallery-slideshow-stop')) return {tooltip: 'עצור מצגת תמונות', special: 'stop'};
+		}
+		
 		function buttonClicked(e) {
-			var button = $(this);
-			var funcs = {
-				'gallery-slideshow-last': function() {switchToSlide(-1);},
-				'gallery-slideshow-first': function() {switchToSlide(0);},
-				'gallery-slideshow-next': function() {advance(1);},
-				'gallery-slideshow-prev': function() {advance(-1);},
-				'gallery-slideshow-play': function() {
-					timer = setInterval(function() {
-						advance(1);
-					}, slideShowDelay);
-					button.button('options', {enabled: false})
-				},
-				'gallery-slideshow-stop': function() {}
-			}
+			var button = $(this),
+  				offset = $this.data('offset'),
+				index = $this.data('index'),
+				special = $this.data('special');
 			$(galleryDiv).stop(false, true);
 			clearInterval(timer);
-			button.siblings('.gallery-slideshow-play').button('options', {enabled: true});
-			for (var className in funcs)
-				if (button.hasClass(className))
-					funcs[className]();
+			if (offset)
+				advance(offset);
+			else if (typeof index != 'undefined')
+				switchToSlide(index);
+			else if (special == 'play')
+				beginSlideshow();
 		}
 		
 		$gallery.toggle(false);
