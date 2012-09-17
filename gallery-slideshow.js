@@ -1,14 +1,20 @@
 "use strict";
 $(function() {
 	function createSlideshow(index, galleryDiv) {
+		
 		var fadeOutRate = 500,
 			fadeInRate = 500,
 			slideShowDelay = 4000,
 			$gallery = $('ul.gallery', galleryDiv),
 			allImgAnchors = $('ul.gallery > li > div > div > div > a.image', galleryDiv),
 			allCaptions = $('ul.gallery > li div.gallerytext', galleryDiv),
-			slideShow = $('<div>', {'class' : 'gallerySlideshowDiv'}).insertBefore($gallery),
-			currentSlide = 0,
+			slideShow = $('<div>', {'class' : 'gallery-slideshow-div'}).insertBefore($gallery),
+			radiosDiv = $('.gallery-slideshow-radios', galleryDiv),
+			radioTemplate = $('.gallery-slideshow-radio', galleryDiv),
+			oneSlideTemplate = $('.gallery-slideshow-slide', galleryDiv),
+			allSlides = [],
+			allRadios = [],
+			currentSlide,
 			timer,
 			tipsyOptions = {
 				title: tipsyTooltip,
@@ -18,24 +24,9 @@ $(function() {
 				delayOut: 0
 			};
 			
-		function quadrant(elem, clientX) {
-			var width = elem.width(),
-				x = clientX - elem.offset().left,
-				ratio = (1.0 * x) / width;
-			return Math.floor(ratio * 4);
-		}
-		
-		function imageClicked(e) {
-			clearInterval(timer);
-			switch (quadrant($(this), e.clientX)) {
-				case 0: advance(1);
-						break;
-				case 1:
-				case 2: window.location = allImgAnchors[currentSlide].href;
-						break;
-				case 3: advance(-1);
-						break;
-			}
+		function quadrant(elem, x) {
+			x -= elem.offset().left;
+			return Math.floor(4.0 * x / elem.width());
 		}
 		
 		function makeOneSlide(index) {
@@ -48,20 +39,44 @@ $(function() {
 				})
 				.data({tiptype: 'image', index: index})
 				.tipsy(tipsyOptions);
-			return $('<div>', {'class': 'gallerySlideShowOneSlide'})
-				.append(image) 
-				.append(caption);
+			radiosDiv.append(
+				radioTemplate.clone()
+				.html(radioTemplate.html().replace('$NUM', (index+1)))
+				.data({index: index, tiptype: 'radio'})
+				.click(radioClicked)
+				.tipsy(tipsyOptions)
+			);
+			if (oneSlideTemplate.length) {
+				var res = oneSlideTemplate.clone().toggle(false);
+				$('.gallery-slideshow-slide-image', res).append(image);
+				$('.gallery-slideshow-slide-caption', res).append(caption);
+				return res;
+			}
+			else
+				return $('<div>', {'class': 'gallery-slideshow-slide'})
+					.append(image) 
+					.append(caption)
+					.toggle(false);
 		}
 		
 		function switchToSlide(i) {
+			function showNew(immediate) {
+				$('.gallery-slideshow-current-index', galleryDiv).text(1 + currentSlide);
+				$('.gallery-slideshow-radio', galleryDiv)
+					.removeClass('gallery-slideshow-radio-selected')
+					.filter(function() {return $(this).data('index') == currentSlide;})
+					.addClass('gallery-slideshow-radio-selected');
+				allSlides[currentSlide].fadeIn(immediate ? 0 : fadeInRate);
+			}
+			
 			if (i == currentSlide)
 				return;
 			var previous = currentSlide;
-			currentSlide = (i + allImgAnchors.length) % allImgAnchors.length;
-			allSlides[previous].fadeOut(fadeOutRate, function() {
-				$('.gallery-slideshow-current-index', galleryDiv).text(1 + currentSlide);
-				allSlides[currentSlide].fadeIn(fadeInRate);
-			});
+			currentSlide = (i + allSlides.length) % allSlides.length;
+			if (typeof previous == 'number')
+				allSlides[previous].fadeOut(fadeOutRate, showNew);
+			else
+				showNew(true);
 		}
 		
 		function advance(step) { // step might be nagative.
@@ -69,12 +84,12 @@ $(function() {
 		}
 		
 		function next(offset) {
-			return (currentSlide + offset + allImgAnchors.length) % allImgAnchors.length;
+			return (currentSlide + offset + allSlides.length) % allSlides.length;
 		}
 		
 		function tipOfGotoImage(index) {
-			index = (index + allImgAnchors.length) % allImgAnchors.length;
-			return 'עבור לתמונה ' + (index+1) + ':<br/>' + allCaptions[index].innerHTML;
+			index = (index + allSlides.length) % allSlides.length;
+			return 'תמונה ' + (index+1) + ':<br/>' + allCaptions[index].innerHTML;
 		}
 		
 		function tipsyTooltip() {
@@ -92,21 +107,54 @@ $(function() {
 					break;
 				case 'button':
 					var offset = $this.data('offset'),
-						index = $this.data('index'),
-						tooltip = $this.data('tooltip');
-					if (offset)
-						return tipOfGotoImage(next(offset));
-					if (typeof index != 'undefined')
-						return tipOfGotoImage(index);
-					return tooltip;
+						index = $this.data('index');
+					return (typeof offset == 'number' && tipOfGotoImage(next(offset))) ||
+							(typeof index == 'number' && tipOfGotoImage(index)) ||
+							$this.data('tooltip');
+					break;
+				case 'radio':
+					return tipOfGotoImage($this.data('index'));
 					break;
 			}
 		}
 		
-		function beginSlideshow() {
+		function imageClicked(e) {
+			clearInterval(timer);
+			switch (quadrant($(this), e.clientX)) {
+				case 0: advance(1);
+						break;
+				case 1:
+				case 2: window.location = allImgAnchors[currentSlide].href;
+						break;
+				case 3: advance(-1);
+						break;
+			}
+		}
+		
+		function radioClicked() {
+			clearInterval(timer);
+			switchToSlide($(this).data('index'));
+		}
+		
+		function playButtonClicked() {
 			timer = setInterval(function() {
 				advance(1);
 			}, slideShowDelay);
+		}
+		
+		function buttonClicked(e) {
+			var button = $(this),
+  				offset = button.data('offset'),
+				index = button.data('index'),
+				action = button.data('action');
+			$(galleryDiv).stop(false, true);
+			clearInterval(timer);
+			if (typeof offset == 'number')
+				advance(offset);
+			else if (typeof index == 'number')
+				switchToSlide(index);
+			else if (typeof action == 'function')
+				action();
 		}
 		
 		function buttonOptions(button) {
@@ -114,54 +162,38 @@ $(function() {
 			if (button.hasClass('gallery-slideshow-first')) return {index: 0};
 			if (button.hasClass('gallery-slideshow-next')) return {offset: 1};
 			if (button.hasClass('gallery-slideshow-prev')) return {offset: -1};
-			if (button.hasClass('gallery-slideshow-play')) return {tooltip: 'החל מצגת תמונות', special: 'play'};
-			if (button.hasClass('gallery-slideshow-stop')) return {tooltip: 'עצור מצגת תמונות', special: 'stop'};
-		}
-		
-		function buttonClicked(e) {
-			var button = $(this),
-  				offset = $this.data('offset'),
-				index = $this.data('index'),
-				special = $this.data('special');
-			$(galleryDiv).stop(false, true);
-			clearInterval(timer);
-			if (offset)
-				advance(offset);
-			else if (typeof index != 'undefined')
-				switchToSlide(index);
-			else if (special == 'play')
-				beginSlideshow();
+			if (button.hasClass('gallery-slideshow-play')) return {tooltip: 'החל מצגת תמונות', action: playButtonClicked};
+			if (button.hasClass('gallery-slideshow-stop')) return {tooltip: 'עצור מצגת תמונות'};
 		}
 		
 		$gallery.toggle(false);
-		var allSlides = [];
 		for (var i = 0; i < allImgAnchors.length; i++) {
 			var slide = makeOneSlide(i);
-			slide.toggle(i == 0);
 			allSlides.push(slide);
 			slideShow.append(slide);
 		}
-		
+		radioTemplate.toggle(false);
 		$('span.gallery-slideshow-toolbar span').each(function(index, button) {
 			var $this = $(this),
 				text = $this.text();
-			if (! $this.hasClass('gallery-slideshow-current-index')) {
-				$('<button>', {'class': $this.attr('class'), title: text, })
-					.text(text)
-					.insertBefore($this)
-					.button('options', {text: $this.text()})
-					.click(buttonClicked)
-					.data({tiptype: 'button'})
-					.tipsy(tipsyTooltip);
-				$this.remove();
-			}
+			$('<button>', {'class': $this.attr('class'), title: text})
+				.addClass('gallery-slideshow-button')
+				.text(text)
+				.insertBefore($this)
+				.button('options', {text: text, click: buttonClicked})
+				.click(buttonClicked)
+				.data({tiptype: 'button'})
+				.data(buttonOptions($this))
+				.tipsy(tipsyOptions);
+			$this.remove();
+		});
+		switchToSlide(0);
+	}
+	
+	if ($('div.gallery-slideshow').length) {
+		mw.util.addCSS($('.gallery-slideshow-style').text());		
+		mw.loader.using(['jquery.ui.button', 'jquery.tipsy'], function() {
+			$('div.gallery-slideshow').each(createSlideshow);
 		});
 	}
-	
-	
-	function galleryToSlideshow(index, gallery) {
-		mw.loader.using(['jquery.ui.button', 'jquery.tipsy'], createSlideshow(index, gallery));
-	}
-	
-	$('div.gallery-slideshow').each(galleryToSlideshow);
 });
