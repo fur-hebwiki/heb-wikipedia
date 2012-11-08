@@ -1,6 +1,6 @@
 ﻿$(document).ready(function() {
 
-	var
+    var
 //add this class to all elements created by the script. the reason is that we call the script again on
 //window resize, and use the class to remove all the "artefacts" we created in the previous run.
 		myClassName = 'imageMapHighlighterArtefacts',
@@ -8,7 +8,7 @@
 // "2d context" attributes used for highlighting.
 		areaHighLighting = {fillStyle: 'rgba(0,0,0,0.35)', strokeStyle: 'yellow', lineJoin: 'round', lineWidth: 2},
 //every imagemap that wants highlighting, should reside in a div of this 'class':
-		hilightDivMarker = '.imageMapHighlighterTest',
+		hilightDivMarker = '.imageMapHighlighter',
 // specifically for wikis - redlinks tooltip adds this message
 		pageDoesntExistMessage = (mw && mw.config && mw.config.get('wgUserLanguage') == 'he')
 			? ' (הדף אינו קיים)'
@@ -66,7 +66,7 @@
 		appendCSS('li.' + myClassName + '{white-space:nowrap;}\n' + //css for li element
 					'li.' + liHighlightClass + '{background-color:yellow;}\n' + //css for highlighted li element.
 					'.rtl li.' + myClassName + '{float: right; margin-left: 3em;}\n' +
-					'.ltr li.' + myClassName + '{float: right; margin-right: 3em;}');
+					'.ltr li.' + myClassName + '{float: left; margin-right: 3em;}');
 		$(hilightDivMarker+ ' img').each(function() {
 			var img = $(this), map = img.siblings('map:first');
 			if (!('area', map).length)
@@ -98,14 +98,12 @@
 				var $this = $(this), text = this.title;
 				var li = lis[text];	// title already met? use the same li
 				if (!li) {			//no? create a new one.
-					var 
-						thisClass = this['className'] || '',
-						linkClass = (thisClass.indexOf('plainlinks') + 1) ? 'external text' : thisClass,
-						href = this.href;
+					var href = this.href, cssClass = this['class'] || '';
 					lis[text] = li = $('<li>', {'class': myClassName})
-						.append($('<a>', {href: href, title: pageOfHref(href, linkClass), text: text, 'class': linkClass})) 
+						.append($('<a>', {href: href, title: pageOfHref(href, cssClass), text: text, 'class': cssClass})) 
 						.bind('mouseover mouseout', mouseAction)
-						.data({areas: [], context: context});
+						.data('areas', [])
+						.data('context', context);
 					ol.append(li);
 				}
 				li.data('areas').push(this);	//add the area to the li
