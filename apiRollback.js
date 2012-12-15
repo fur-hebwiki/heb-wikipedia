@@ -1,8 +1,12 @@
+//<source lang="javascript">
 // License: PD
+// rollback "in place", using API
+"use strict";
+
 "use strict";
 if (
 	mw.config.get( 'wgAction' ) === 'history' 
-	|| ( $.inArray( mw.config.get( 'wgCanonicalSpecialPageName' ), ['RecentChanges', 'Watchlist', 'Contributions'] ) + 1 )
+	|| ( $.inArray( mw.config.get( 'wgCanonicalSpecialPageName' ), ['Recentchanges', 'Watchlist', 'Contributions'] ) + 1 )
 	|| mw.util.getParamValue( 'diff' )
 	)
 $(function() {
@@ -21,11 +25,9 @@ $(function() {
 					rbParams.watchlist = 'watch';
 				$.post( mw.util.wikiScript( 'api' ), rbParams, function() {
 					var match = $this.text().match( /:(.*)/ ),
-						edits = 'edit',
+						edits = ( match && match.length > 1 ) ? match[1] : $this.text(),
 						userLink = $this.closest('span').parent().find( '.mw-usertoollinks' );
-					if ( match.length > 1 )
-						edits = match[1];
-					mw.util.jsMessage('Successfully rolled back ' + edits + ' by ' + from);
+					mw.util.jsMessage( i18n( 'success', edits, from ) );
 					$this.remove();
 					if ( userLink.length ) {
 						var a = userLink.find( 'a' ).filter( function(){ return $( this ).text() == 'talk'; } ),
@@ -38,6 +40,51 @@ $(function() {
 				} );
 			};
 		
+		function i18n() {
+			var str = arguments[0];
+			switch ( mw.config.get( 'wgUserLanguage' ) ) {
+				case 'he':
+					switch ( str ) {
+						case 'description': 
+							str = 'אנא הזינו תקציר עריכה לשחזור.<br />'
+								+ '$1 יוחלף בשם הדף (%1),<br />' 
+								+ '$2 יוחלף בשם המשתמש (%2)';
+							break;
+						case 'dialogtitle':
+							return 'תקציר לשחזור';
+						case 'success':
+							str = '%1 של %2 בוצע';
+							break;
+						case 'ok':
+							return 'אישור';
+						case 'cancel':
+							return 'ביטול';
+					}
+					break;
+				default: 
+					switch ( str ) {
+						case 'description': 
+							str = 'Please enter rolllback summary.<br />' 
+								+ '$1 will be replaced by page name (%1),<br />' 
+								+ '$2 will be replaced by user name (%2).';
+							break;
+						case 'dialogtitle' :
+							return 'Rollback summary';
+						case 'success':
+							str = 'Successfully rolled back %1 by %2';
+							break;
+						case 'ok':
+							return 'OK';
+						case 'cancel':
+							return 'Cancel';
+					}
+					break;
+			}
+			for ( var arg = 1; arg < arguments.length; arg++ ) 
+				str = str.replace( new RegExp( '%' + arg, 'g' ), arguments[ arg ] );
+			return str;
+		}
+		
 		e.preventDefault();
 		mw.loader.using( [ 'jquery.ui.dialog', 'jquery.jStorage' ], function() {
 			if ( e.type == 'contextmenu' ) {
@@ -48,11 +95,11 @@ $(function() {
 					selector = $( '<select>' ).change( function() { inputbox.val( this.value ) } );
 				$( options ).each( function( index, item ) { selector.append( $( '<option>', { value: item, text: item } ) ); } );
 				dialog = $( '<div>' ).dialog( {
-					title: 'Rollback summary',
+					title: i18n( 'dialogtitle' ),
 					width: 'auto',
 					modal: true,
 					buttons: [
-						{text: 'OK', click: function() {
+						{ text: i18n('ok'), click: function() {
 							summary = $.trim( inputbox.val() );
 							if ( !summary )
 								return;
@@ -67,19 +114,17 @@ $(function() {
 							rollback();
 							$(this).dialog( 'close' );
 						} },
-						{ text: 'Cancel', click: function() { $( this ).dialog( 'close' ); } }
+						{ text: i18n('cancel'), click: function() { $( this ).dialog( 'close' ); } }
 					]
 				 } )
-					.append($('<p>').html('Pleace enter rolllback summary.<br />' 
-						+ '$1 will be replaced by page name (' + title + '),<br />' 
-						+ '$2 will be replaced by user name (' + from + ').')
+					.append($('<p>').html()
 					)
 					.append( inputbox )
-					.append( $( '<p>' ) )
+					.append( $( '<p>' ).html( i18n( 'description', title, from ) ) )
 					.append( selector );
 				inputbox.focus().select().keypress( function( e ) { 
 					if ( e.which == 13 ) 
-						dialog.siblings( '.ui-dialog-buttonpane' ).find( 'button:Contains(OK)' ).click();
+						dialog.siblings( '.ui-dialog-buttonpane' ).find( 'button:Contains(' + i18n('ok') + ')' ).click();
 				} );
 			} // e.type == contextmenu
 			else // left-click
@@ -87,3 +132,4 @@ $(function() {
 		} ); // using
 	} ); // on
 } );
+//</source>
