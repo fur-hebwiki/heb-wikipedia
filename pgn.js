@@ -21,9 +21,9 @@ $(function() {
 		moveBucket = [], // this is a scratch thing, but since we access it from different objects, it's convenient to have it global
 		anim = 1000,
 		sides = ['n', 'e', 's', 'w'], // used for legends
-		brainDamage = $.browser.msie, // do not allow resize, do not use svg images.
+		brainDamage = $.client.profile().name == 'msie', // do not allow resize, do not use svg images.
 		defaultBlockSize = 40,
-		timer;
+		wrapperSelector = 'div.pgn-source-wrapper';
 
 // some global, utility functions.
 	function bindex(file, row) { return 8 * file + row; }
@@ -32,10 +32,13 @@ $(function() {
 	function sign(a, b) { return a == b ? 0 : (a < b ? 1 : -1); }
 	function fileOfStr(file) { return file && file.charCodeAt(0) - acode;}
 	function rowOfStr(row) { return row && (row - 1);}
-	function clearTimer() {
-		if (timer)
-			clearInterval(timer);
-		timer = null;
+
+	function showCurrentMovelink(moveLink) {
+		moveLink.addClass('pgn-current-move').siblings().removeClass('pgn-current-move');
+		var wannabe = moveLink.parent().height() / 2, 
+			isNow = moveLink.position().top,
+			newScrolltop = moveLink.parent()[0].scrollTop + isNow - wannabe;
+		moveLink.parent().stop().animate({scrollTop: newScrolltop}, 500);
 	}
 
 	function linkMoveClick(e) {
@@ -44,8 +47,7 @@ $(function() {
 			game = $this.data('game'),
 			index = $this.data('index'),
 			noAnim = $this.data('noAnim');
-		clearTimer();
-		$this.addClass('pgn-current-move').siblings().removeClass('pgn-current-move');
+		game.gs.clearTimer();
 		game.showMoveTo(index, noAnim);
 	}
 
@@ -57,7 +59,7 @@ $(function() {
 			allGames: [],
 			currentGame: null,
 			showDetails:false,
-
+			timer: null,
 			top: function(row, l) { return (((this.flip ? row : (7 - row)) + (l ? 0.3 : 0)) * this.blockSize + 20) + 'px'; },
 			left: function(file, l) { return (((this.flip ? 7 - file : file) + (l ? 0.5 : 0)) * this.blockSize + 20) + 'px'; },
 			legendLocation: function(side, num) {
@@ -79,8 +81,6 @@ $(function() {
 						this[sides[si]][n].css(this.legendLocation(sides[si], n));
 			},
 			selectGame: function(val) {
-				if (this.currentGame)
-					this.currentGame.toggle(false);
 				var game = this.allGames[val];
 				if (game) {
 					this.currentGame = game;
@@ -92,19 +92,32 @@ $(function() {
 					this.currentGame.drawBoard();
 				this.needRefresh = false;
 			},
+			changeAppearance: function() {
+				this.needRefresh = true;
+				this.currentGame.drawBoard();
+				this.relocateLegends();
+			},
 			setWidth: function(width) {
 				this.blockSize = width;
 				this.boardImg.css({width: width * 8, height: width * 8});
-				this.boardDiv.css('width', 40+(width * 8));
-				this.currentGame.drawBoard();
-				this.relocateLegends();
-				this.needRefresh = true;
+				this.currentGame.tds.boardDiv.css({width: width * 8 + 40, height: width * 8 + 40});
+				this.currentGame.tds.pgnDiv.css({maxHeight: width * 8 + 80});
+				this.changeAppearance();
 			},
 			doFlip: function() {
 				this.flip ^= 1;
-				this.needRefresh = true;
-				this.currentGame.drawBoard();
-				this.relocateLegends();
+				this.changeAppearance();
+			},
+			clearTimer: function() {
+				if (this.timer)
+					clearInterval(this.timer);
+				this.timer = null;
+			},
+			play: function() {
+				var cg = this.currentGame;
+				this.currentGame.wrapAround();
+				this.clearTimer();
+				this.timer = setInterval(function(){cg.advance()}, 1000 + anim);
 			}
 		});
 	}
@@ -114,8 +127,7 @@ $(function() {
 		this.type = type;
 		this.color = color;
 		this.img = $('<img>', {src: pieceImageUrl[type + color], 'class': 'pgn-chessPiece'})
-			.toggle(false)
-			.appendTo(game.boardDiv);
+			.toggle(false);
 	}
 
 	ChessPiece.prototype.appear = function(file, row) {
@@ -211,24 +223,46 @@ $(function() {
 			index: 0,
 			piecesByTypeCol: {},
 			descriptions: {},
+			comments: [],
 			tds: tds,
 			gs: gameSet});
-		tds.boardDiv.append(this.boardDiv = $('<div>', {'class': 'pgn-board-div'}).css({position: 'absolute', top: 0, left: 0}));
-		tds.pgnDiv.append(this.pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}));
-		tds.descriptionsDiv.append(this.descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}));
-		this.toggle(false);
-	}
-
-	Game.prototype.toggle = function(what) {
-		this.boardDiv.toggle(what);
-		this.pgnDiv.toggle(this.gs.showDetails && what);
-		this.descriptionsDiv.toggle(this.gs.showDetails && what);
 	}
 
 	Game.prototype.show = function() {
-		clearTimer();
-		this.toggle(true);
-		this.drawBoard();
+		var desc = $.extend({}, this.descriptions),
+			rtl = desc['Direction'] == 'rtl',
+			tds = this.tds;
+
+		// cleanup from previous game.
+		this.gs.clearTimer();
+		tds.descriptionsDiv.html('');
+		tds.pgnDiv.html('');
+		tds.boardDiv.find('img.pgn-chessPiece').toggle(false);
+		
+		// setup descriptions
+		delete desc['Direction'];
+		tds.descriptionsDiv.css({ direction: rtl ? 'rtl' : 'ltr', textAlign: rtl ? 'right' : 'left' });
+		$.each(desc, function(key, val) { tds.descriptionsDiv.append(key + ': ' + val + '<br />'); });
+		
+		// setup pgn section
+		this.linkOfIndex = [];
+		for (var i = 0; i < this.moves.length; i++) {
+			var move = this.moves[i];
+			if (move.s) {
+				if (this.comments[i])
+					tds.pgnDiv.append($('<span>', {'class': 'pgn-comment'}).text(this.comments[i]));
+				var link = $('<span>', {'class': (move.a ? 'pgn-steplink' : 'pgn-movelink')})
+					.text(move.s.replace(/-/g, '\u2011')) // replace hyphens with non-breakable hyphens, to avoid linebreak within O-O or 1-0
+					.data({game: this, index: i, noAnim: move.a})
+					.click(linkMoveClick);
+				tds.pgnDiv.append(link);
+				this.linkOfIndex[i] = link;
+			}
+		}
+		
+		// set the board.
+		$(this.pieces).each(function(i, piece){piece.img.appendTo(tds.boardDiv);});
+		this.showMoveTo(this.index, true);
 	}
 
 	Game.prototype.copyBoard = function() { return this.board.slice(); }
@@ -296,24 +330,28 @@ $(function() {
 		this.drawBoard();
 	}
 
-	Game.prototype.advance = function() {
-		if (this.index < this.moves.length - 1)
-			this.showMoveTo(this.index + 1);
-		this.pgnDiv.find('span').removeClass('pgn-current-move');
-		if (this.linkOfIndex[this.index])
-			this.linkOfIndex[this.index].addClass('pgn-current-move');
+	Game.prototype.advance = function(delta) {
+		var m = this.index + (delta || 1); // no param means 1 forward.
+		if (0 <= m && m < this.moves.length) {
+			this.showMoveTo(m);
+			if (this.moves[this.index].a)
+				this.advance(delta);
+		}
 	}
 
 	Game.prototype.showMoveTo = function(index, noAnim) {
 		var dif = index - this.index;
-			if (noAnim || dif < 1 || 2 < dif)
-				this.gotoBoard(index);
-			else
-				while (this.index < index) {
-					var mb = this.moves[++this.index];
-					for (var m in mb)
-						mb[m].piece.showAction(mb[m]);
-				}
+		
+		if (noAnim || dif < 1 || 2 < dif)
+			this.gotoBoard(index);
+		else
+			while (this.index < index) {
+				var mb = this.moves[++this.index].m;
+				for (var m in mb)
+					mb[m].piece.showAction(mb[m]);
+			}
+		if (this.linkOfIndex[this.index])
+		showCurrentMovelink(this.linkOfIndex[this.index]);
 	}
 
 	Game.prototype.drawBoard = function() {
@@ -403,27 +441,8 @@ $(function() {
 		return moveStr;
 	}
 
-	Game.prototype.addMoveLink = function(str, noAnim) {
-		if (!str || !noAnim) {
-			this.boards.push(this.board.slice());
-			this.moves.push(moveBucket);
-			moveBucket = [];
-		}
-		if (str) {
-			str = str.replace(/-/g, '\u2011'); // replace hyphens with non-breakable hyphens, to avoid linebreak within O-O or 1-0
-			var index = this.moves.length-1,
-				link = $('<span>', {'class': (noAnim ? 'pgn-steplink' : 'pgn-movelink')})
-				.text(str)
-				.data({game: this, index: index, noAnim: noAnim})
-				.click(linkMoveClick);
-			this.pgnDiv.append(link);
-			if (!noAnim)
-				this.linkOfIndex[index] = link;
-		}
-	}
-
 	Game.prototype.addComment = function(str) {
-		this.pgnDiv.append($('<span>', {'class': 'pgn-comment'}).text(str));
+		this.comments[this.moves.length] = str;
 	}
 
 	Game.prototype.addDescription = function(description) {
@@ -437,13 +456,23 @@ $(function() {
 		var d = this.descriptions;
 		var s =
 			d['Name'] || d['שם'] ||
-			( (d['Event'] || d['אירוע'] || '') + ': ' + (d['White'] || d[''] || 'לבן') + ' - ' + (d['Black'] || d['שחור'] || '') );
+			( (d['Event'] || d['אירוע'] || '') + ': ' + (d['White'] || d['לבן'] || '') + ' - ' + (d['Black'] || d['שחור'] || '') );
 		return s;
 	}
 
+	Game.prototype.addMoveLink = function(str, noAnim) {
+		this.boards.push(this.board.slice());
+		this.moves.push({m: moveBucket, s: str, a: noAnim});
+		moveBucket = [];
+	}
+		
 	Game.prototype.analyzePgn = function(pgn) {
-
-
+		var
+			match,
+			turn,
+			indexOfMove = {},
+			moveNum = '';
+		
 		function removeHead(match) {
 			var ind = pgn.indexOf(match) + match.length;
 			pgn = pgn.substring(ind);
@@ -451,25 +480,16 @@ $(function() {
 		}
 
 		function tryMatch(regex) {
-			var match = pgn.match(regex);
-			if (match)
-				removeHead(match[0]);
-			return match && match[0];
+			var rmatch = pgn.match(regex);
+			if (rmatch) {
+				removeHead(rmatch[0]);
+				moveNum = rmatch[1] || moveNum;;
+			}
+			return rmatch && rmatch[0];
 		}
-
-		var
-			match,
-			turn;
 
 		while (match = tryMatch(/^\s*\[[^\]]*\]/))
 			this.addDescription(match);
-
-		var rtl = this.descriptions['Direction'] == 'rtl';
-		delete this.descriptions['Direction'];
-		this.descriptionsDiv.css({direction: rtl ? 'rtl' : 'ltr', textAlign: rtl ? 'right' : 'left' });
-
-		var dar = $.map(this.descriptions, function(val, key) { return key + ': ' + val; });
-		this.descriptionsDiv.html(dar.join('<br />'));
 
 		pgn = pgn.replace(/;(.*)\n/g, ' {$1} ').replace(/\s+/g, ' '); // replace to-end-of-line comments with block comments, remove newlines and noramlize spaces to 1
 		this.populateBoard(this.descriptions.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'); 
@@ -483,7 +503,7 @@ $(function() {
 				this.addComment(match);
 			if (match = tryMatch(/^\s*\([^\)]*\)/))
 				this.addComment(match);
-			if (match = tryMatch(/^\s*\d+\.+/)) {
+			if (match = tryMatch(/^\s*(\d+)\.+/)) {
 				turn = /\.\.\./.test(match) ? BLACK : WHITE;
 				this.addMoveLink(match, true);
 				continue;
@@ -491,9 +511,13 @@ $(function() {
 			if (match = tryMatch(/^\s*[^ ]+ ?/)) {
 				this.createMove(turn, match);
 				this.addMoveLink(match);
+				indexOfMove[moveNum + turn] = this.moves.length - 1;
 				turn = BLACK;
 			}
 		}
+		
+		var showFirst = this.descriptions['FirstMove'];
+		this.index = (showFirst && indexOfMove[showFirst]) || this.moves.length - 1;
 	}
 
 	Game.prototype.populateBoard = function(fen) {
@@ -523,7 +547,7 @@ $(function() {
 	function createFlipper(gameSet) {
 		var flipper =
 			$('<img>', {src: flipImageUrl})
-				.css({width: '37px', float:'right', clear: 'right', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
+				.css({width: '37px', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
 				.click(function() {
 					gameSet.doFlip();
 					var rotation = gameSet.flip ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -537,24 +561,19 @@ $(function() {
 		return flipper;
 	}
 
-	function advanceButton(gameSet) {
-		var button = $('<input>', {type: 'button', value: '<'})
-			.css({float: 'right', clear: 'right', fontSize: '16px', width: 40})
+	function advanceButton(gameSet, forward) {
+		var button = $('<input>', {'class': 'pgn-button', type: 'button', rel: 'f', value: forward ? '<' : '>'})
 			.click(function() {
-				gameSet.currentGame.wrapAround();
-				clearTimer();
-				gameSet.currentGame.advance();
+				gameSet.clearTimer();
+				gameSet.currentGame.advance(forward * 2 - 1);
 			});
 		return button;
 	}
 
-	function slideShowButton(gameSet) {
+	function autoPlayButton(gameSet) {
 		var button = $('<input>', {type: 'button', value: '\u25B6'})
-			.css({float: 'right', clear: 'right', fontSize: '16px', width: 40})
 			.click(function() {
-				gameSet.currentGame.wrapAround();
-				clearTimer();
-				timer = setInterval(function(){gameSet.currentGame.advance()}, 1000 + anim);
+				gameSet.play();
 			});
 		return button;
 	}
@@ -563,16 +582,16 @@ $(function() {
 
 	function buildBoardDiv(container, selector, gameSet) {
 		var
-			pgnDiv, 
-			descriptionsDiv,
+			pgnDiv = $('<div>', {'class': 'pgn-pgndiv'}).css({maxHeight: defaultBlockSize * 8 + 80}), 
+			descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}),
 			gameSetDiv,
 			controlsDiv,
 			scrollDiv,
 			cdTable,
 			flipper = createFlipper(gameSet),
-			advance = advanceButton(gameSet),
-			slideShow = slideShowButton(gameSet),
-			buttons = $('<div>').css({maxWidth: 40}).append(advance).append(slideShow),
+			forward = advanceButton(gameSet, true),
+			backstep = advanceButton(gameSet, false),
+			autoPlay = autoPlayButton(gameSet),
 			slider;
 
 		if (!brainDamage)
@@ -580,7 +599,7 @@ $(function() {
 				.slider({
 					max: 60,
 					min: 20,
-					orientation: 'vertical',
+					orientation: 'horizontal',
 					value: gameSet.blockSize,
 					stop: function() {
 						var $this = $(this),
@@ -590,25 +609,15 @@ $(function() {
 				}).data({gameSet: gameSet});
 
 		gameSetDiv = $('<div>', {'class': 'pgn-gameset-div'})
-			.css({width: 40 + 8 * gameSet.blockSize})
-			.appendTo(container);
-		if (selector)
-			gameSetDiv.append(selector);
-
-		$(gameSetDiv)
-			.append(scrollDiv = $('<div>', {'valign': 'top'}).append(slider || '').css({'float':'right', 'display':'none'}))
-			.append(controlsDiv = $('<div>', {'class': 'pgn-controls'}).css({'float':'right', 'display':'none'}))
-			.append($('<div>',{ text: mw.msg('showtoc') }).button().click(function(){
-				$(this).hide()
-				gameSet.showDetails=true;
-				gameSet.currentGame.toggle(true);
-				controlsDiv.show();
-				scrollDiv.show();
-			}))
-			.append(descriptionsDiv = $('<div>'))
-		controlsDiv.append(advance).append(slideShow).append(flipper);
-		gameSet.boardDiv = $('<div>', {'class': 'pgn-board-div'}).appendTo(gameSetDiv);
-		pgnDiv = $('<div>', {'class': 'pgn-pgn-display'}).appendTo(gameSetDiv);
+			.css({width: 40 + 8 * gameSet.blockSize});
+		controlsDiv = $('<div>', {'class': 'pgn-controls'})
+			.css({clear: 'both', textAlign: 'center'})
+			.append(backstep)
+			.append(autoPlay)
+			.append(forward)
+			.append(flipper)
+			.append(slider || '');
+		gameSet.boardDiv = $('<div>', {'class': 'pgn-board-div'});
 		gameSet.boardImg = $('<img>', {'class': 'pgn-board-img', src: boardImageUrl})
 			.css({padding: 20, width: gameSet.blockSize * 8, height: gameSet.blockSize * 8})
 			.appendTo(gameSet.boardDiv);
@@ -626,12 +635,27 @@ $(function() {
 				gameSet[s][i] = sp;
 			}
 		}
+		var table = $('<table>').css({direction: 'ltr'}).appendTo(container);
+		if (selector)
+			table.append(
+				$('<tr>').append($('<td>', {colspan: 3}).css('text-align', 'center').append(selector))
+			);
+		table.append($('<tr>')
+				.append($('<td>', {valign: 'top'}).append(descriptionsDiv))
+				.append($('<td>').append(gameSet.boardDiv))
+				.append($('<td>', {valign: 'top'}).append(pgnDiv))
+			)
+			.append($('<tr>')
+				.append($('<td>'))
+				.append($('<td>').css('text-align', 'center').append(controlsDiv))
+			);
+			
 		return {boardDiv: gameSet.boardDiv, pgnDiv: pgnDiv, descriptionsDiv: descriptionsDiv};
 	}
 
 	function doIt() {
 
-		$('div.pgn-source-wrapper').each(function() {
+		$(wrapperSelector).each(function() {
 			var
 				wrapperDiv = $(this),
 				pgnSource = $('div.pgn-sourcegame', wrapperDiv),
@@ -647,10 +671,8 @@ $(function() {
 			pgnSource.each(function() {
 				try {
 					var
-						pgnDiv = $(this),
 						game = new Game(tds, gameSet);
-						game.analyzePgn(pgnDiv.text());
-						game.linkOfIndex[game.boards.length - 1].trigger('click');
+						game.analyzePgn($(this).text());
 						wrapperDiv.data({currentGame: game});
 					ind++;
 
@@ -661,6 +683,9 @@ $(function() {
 						game.show();
 				} catch (e) {
 					mw.log('exception in game ' + ind + ' problem is: "' + e + '"');
+					if (game && game.descriptions) 
+						for (var d in game.descriptions)
+							mw.log(d + ':' + game.descriptions[d]);
 				}
 			});
 			gameSet.selectGame(0);
@@ -716,6 +741,6 @@ $(function() {
 		);
 	}
 
-	if ($('div.pgn-source-wrapper').length)
+	if ($(wrapperSelector).length) 
 		mw.loader.using(['mediawiki.api', 'jquery.ui.slider'], pupulateImages);
 });
