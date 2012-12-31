@@ -107,6 +107,7 @@ $(function() {
 			doFlip: function() {
 				this.flip ^= 1;
 				this.changeAppearance();
+				return this.flip;
 			},
 			clearTimer: function() {
 				if (this.timer)
@@ -235,8 +236,8 @@ $(function() {
 
 		// cleanup from previous game.
 		this.gs.clearTimer();
-		tds.descriptionsDiv.html('');
-		tds.pgnDiv.html('');
+		tds.descriptionsDiv.empty();
+		tds.pgnDiv.empty();
 		tds.boardDiv.find('img.pgn-chessPiece').toggle(false);
 		
 		// setup descriptions
@@ -322,7 +323,8 @@ $(function() {
 	}
 
 	Game.prototype.registerMove = function(move) {
-		moveBucket.push(move);
+		function act() { this.piece.showAction(this) };
+		moveBucket.push($.extend(move, {act: act}));
 	}
 
 	Game.prototype.gotoBoard = function(index) {
@@ -345,13 +347,10 @@ $(function() {
 		if (noAnim || dif < 1 || 2 < dif)
 			this.gotoBoard(index);
 		else
-			while (this.index < index) {
-				var mb = this.moves[++this.index].m;
-				for (var m in mb)
-					mb[m].piece.showAction(mb[m]);
-			}
+			while (this.index < index) 
+				$.each(this.moves[++this.index].bucket, function(index, drop) {drop.act()});
 		if (this.linkOfIndex[this.index])
-		showCurrentMovelink(this.linkOfIndex[this.index]);
+			showCurrentMovelink(this.linkOfIndex[this.index]);
 	}
 
 	Game.prototype.drawBoard = function() {
@@ -393,7 +392,7 @@ $(function() {
 		piece[capture ? 'capture' : 'move'](file, row);
 		this.clearPieceAt(file, row);
 		var newPiece = this.createPiece(type, piece.color, file, row);
-		this.registerMove({what:'a', piece: newPiece, file: file, row: row})
+		this.registerMove({what:'a', piece: newPiece, file: file, row: row});
 	}
 
 	Game.prototype.createPiece = function(type, color, file, row) {
@@ -462,7 +461,7 @@ $(function() {
 
 	Game.prototype.addMoveLink = function(str, noAnim) {
 		this.boards.push(this.board.slice());
-		this.moves.push({m: moveBucket, s: str, a: noAnim});
+		this.moves.push({bucket: moveBucket, s: str, a: noAnim});
 		moveBucket = [];
 	}
 		
@@ -549,8 +548,8 @@ $(function() {
 			$('<img>', {src: flipImageUrl})
 				.css({width: '37px', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
 				.click(function() {
-					gameSet.doFlip();
-					var rotation = gameSet.flip ? 'rotate(180deg)' : 'rotate(0deg)';
+					var 
+						rotation = gameSet.doFlip() ? 'rotate(180deg)' : 'rotate(0deg)';
 					$(this).css({
 						'-webkit-transform': rotation,
 						'-moz-transform': rotation,
@@ -562,20 +561,16 @@ $(function() {
 	}
 
 	function advanceButton(gameSet, forward) {
-		var button = $('<input>', {'class': 'pgn-button', type: 'button', rel: 'f', value: forward ? '<' : '>'})
+		return $('<input>', {'class': 'pgn-button', type: 'button', rel: 'f', value: forward ? '<' : '>'})
 			.click(function() {
 				gameSet.clearTimer();
 				gameSet.currentGame.advance(forward * 2 - 1);
 			});
-		return button;
 	}
 
 	function autoPlayButton(gameSet) {
-		var button = $('<input>', {type: 'button', value: '\u25B6'})
-			.click(function() {
-				gameSet.play();
-			});
-		return button;
+		return $('<input>', {type: 'button', value: '\u25B6'})
+				.click(function() { gameSet.play(); });
 	}
 
 	function setWidth(width, $this) { $this.data('gameSet').setWidth(width); }
@@ -601,12 +596,8 @@ $(function() {
 					min: 20,
 					orientation: 'horizontal',
 					value: gameSet.blockSize,
-					stop: function() {
-						var $this = $(this),
-							newWidth = parseInt($this.slider('value'), 10);
-						setWidth(newWidth, $this);
-					}
-				}).data({gameSet: gameSet});
+					stop: function() { gameSet.setWidth(parseInt(slider.slider('value'), 10)); }
+				});
 
 		gameSetDiv = $('<div>', {'class': 'pgn-gameset-div'})
 			.css({width: 40 + 8 * gameSet.blockSize});
@@ -621,15 +612,16 @@ $(function() {
 		gameSet.boardImg = $('<img>', {'class': 'pgn-board-img', src: boardImageUrl})
 			.css({padding: 20, width: gameSet.blockSize * 8, height: gameSet.blockSize * 8})
 			.appendTo(gameSet.boardDiv);
-		var fl = 'abcdefgh';
+		var fl = 'abcdefgh'.split('');
 
 		for (var side in sides) {
-			var s = sides[side],
+			var 
+				s = sides[side],
 				isFile = /n|s/.test(s);
 			gameSet[s] = [];
 			for (var i = 0; i < 8; i++) {
 				var sp = $('<span>', {'class': isFile ? 'pgn-file-legend' : 'pgn-row-legend'})
-					.text(isFile ? fl.charAt(i) : (i + 1))
+					.text(isFile ? fl[i] : (i + 1))
 					.appendTo(gameSet.boardDiv)
 					.css(gameSet.legendLocation(s, i));
 				gameSet[s][i] = sp;
