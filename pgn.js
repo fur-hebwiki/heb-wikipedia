@@ -1,9 +1,9 @@
 /*
 this work is placed by its authors in the public domain.
 it was created from scratch, and no part of it was copied from elsewhere.
-it can be used, copied, modified, redistributed, as-is or modified, 
+it can be used, copied, modified, redistributed, as-is or modified,
 	whole or in part, without restrictions.
-it can be embedded in a copyright protected work, as long as it's clear 
+it can be embedded in a copyright protected work, as long as it's clear
 	that the copyright does not apply to the embedded parts themselves.
 please do not claim for yourself copyrights for this work or parts of it.
 the work comes with no warranty or guarantee, stated or implied, including
@@ -35,7 +35,7 @@ $(function() {
 
 	function showCurrentMovelink(moveLink) {
 		moveLink.addClass('pgn-current-move').siblings().removeClass('pgn-current-move');
-		var wannabe = moveLink.parent().height() / 2, 
+		var wannabe = moveLink.parent().height() / 2,
 			isNow = moveLink.position().top,
 			newScrolltop = moveLink.parent()[0].scrollTop + isNow - wannabe;
 		moveLink.parent().stop().animate({scrollTop: newScrolltop}, 500);
@@ -98,10 +98,15 @@ $(function() {
 				this.relocateLegends();
 			},
 			setWidth: function(width) {
+				var
+					widthPx = width * 8,
+					widthPxPlus = widthPx + 40,
+					widthPxPlusPlus = widthPx + 80;
 				this.blockSize = width;
-				this.boardImg.css({width: width * 8, height: width * 8});
-				this.currentGame.tds.boardDiv.css({width: width * 8 + 40, height: width * 8 + 40});
-				this.currentGame.tds.pgnDiv.css({maxHeight: width * 8 + 80});
+				this.boardImg.css({width: widthPx, height: widthPx});
+				this.currentGame.tds.boardDiv.css({width: widthPxPlus, height: widthPxPlus});
+				this.currentGame.tds.pgnDiv.css({maxHeight: widthPxPlusPlus});
+				this.currentGame.tds.descriptionsDiv.css({maxHeight: widthPxPlusPlus});
 				this.changeAppearance();
 			},
 			doFlip: function() {
@@ -180,7 +185,7 @@ $(function() {
 				var dir = this.pawnDirection();
 				return (
 					((this.row == this.pawnStart() && row ==  this.row + dir * 2 && !fd && this.game.roadIsClear(this.file, file, this.row, row) && !capture)
-					|| (this.row + dir == row && fd == !!capture))); // advance 1, and either stay in file and no capture, or move exactly one 
+					|| (this.row + dir == row && fd == !!capture))); // advance 1, and either stay in file and no capture, or move exactly one
 			case 'k':
 				return (rd | fd) == 1; // we'll accept 1 and 1 or 1 and 0.
 			case 'q':
@@ -239,28 +244,35 @@ $(function() {
 		tds.descriptionsDiv.empty();
 		tds.pgnDiv.empty();
 		tds.boardDiv.find('img.pgn-chessPiece').toggle(false);
-		
+
 		// setup descriptions
 		delete desc['Direction'];
 		tds.descriptionsDiv.css({ direction: rtl ? 'rtl' : 'ltr', textAlign: rtl ? 'right' : 'left' });
 		$.each(desc, function(key, val) { tds.descriptionsDiv.append(key + ': ' + val + '<br />'); });
-		
+
 		// setup pgn section
 		this.linkOfIndex = [];
 		for (var i = 0; i < this.moves.length; i++) {
-			var move = this.moves[i];
+			var
+				move = this.moves[i],
+				comment = this.comments[i];
+			if (comment) {
+				var
+					celem = $('<span>', {'class': 'pgn-comment'}).text(comment).appendTo(tds.pgnDiv);
+				if (/\u200f/.test(comment)) // &lrm; : the pgn is ltr. if the comment is rtl, it's best to give it a separate paragraph.
+					celem.wrap('<p dir="rtl" style="text-align:right">');
+			}
 			if (move.s) {
-				if (this.comments[i])
-					tds.pgnDiv.append($('<span>', {'class': 'pgn-comment'}).text(this.comments[i]));
-				var link = $('<span>', {'class': (move.a ? 'pgn-steplink' : 'pgn-movelink')})
-					.text(move.s.replace(/-/g, '\u2011')) // replace hyphens with non-breakable hyphens, to avoid linebreak within O-O or 1-0
-					.data({game: this, index: i, noAnim: move.a})
-					.click(linkMoveClick);
+				var
+					link = $('<span>', {'class': (move.a ? 'pgn-steplink' : 'pgn-movelink')})
+						.text(move.s.replace(/-/g, '\u2011')) // replace hyphens with non-breakable hyphens, to avoid linebreak within O-O or 1-0
+						.data({game: this, index: i, noAnim: move.a})
+						.click(linkMoveClick);
 				tds.pgnDiv.append(link);
 				this.linkOfIndex[i] = link;
 			}
 		}
-		
+
 		// set the board.
 		$(this.pieces).each(function(i, piece){piece.img.appendTo(tds.boardDiv);});
 		this.showMoveTo(this.index, true);
@@ -343,11 +355,11 @@ $(function() {
 
 	Game.prototype.showMoveTo = function(index, noAnim) {
 		var dif = index - this.index;
-		
+
 		if (noAnim || dif < 1 || 2 < dif)
 			this.gotoBoard(index);
 		else
-			while (this.index < index) 
+			while (this.index < index)
 				$.each(this.moves[++this.index].bucket, function(index, drop) {drop.act()});
 		if (this.linkOfIndex[this.index])
 			showCurrentMovelink(this.linkOfIndex[this.index]);
@@ -424,8 +436,8 @@ $(function() {
 			file = fileOfStr(match[5]),
 			row = rowOfStr(match[6]),
 			promotion = match[7],
-			thePiece = $(this.piecesByTypeCol[type][color]).filter(function() { 
-					return this.matches(oldFile, oldRow, isCapture, file, row); 
+			thePiece = $(this.piecesByTypeCol[type][color]).filter(function() {
+					return this.matches(oldFile, oldRow, isCapture, file, row);
 				});
 		if (thePiece.length != 1)
 			throw 'could not find matching pieces. type="' + type + ' color=' + color + ' moveAGN="' + moveStr + '". found ' + thePiece.length + ' matching pieces';
@@ -464,14 +476,14 @@ $(function() {
 		this.moves.push({bucket: moveBucket, s: str, a: noAnim});
 		moveBucket = [];
 	}
-		
+
 	Game.prototype.analyzePgn = function(pgn) {
 		var
 			match,
 			turn,
 			indexOfMove = {},
 			moveNum = '';
-		
+
 		function removeHead(match) {
 			var ind = pgn.indexOf(match) + match.length;
 			pgn = pgn.substring(ind);
@@ -491,7 +503,7 @@ $(function() {
 			this.addDescription(match);
 
 		pgn = pgn.replace(/;(.*)\n/g, ' {$1} ').replace(/\s+/g, ' '); // replace to-end-of-line comments with block comments, remove newlines and noramlize spaces to 1
-		this.populateBoard(this.descriptions.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'); 
+		this.populateBoard(this.descriptions.FEN || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR');
 		var prevLen = -1;
 		this.addMoveLink();
 		while (pgn.length) {
@@ -514,7 +526,7 @@ $(function() {
 				turn = BLACK;
 			}
 		}
-		
+
 		var showFirst = this.descriptions['FirstMove'];
 		this.index = (showFirst && indexOfMove[showFirst]) || this.moves.length - 1;
 	}
@@ -548,7 +560,7 @@ $(function() {
 			$('<img>', {src: flipImageUrl})
 				.css({width: '37px', border: 'solid 1px gray', borderRadius: '4px', backgroundColor: '#ddd'})
 				.click(function() {
-					var 
+					var
 						rotation = gameSet.doFlip() ? 'rotate(180deg)' : 'rotate(0deg)';
 					$(this).css({
 						'-webkit-transform': rotation,
@@ -577,7 +589,7 @@ $(function() {
 
 	function buildBoardDiv(container, selector, gameSet) {
 		var
-			pgnDiv = $('<div>', {'class': 'pgn-pgndiv'}).css({maxHeight: defaultBlockSize * 8 + 80}), 
+			pgnDiv = $('<div>', {'class': 'pgn-pgndiv'}).css({maxHeight: defaultBlockSize * 8 + 80}),
 			descriptionsDiv = $('<div>', {'class': 'pgn-descriptions'}),
 			gameSetDiv,
 			controlsDiv,
@@ -610,12 +622,12 @@ $(function() {
 			.append(slider || '');
 		gameSet.boardDiv = $('<div>', {'class': 'pgn-board-div'});
 		gameSet.boardImg = $('<img>', {'class': 'pgn-board-img', src: boardImageUrl})
-			.css({padding: 20, width: gameSet.blockSize * 8, height: gameSet.blockSize * 8})
+			.css({padding: 20})
 			.appendTo(gameSet.boardDiv);
 		var fl = 'abcdefgh'.split('');
 
 		for (var side in sides) {
-			var 
+			var
 				s = sides[side],
 				isFile = /n|s/.test(s);
 			gameSet[s] = [];
@@ -641,7 +653,7 @@ $(function() {
 				.append($('<td>'))
 				.append($('<td>').css('text-align', 'center').append(controlsDiv))
 			);
-			
+
 		return {boardDiv: gameSet.boardDiv, pgnDiv: pgnDiv, descriptionsDiv: descriptionsDiv};
 	}
 
@@ -675,12 +687,13 @@ $(function() {
 						game.show();
 				} catch (e) {
 					mw.log('exception in game ' + ind + ' problem is: "' + e + '"');
-					if (game && game.descriptions) 
+					if (game && game.descriptions)
 						for (var d in game.descriptions)
 							mw.log(d + ':' + game.descriptions[d]);
 				}
 			});
 			gameSet.selectGame(0);
+			gameSet.setWidth(defaultBlockSize);
 		})
 	}
 
@@ -733,6 +746,6 @@ $(function() {
 		);
 	}
 
-	if ($(wrapperSelector).length) 
+	if ($(wrapperSelector).length)
 		mw.loader.using(['mediawiki.api', 'jquery.ui.slider'], pupulateImages);
 });
